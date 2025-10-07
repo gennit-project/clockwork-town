@@ -81,7 +81,7 @@ type Item {
 
   # Derived via USING edges (query-only, not stored as arrays):
   activeUsers: [Character!]!
-  activeAnimalUsers: [AnimalCharacter!]!
+  activeAnimalUsers: [Animal!]!
 }
 
 type Memory {
@@ -124,10 +124,12 @@ type Trait {
 # -----------------------------
 # Relationships (Character <-> Character)
 # -----------------------------
+union RelationshipEntity = Character | Animal
+
 type Relationship {
   id: ID!
-  from: Character | AnimalCharacter!
-  to: Character | AnimalCharacter!
+  from: RelationshipEntity!
+  to: RelationshipEntity!
   relationshipType: String!        # e.g., "friendship", "romance", "rivalry"
   longTermCloseness: Int!
   shortTermCloseness: Int!
@@ -199,7 +201,7 @@ type Character {
   stepChildren: [Character!]!
 
   # Pets (ownership edges)
-  pets: [AnimalCharacter!]!
+  pets: [Animal!]!
 
   # Current state
   currentHousehold: Household!
@@ -225,23 +227,23 @@ type Character {
   employment: Employment
 }
 
-type AnimalCharacter {
+type Animal {
   id: ID!
   name: String!
   age: Int!
   traits: [String!]!
 
   owner: Character!
-  parents: [AnimalCharacter!]!
-  siblings: [AnimalCharacter!]!
-  children: [AnimalCharacter!]!
+  parents: [Animal!]!
+  siblings: [Animal!]!
+  children: [Animal!]!
 
   currentHousehold: Household!
   currentLot: Lot!
   homeLot: Lot!
 
   knownCharacters: [Character!]!
-  knownAnimals: [AnimalCharacter!]!
+  knownAnimals: [Animal!]!
 }
 
 # -----------------------------
