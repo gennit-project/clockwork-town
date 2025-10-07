@@ -25,6 +25,20 @@
     </div>
 
     <div v-else>
+      <!-- Household Info Banner -->
+      <div v-if="household" class="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <h2 class="text-lg font-semibold text-blue-900 mb-2">{{ household.name }}</h2>
+        <div v-if="household.characters.length > 0" class="flex flex-wrap gap-2">
+          <span
+            v-for="char in household.characters"
+            :key="char.id"
+            class="text-sm bg-blue-100 text-blue-800 px-3 py-1 rounded-full"
+          >
+            {{ char.name }} ({{ char.age }})
+          </span>
+        </div>
+      </div>
+
       <div v-if="indoorSpaces.length > 0" class="mb-8">
         <h2 class="text-2xl font-semibold mb-4 text-gray-800">Indoor Rooms</h2>
         <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -205,6 +219,7 @@ const outdoorSpaces = ref([])
 const world = ref(null)
 const region = ref(null)
 const lot = ref(null)
+const household = ref(null)
 const loading = ref(true)
 const error = ref(null)
 const showCreateModal = ref(false)
@@ -226,17 +241,19 @@ const loadData = async () => {
   try {
     loading.value = true
     error.value = null
-    const [worldData, regionsData, lotsData, spacesData] = await Promise.all([
+    const [worldData, regionsData, lotsData, spacesData, householdsData] = await Promise.all([
       client.request(queries.getWorld, { id: worldId.value }),
       client.request(queries.getRegions, { worldId: worldId.value }),
       client.request(queries.getLots, { regionId: regionId.value }),
-      client.request(queries.getSpaces, { lotId: lotId.value })
+      client.request(queries.getSpaces, { lotId: lotId.value }),
+      client.request(queries.getHouseholds, { regionId: regionId.value })
     ])
     world.value = worldData.world
     region.value = regionsData.regions.find(r => r.id === regionId.value)
     lot.value = lotsData.lots.find(l => l.id === lotId.value)
     indoorSpaces.value = spacesData.lot?.indoorRooms || []
     outdoorSpaces.value = spacesData.lot?.outdoorAreas || []
+    household.value = householdsData.households.find(h => h.lotId === lotId.value) || null
   } catch (e) {
     error.value = e.message
   } finally {

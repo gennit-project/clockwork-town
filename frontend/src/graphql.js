@@ -63,6 +63,45 @@ export const queries = {
         }
       }
     }
+  `,
+
+  getHouseholds: `
+    query GetHouseholds($regionId: ID!) {
+      households(regionId: $regionId) {
+        id
+        name
+        lotId
+        lotName
+        characters {
+          id
+          name
+          age
+        }
+      }
+    }
+  `,
+
+  getHousehold: `
+    query GetHousehold($id: ID!) {
+      household(id: $id) {
+        id
+        name
+        lotId
+        lotName
+        characters {
+          id
+          name
+          age
+          bio
+        }
+        animals {
+          id
+          name
+          age
+          traits
+        }
+      }
+    }
   `
 }
 
@@ -169,6 +208,39 @@ export const mutations = {
   deleteSpace: `
     mutation DeleteSpace($id: ID!) {
       deleteSpace(id: $id)
+    }
+  `,
+
+  createHousehold: `
+    mutation CreateHousehold($input: NewHousehold!, $characters: [NewCharacterSimple!]!, $animals: [NewAnimalSimple!]) {
+      createHousehold(input: $input, characters: $characters, animals: $animals) {
+        id
+        name
+        lotId
+        lotName
+        characters {
+          id
+          name
+          age
+        }
+      }
+    }
+  `,
+
+  updateHousehold: `
+    mutation UpdateHousehold($id: ID!, $name: String!, $lotId: ID!, $characters: [NewCharacterSimple!], $animals: [NewAnimalSimple!]) {
+      updateHousehold(id: $id, name: $name, lotId: $lotId, characters: $characters, animals: $animals) {
+        id
+        name
+        lotId
+        lotName
+      }
+    }
+  `,
+
+  deleteHousehold: `
+    mutation DeleteHousehold($id: ID!) {
+      deleteHousehold(id: $id)
     }
   `
 }

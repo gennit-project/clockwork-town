@@ -59,7 +59,10 @@ type Household {
   id: ID!
   name: String!
   characters: [Character!]!
+  animals: [Animal!]!
   currentLot: Lot
+  lotId: ID
+  lotName: String
 }
 
 # -----------------------------
@@ -276,6 +279,8 @@ type Query {
   regions(worldId: ID!): [Region!]!
   lots(regionId: ID!): [Lot!]!
   lot(id: ID!): Lot
+  households(regionId: ID!): [Household!]!
+  household(id: ID!): Household
 
   character(id: ID!): Character
   characters(page: Page): CharacterConnection!
@@ -313,6 +318,28 @@ input NewSpace {
   name: String!
   description: String!
   isIndoor: Boolean!
+}
+
+input NewHousehold {
+  id: ID!
+  name: String!
+  regionId: ID!
+  lotId: ID!
+}
+
+input NewCharacterSimple {
+  id: ID!
+  name: String!
+  age: Int!
+  bio: String
+}
+
+input NewAnimalSimple {
+  id: ID!
+  name: String!
+  age: Int!
+  traits: [String!]!
+  ownerId: ID!
 }
 
 input NewCharacter {
@@ -356,6 +383,10 @@ type Mutation {
   createSpace(input: NewSpace!): Space!
   updateSpace(id: ID!, name: String!, description: String!): Space!
   deleteSpace(id: ID!): Boolean!
+
+  createHousehold(input: NewHousehold!, characters: [NewCharacterSimple!]!, animals: [NewAnimalSimple!]): Household!
+  updateHousehold(id: ID!, name: String!, lotId: ID!, characters: [NewCharacterSimple!], animals: [NewAnimalSimple!]): Household!
+  deleteHousehold(id: ID!): Boolean!
 
   createCharacter(input: NewCharacter!): Character!
   moveCharacter(input: MoveInput!): Boolean!

@@ -42,6 +42,11 @@
           <div>
             <h2 class="text-xl font-semibold text-gray-900">{{ lot.name }}</h2>
             <p class="text-sm text-gray-500">{{ lot.lotType }}</p>
+            <div v-if="getHouseholdForLot(lot.id)" class="mt-2">
+              <p class="text-xs font-medium text-gray-700">Household:</p>
+              <p class="text-xs text-gray-600">{{ getHouseholdForLot(lot.id).name }}</p>
+              <p class="text-xs text-gray-500">{{ getHouseholdForLot(lot.id).characters.length }} member(s)</p>
+            </div>
           </div>
           <div class="flex space-x-2">
             <button
@@ -164,6 +169,7 @@ const worldId = computed(() => route.params.worldId)
 const regionId = computed(() => route.params.regionId)
 
 const lots = ref([])
+const households = ref([])
 const world = ref(null)
 const region = ref(null)
 const loading = ref(true)
@@ -177,21 +183,28 @@ const formData = ref({ name: '', lotType: '' })
 const breadcrumbs = computed(() => [
   { label: 'Worlds', to: '/' },
   { label: world.value?.name || 'Loading...', to: `/world/${worldId.value}` },
-  { label: region.value?.name || 'Loading...', to: '#' }
+  { label: region.value?.name || 'Loading...', to: `/world/${worldId.value}/region/${regionId.value}` },
+  { label: 'Lots', to: '#' }
 ])
+
+const getHouseholdForLot = (lotId) => {
+  return households.value.find(h => h.lotId === lotId)
+}
 
 const loadData = async () => {
   try {
     loading.value = true
     error.value = null
-    const [worldData, regionsData, lotsData] = await Promise.all([
+    const [worldData, regionsData, lotsData, householdsData] = await Promise.all([
       client.request(queries.getWorld, { id: worldId.value }),
       client.request(queries.getRegions, { worldId: worldId.value }),
-      client.request(queries.getLots, { regionId: regionId.value })
+      client.request(queries.getLots, { regionId: regionId.value }),
+      client.request(queries.getHouseholds, { regionId: regionId.value })
     ])
     world.value = worldData.world
     region.value = regionsData.regions.find(r => r.id === regionId.value)
     lots.value = lotsData.lots || []
+    households.value = householdsData.households || []
   } catch (e) {
     error.value = e.message
   } finally {
