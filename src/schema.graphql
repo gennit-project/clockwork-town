@@ -1,0 +1,321 @@
+# -----------------------------
+# Scalars
+# -----------------------------
+scalar Date
+scalar DateTime
+
+# -----------------------------
+# Enums
+# -----------------------------
+enum LotType { RESIDENTIAL COMMUNITY GENERIC }
+enum RelationshipDepth { ACQUAINTANCE FRIEND CLOSE_FRIEND BEST_FRIEND LOVER SPOUSE }
+enum SelfActualizationType { CREATIVITY KNOWLEDGE NATURE POPULARITY PROFESSION SPIRITUALITY }
+
+# -----------------------------
+# Core World Structure
+# -----------------------------
+type World {
+  id: ID!
+  name: String!
+  createdAt: DateTime!
+  regions: [Region!]!
+}
+
+type Region {
+  id: ID!
+  name: String!
+  worldId: ID!
+  kind: String!              # e.g., "urban", "rural", "mountain", etc.
+  lots: [Lot!]!
+  naturalAreas: [NaturalArea!]!
+  characters: [Character!]!  # derived via AT edges through lots/spaces
+}
+
+type NaturalArea {
+  id: ID!
+  name: String!
+  description: String!
+}
+
+type Lot {
+  id: ID!
+  name: String!
+  lotType: LotType!
+  items: [Item!]!
+  indoorRooms: [Space!]!
+  outdoorAreas: [Space!]!
+  household: Household       # current household occupying the lot (if any)
+}
+
+type Space {
+  id: ID!
+  name: String!
+  description: String!
+  items: [Item!]!
+  characters: [Character!]!
+}
+
+type Household {
+  id: ID!
+  name: String!
+  characters: [Character!]!
+  currentLot: Lot
+}
+
+# -----------------------------
+# Items & Memories
+# -----------------------------
+type Item {
+  id: ID!
+  name: String!
+  description: String!
+  canBeUsedByHumans: Boolean!
+  canBeUsedByAnimals: Boolean!
+  minimumAgeToUse: Int
+  maxSimultaneousUsers: Int
+  satisfiesNeeds: [String!]!
+  canStoreItems: Boolean!
+  allowedActivities: [String!]!
+  storedItems: [Item!]!      # items contained within this item (bags/chests/fridges/etc.)
+  cost: Int!
+
+  # Derived via USING edges (query-only, not stored as arrays):
+  activeUsers: [Character!]!
+  activeAnimalUsers: [AnimalCharacter!]!
+}
+
+type Memory {
+  id: ID!
+  content: String!
+  createdAt: DateTime!
+}
+
+# -----------------------------
+# Needs / Values / Traits
+# -----------------------------
+# Simple, extensible "key/value" needs model to avoid schema churn.
+type Need {
+  key: String!         # e.g., "hunger", "energy", "hygiene"
+  value: Int!          # current level (0-100 or your chosen scale)
+  decayPerHour: Int!   # how fast it drops per in-game hour
+}
+
+type SelfActualizationNeed {
+  type: SelfActualizationType!
+  progress: Int!
+  goal: Int!
+}
+
+type Value {
+  id: ID!
+  name: String!        # e.g., "Family", "Creativity", "Outdoors"
+  description: String
+}
+
+type Trait {
+  id: ID!
+  name: String!
+  description: String!
+  # Modifiers represented as lists of needs for flexibility (e.g., {key:"hunger", value:+5, decayPerHour:-1})
+  basicNeedModifiers: [Need!]!
+  emotionalNeedModifiers: [Need!]!
+}
+
+# -----------------------------
+# Relationships (Character <-> Character)
+# -----------------------------
+type Relationship {
+  id: ID!
+  from: Character | AnimalCharacter!
+  to: Character | AnimalCharacter!
+  relationshipType: String!        # e.g., "friendship", "romance", "rivalry"
+  longTermCloseness: Int!
+  shortTermCloseness: Int!
+  memories: [Memory!]!
+}
+
+# -----------------------------
+# Activities (now) & Activity Types (templates)
+# -----------------------------
+type ActivityType {
+  id: ID!
+  name: String!
+  description: String!
+  defaultDurationMinutes: Int!
+}
+
+type Activity {
+  id: ID!
+  activityType: ActivityType!
+  startedAt: DateTime!
+  status: String!        # e.g., "active", "paused", "stopped"
+  location: Lot!
+  note: String
+}
+
+# -----------------------------
+# Employment
+# -----------------------------
+type Employer {
+  id: ID!
+  companyName: String!
+  industry: String!
+  locations: [Lot!]!
+}
+
+type Shift {
+  day: String!     # e.g., "Mon", "Tue", or "Monday" (your choice)
+  start: String!   # "09:00"
+  end: String!     # "17:00"
+  location: Lot!
+}
+
+type Employment {
+  id: ID!
+  employer: Employer!
+  position: String!
+  salary: Int!
+  schedule: [Shift!]!
+}
+
+# -----------------------------
+# Characters (humans) & Animals
+# -----------------------------
+type Character {
+  id: ID!
+  name: String!
+  age: Int!
+  bio: String
+  traits: [Trait!]!
+  values: [Value!]!
+
+  # Family (can be derived from PARENT_OF edges; exposed directly for convenience)
+  biologicalParents: [Character!]!
+  adoptiveParents: [Character!]!
+  stepParents: [Character!]!
+  siblings: [Character!]!
+  biologicalChildren: [Character!]!
+  adoptiveChildren: [Character!]!
+  stepChildren: [Character!]!
+
+  # Pets (ownership edges)
+  pets: [AnimalCharacter!]!
+
+  # Current state
+  currentHousehold: Household!
+  location: Lot!
+  homeLot: Lot!
+
+  # Inventory & memories
+  inventory: [Item!]!
+  longTermMemories: [Memory!]!
+  shortTermMemories: [Memory!]!
+
+  # Needs
+  basicNeeds: [Need!]!
+  emotionalNeeds: [Need!]!
+  selfActualizationNeeds: [SelfActualizationNeed!]!
+
+  # Social knowledge
+  knownCharacters: [Relationship!]!
+  knownAnimals: [Relationship!]!
+
+  # Routine & job
+  weeklySchedule: [Activity!]!
+  employment: Employment
+}
+
+type AnimalCharacter {
+  id: ID!
+  name: String!
+  age: Int!
+  traits: [String!]!
+
+  owner: Character!
+  parents: [AnimalCharacter!]!
+  siblings: [AnimalCharacter!]!
+  children: [AnimalCharacter!]!
+
+  currentHousehold: Household!
+  currentLot: Lot!
+  homeLot: Lot!
+
+  knownCharacters: [Character!]!
+  knownAnimals: [AnimalCharacter!]!
+}
+
+# -----------------------------
+# Presence summary (for region overviews)
+# -----------------------------
+type Presence {
+  who: String!     # character name
+  where: String!   # lot/space name
+  doing: String
+  status: String
+}
+
+# -----------------------------
+# Pagination (connection pattern)
+# -----------------------------
+input Page {
+  after: String
+  limit: Int = 50
+}
+
+type CharacterEdge { cursor: String!, node: Character! }
+type CharacterConnection { edges: [CharacterEdge!]!, hasNextPage: Boolean! }
+
+# -----------------------------
+# Queries
+# -----------------------------
+type Query {
+  world(id: ID!): World
+  regions(worldId: ID!): [Region!]!
+  lots(regionId: ID!): [Lot!]!
+
+  character(id: ID!): Character
+  characters(page: Page): CharacterConnection!
+  charactersInLot(lotId: ID!): [Character!]!
+
+  # "Who is where & doing what" for a region
+  whereIsEveryone(regionId: ID!): [Presence!]!
+}
+
+# -----------------------------
+# Inputs
+# -----------------------------
+input NewCharacter {
+  id: ID!
+  name: String!
+  age: Int!
+  bio: String
+  traitIds: [ID!]!        # pass Trait IDs; resolver attaches Trait nodes
+  valueIds: [ID!]!        # pass Value IDs; resolver attaches Value nodes
+  homeLotId: ID!
+  householdId: ID!
+}
+
+input MoveInput {
+  characterId: ID!
+  lotId: ID!
+}
+
+input PerformInput {
+  characterId: ID!
+  activityTypeId: ID!
+  note: String
+}
+
+# -----------------------------
+# Mutations
+# -----------------------------
+type Mutation {
+  createCharacter(input: NewCharacter!): Character!
+  moveCharacter(input: MoveInput!): Boolean!
+  startActivity(input: PerformInput!): Boolean!
+  stopAllActivities(characterId: ID!): Boolean!
+
+  # Optional if you wire Google Drive:
+  backupNow: Boolean!
+  restoreLatest: Boolean!
+}
