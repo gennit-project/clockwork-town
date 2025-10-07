@@ -10,6 +10,7 @@ export const resolvers = {
     ...ActivityResolvers.Query,
   },
   Mutation: {
+    ...WorldResolvers.Mutation,
     ...CharacterResolvers.Mutation,
     ...ActivityResolvers.Mutation,
   }

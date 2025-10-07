@@ -3,9 +3,11 @@ import { createServer } from "http";
 import { makeExecutableSchema } from "@graphql-tools/schema";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { applyDDL } from "./db";
 import { resolvers } from "./resolvers";
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const schemaPath = path.join(process.cwd(), "src", "schema.graphql");
 
 async function main() {
@@ -23,10 +25,57 @@ async function main() {
     graphqlEndpoint: "/graphql",
   });
 
-  const server = createServer(yoga);
+  const distPath = path.join(__dirname, "..", "dist");
+  const hasBuiltFrontend = fs.existsSync(distPath);
+
+  const server = createServer(async (req, res) => {
+    // Handle GraphQL requests
+    if (req.url?.startsWith("/graphql")) {
+      return yoga(req, res);
+    }
+
+    // Serve frontend if built
+    if (hasBuiltFrontend) {
+      const filePath = req.url === "/" || req.url === ""
+        ? path.join(distPath, "index.html")
+        : path.join(distPath, req.url);
+
+      if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+        const ext = path.extname(filePath);
+        const contentTypes: Record<string, string> = {
+          ".html": "text/html",
+          ".js": "text/javascript",
+          ".css": "text/css",
+          ".json": "application/json",
+          ".png": "image/png",
+          ".jpg": "image/jpeg",
+          ".svg": "image/svg+xml",
+        };
+        res.writeHead(200, { "Content-Type": contentTypes[ext] || "text/plain" });
+        fs.createReadStream(filePath).pipe(res);
+        return;
+      }
+
+      // SPA fallback
+      res.writeHead(200, { "Content-Type": "text/html" });
+      fs.createReadStream(path.join(distPath, "index.html")).pipe(res);
+      return;
+    }
+
+    // No frontend built
+    res.writeHead(200, { "Content-Type": "text/plain" });
+    res.end("GraphQL API is running. Build the frontend with: npm run build:frontend");
+  });
+
   const port = process.env.PORT ? Number(process.env.PORT) : 4000;
   server.listen(port, () => {
-    console.log(`🚀 GraphQL Yoga running at http://localhost:${port}/graphql`);
+    console.log(`🚀 Server running at http://localhost:${port}`);
+    console.log(`   GraphQL endpoint: http://localhost:${port}/graphql`);
+    if (hasBuiltFrontend) {
+      console.log(`   Frontend: http://localhost:${port}`);
+    } else {
+      console.log(`   Run 'npm run build:frontend' to build the frontend`);
+    }
   });
 }
 

@@ -13,7 +13,8 @@ export const ActivityResolvers = {
 
         // create new activity
         const aid = crypto.randomUUID?.() ?? String(Math.random());
-        await q(`CREATE (:Activity {id:$aid, startedAt: NOW(), status: 'active', note:$note})`, { aid, note: input.note ?? null });
+        const startedAt = new Date().toISOString();
+        await q(`CREATE (:Activity {id:$aid, startedAt:$startedAt, status: 'active', note:$note})`, { aid, startedAt, note: input.note ?? null });
 
         await q(`
           MATCH (c:Character {id:$cid}), (t:ActivityType {id:$tid}), (a:Activity {id:$aid})

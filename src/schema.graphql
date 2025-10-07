@@ -271,9 +271,11 @@ type CharacterConnection { edges: [CharacterEdge!]!, hasNextPage: Boolean! }
 # Queries
 # -----------------------------
 type Query {
+  worlds: [World!]!
   world(id: ID!): World
   regions(worldId: ID!): [Region!]!
   lots(regionId: ID!): [Lot!]!
+  lot(id: ID!): Lot
 
   character(id: ID!): Character
   characters(page: Page): CharacterConnection!
@@ -286,6 +288,33 @@ type Query {
 # -----------------------------
 # Inputs
 # -----------------------------
+input NewWorld {
+  id: ID!
+  name: String!
+}
+
+input NewRegion {
+  id: ID!
+  worldId: ID!
+  name: String!
+  kind: String!
+}
+
+input NewLot {
+  id: ID!
+  regionId: ID!
+  name: String!
+  lotType: LotType!
+}
+
+input NewSpace {
+  id: ID!
+  lotId: ID!
+  name: String!
+  description: String!
+  isIndoor: Boolean!
+}
+
 input NewCharacter {
   id: ID!
   name: String!
@@ -312,6 +341,22 @@ input PerformInput {
 # Mutations
 # -----------------------------
 type Mutation {
+  createWorld(input: NewWorld!): World!
+  updateWorld(id: ID!, name: String!): World!
+  deleteWorld(id: ID!): Boolean!
+
+  createRegion(input: NewRegion!): Region!
+  updateRegion(id: ID!, name: String!, kind: String!): Region!
+  deleteRegion(id: ID!): Boolean!
+
+  createLot(input: NewLot!): Lot!
+  updateLot(id: ID!, name: String!, lotType: LotType!): Lot!
+  deleteLot(id: ID!): Boolean!
+
+  createSpace(input: NewSpace!): Space!
+  updateSpace(id: ID!, name: String!, description: String!): Space!
+  deleteSpace(id: ID!): Boolean!
+
   createCharacter(input: NewCharacter!): Character!
   moveCharacter(input: MoveInput!): Boolean!
   startActivity(input: PerformInput!): Boolean!

@@ -66,12 +66,13 @@ export const CharacterResolvers = {
             `, { cid: id, vid });
           }
         }
+        const now = new Date().toISOString();
         await q(`
           MATCH (c:Character {id:$cid}), (h:Household {id:$hid}), (l:Lot {id:$lid})
           CREATE (c)-[:IN_HOUSEHOLD]->(h),
                  (c)-[:HOME]->(l),
-                 (c)-[:AT {at: NOW()}]->(l)
-        `, { cid: id, hid: householdId, lid: homeLotId });
+                 (c)-[:AT {at: $now}]->(l)
+        `, { cid: id, hid: householdId, lid: homeLotId, now });
       });
 
       const [created] = await q(`
@@ -84,10 +85,11 @@ export const CharacterResolvers = {
     moveCharacter: async (_: any, { input }: { input: { characterId: string, lotId: string } }) => {
       await batch(async () => {
         await q(`MATCH (c:Character {id:$cid})-[a:AT]->() DELETE a`, { cid: input.characterId });
+        const now = new Date().toISOString();
         await q(`
           MATCH (c:Character {id:$cid}), (l:Lot {id:$lid})
-          CREATE (c)-[:AT {at: NOW()}]->(l)
-        `, { cid: input.characterId, lid: input.lotId });
+          CREATE (c)-[:AT {at: $now}]->(l)
+        `, { cid: input.characterId, lid: input.lotId, now });
       });
       return true;
     },
