@@ -168,8 +168,8 @@ const formData = ref({ name: '', lotType: '' })
 
 const breadcrumbs = computed(() => [
   { label: 'Worlds', to: '/' },
-  { label: world.value?.name || 'World', to: `/world/${worldId.value}` },
-  { label: region.value?.name || 'Region', to: '#' }
+  { label: world.value?.name || 'Loading...', to: `/world/${worldId.value}` },
+  { label: region.value?.name || 'Loading...', to: '#' }
 ])
 
 const loadData = async () => {

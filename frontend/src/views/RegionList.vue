@@ -163,7 +163,7 @@ const formData = ref({ name: '', kind: '' })
 
 const breadcrumbs = computed(() => [
   { label: 'Worlds', to: '/' },
-  { label: world.value?.name || 'World', to: '#' }
+  { label: world.value?.name || 'Loading...', to: '#' }
 ])
 
 const loadData = async () => {

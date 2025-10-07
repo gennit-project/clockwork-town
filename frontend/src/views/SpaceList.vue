@@ -217,9 +217,9 @@ const allSpaces = computed(() => [...indoorSpaces.value, ...outdoorSpaces.value]
 
 const breadcrumbs = computed(() => [
   { label: 'Worlds', to: '/' },
-  { label: world.value?.name || 'World', to: `/world/${worldId.value}` },
-  { label: region.value?.name || 'Region', to: `/world/${worldId.value}/region/${regionId.value}` },
-  { label: lot.value?.name || 'Lot', to: '#' }
+  { label: world.value?.name || 'Loading...', to: `/world/${worldId.value}` },
+  { label: region.value?.name || 'Loading...', to: `/world/${worldId.value}/region/${regionId.value}` },
+  { label: lot.value?.name || 'Loading...', to: '#' }
 ])
 
 const loadData = async () => {
