@@ -4,12 +4,20 @@
 
     <div class="flex justify-between items-center mb-6">
       <h1 class="text-3xl font-bold text-gray-900">Lots</h1>
-      <button
-        @click="showCreateModal = true"
-        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
-      >
-        Create Lot
-      </button>
+      <div class="flex space-x-3">
+        <router-link
+          :to="`/world/${worldId}/region/${regionId}/overview`"
+          class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
+        >
+          View Overview
+        </router-link>
+        <button
+          @click="showCreateModal = true"
+          class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+        >
+          Create Lot
+        </button>
+      </div>
     </div>
 
     <div v-if="loading" class="text-center py-12">
