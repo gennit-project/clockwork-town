@@ -424,6 +424,56 @@ export const useSimulationStore = defineStore('simulation', () => {
     console.log('World data:', newWorldData)
   }
 
+  /**
+   * Find items with a specific affordance (action) accessible to a character
+   * Step 6: Same space only (travel cost 0)
+   *
+   * @param {string} characterId - Character ID
+   * @param {string} action - Action name (e.g., 'eat', 'sleep')
+   * @returns {Array} Array of item options: [{ itemId, itemName, spaceId, spaceName, lotId, lotName, travelCost }]
+   */
+  function findItemsWithAffordance(characterId, action) {
+    const charState = characterStates.value[characterId]
+    if (!charState) {
+      console.warn(`Character ${characterId} not found in characterStates`)
+      return []
+    }
+
+    const currentSpaceId = charState.location?.spaceId
+    if (!currentSpaceId) {
+      console.warn(`Character ${characterId} has no spaceId in location`)
+      return []
+    }
+
+    const results = []
+
+    // Get all items with this affordance
+    const itemIdsWithAction = worldData.value.itemsByAffordance[action] || []
+
+    // Filter to same space only
+    for (const itemId of itemIdsWithAction) {
+      const item = worldData.value.items[itemId]
+
+      if (item.spaceId === currentSpaceId) {
+        const space = worldData.value.spaces[item.spaceId]
+        const lot = worldData.value.lots[item.lotId]
+
+        results.push({
+          itemId: item.id,
+          itemName: item.name,
+          spaceId: item.spaceId,
+          spaceName: space.name,
+          lotId: item.lotId,
+          lotName: lot.name,
+          travelCost: 0  // Same space
+        })
+      }
+    }
+
+    console.log(`🔍 findItemsWithAffordance('${characterId}', '${action}'):`, results)
+    return results
+  }
+
   return {
     // State
     currentTick,
@@ -446,6 +496,7 @@ export const useSimulationStore = defineStore('simulation', () => {
     pauseAutoTick,
     resetSimulation,
     updateCharacterLocation,
-    loadWorldData
+    loadWorldData,
+    findItemsWithAffordance
   }
 })

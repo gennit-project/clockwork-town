@@ -116,6 +116,38 @@
       </div>
 
       <div class="mt-3 pt-3 border-t border-yellow-300">
+        <p class="text-xs font-medium text-yellow-900 dark:text-yellow-100 mb-2">
+          🔍 Test Item Finding (Same Space):
+        </p>
+        <div class="grid grid-cols-2 gap-2">
+          <button
+            @click="testFindItems('eat')"
+            class="px-2 py-1 text-xs font-medium rounded bg-gray-600 hover:bg-gray-700 text-white"
+          >
+            Find 'eat' items
+          </button>
+          <button
+            @click="testFindItems('sleep')"
+            class="px-2 py-1 text-xs font-medium rounded bg-gray-600 hover:bg-gray-700 text-white"
+          >
+            Find 'sleep' items
+          </button>
+          <button
+            @click="testFindItems('read')"
+            class="px-2 py-1 text-xs font-medium rounded bg-gray-600 hover:bg-gray-700 text-white"
+          >
+            Find 'read' items
+          </button>
+          <button
+            @click="testFindItems('medicate')"
+            class="px-2 py-1 text-xs font-medium rounded bg-gray-600 hover:bg-gray-700 text-white"
+          >
+            Find 'medicate' items
+          </button>
+        </div>
+      </div>
+
+      <div class="mt-3 pt-3 border-t border-yellow-300">
         <p class="text-xs text-yellow-800 dark:text-yellow-200">
           💡 <strong>Tip:</strong> Watch the character card needs update and check the activity log panel.
           Effects are logged in the browser console.
@@ -152,5 +184,26 @@ const testAction = (action) => {
   }
 
   simulationStore.applyActionEffects(selectedCharacterId.value, action, `Debug test: ${action}`)
+}
+
+const testFindItems = (action) => {
+  if (!selectedCharacterId.value) {
+    alert('Please select a character first')
+    return
+  }
+
+  const items = simulationStore.findItemsWithAffordance(selectedCharacterId.value, action)
+  console.log(`\n🔍 Test findItemsWithAffordance('${selectedCharacterId.value}', '${action}'):`)
+  console.log(`Found ${items.length} items in same space:`)
+  items.forEach(item => {
+    console.log(`  - ${item.itemName} in ${item.spaceName} (${item.lotName})`)
+  })
+  console.log('Full results:', items)
+
+  if (items.length === 0) {
+    alert(`No items with '${action}' affordance found in current space.\n\nCheck console for details.`)
+  } else {
+    alert(`Found ${items.length} item(s) with '${action}' affordance in current space.\n\nCheck console for details.`)
+  }
 }
 </script>
