@@ -90,7 +90,7 @@
           <div
             v-for="item in items"
             :key="item.id"
-            class="border rounded-lg p-3 transition-colors"
+            class=" rounded-lg p-3 transition-colors"
             :class="editingItem?.id === item.id ? 'border-blue-400 bg-blue-50 dark:bg-blue-950' : 'border-gray-200 hover:border-blue-300 bg-gray-50 dark:bg-gray-900'"
           >
             <!-- Edit Mode -->
