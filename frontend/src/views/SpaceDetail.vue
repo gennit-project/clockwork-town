@@ -193,6 +193,7 @@ const breadcrumbs = computed(() => [
   { label: world.value?.name || 'Loading...', to: `/world/${worldId.value}` },
   { label: region.value?.name || 'Loading...', to: `/world/${worldId.value}/region/${regionId.value}` },
   { label: 'Overview', to: `/world/${worldId.value}/region/${regionId.value}/overview` },
+  { label: lot.value?.name || 'Loading...', to: `/world/${worldId.value}/region/${regionId.value}/lot/${lotId.value}` },
   { label: space.value?.name || 'Loading...', to: '#' }
 ])
 
