@@ -1,6 +1,92 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
+// ============================================
+// ACTION EFFECTS DATA (from TICKS.md)
+// ============================================
+
+/**
+ * Defines the effects and cooldowns for each action type
+ * Effects are applied immediately when action executes
+ */
+const ACTION_EFFECTS = {
+  eat: {
+    primaryNeed: 'food',
+    primaryEffect: 0.35,
+    secondaryEffects: {},
+    cooldownTicks: 6  // 30 minutes
+  },
+  sleep: {
+    primaryNeed: 'sleep',
+    primaryEffect: 0.50,
+    secondaryEffects: {},
+    cooldownTicks: 12  // 60 minutes
+  },
+  medicate: {
+    primaryNeed: 'health',
+    primaryEffect: 0.40,
+    secondaryEffects: {},
+    cooldownTicks: 12  // 60 minutes
+  },
+  chat_friend: {
+    primaryNeed: 'friends',
+    primaryEffect: 0.25,
+    secondaryEffects: {},
+    cooldownTicks: 9  // 45 minutes
+  },
+  call_mom: {
+    primaryNeed: 'family',
+    primaryEffect: 0.30,
+    secondaryEffects: {},
+    cooldownTicks: 12  // 60 minutes
+  },
+  date: {
+    primaryNeed: 'romance',
+    primaryEffect: 0.35,
+    secondaryEffects: { friends: 0.10 },
+    cooldownTicks: 18  // 90 minutes
+  },
+  read: {
+    primaryNeed: 'fulfillment',
+    primaryEffect: 0.20,
+    secondaryEffects: { friends: -0.05 },
+    cooldownTicks: 9  // 45 minutes
+  },
+  write: {
+    primaryNeed: 'fulfillment',
+    primaryEffect: 0.25,
+    secondaryEffects: { friends: -0.05 },
+    cooldownTicks: 12  // 60 minutes
+  },
+  view_art: {
+    primaryNeed: 'fulfillment',
+    primaryEffect: 0.20,
+    secondaryEffects: { friends: 0.05 },
+    cooldownTicks: 6  // 30 minutes
+  },
+  volunteer: {
+    primaryNeed: 'fulfillment',
+    primaryEffect: 0.30,
+    secondaryEffects: { family: 0.10 },
+    cooldownTicks: 18  // 90 minutes
+  },
+  work: {
+    primaryNeed: 'money',  // Note: money not tracked in v0
+    primaryEffect: 0,
+    secondaryEffects: { sleep: -0.15 },
+    cooldownTicks: 48  // 240 minutes
+  },
+  idle: {
+    primaryNeed: null,
+    primaryEffect: 0,
+    secondaryEffects: {},
+    cooldownTicks: 1  // 5 minutes
+  }
+}
+
+// Log action effects on module load for debugging
+console.log('📊 ACTION_EFFECTS loaded:', ACTION_EFFECTS)
+
 export const useSimulationStore = defineStore('simulation', () => {
   // ============================================
   // STATE
