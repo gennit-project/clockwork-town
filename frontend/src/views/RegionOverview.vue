@@ -141,43 +141,28 @@
         </div>
       </div>
 
-      <!-- Right Sidebar - Activity Log & Characters -->
+      <!-- Right Sidebar - Characters & Activity Log Link -->
       <div class="w-80 flex flex-col space-y-4 p-4 overflow-hidden">
-        <!-- Activity Log Panel -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 flex-1 flex flex-col overflow-hidden">
-          <h2 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
-            <svg class="w-5 h-5 mr-2 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        <!-- Activity Log Link -->
+        <router-link
+          :to="`/world/${worldId}/region/${regionId}/activity-log`"
+          class="bg-purple-500 hover:bg-purple-600 text-white rounded-lg shadow-lg p-4 transition-colors"
+        >
+          <div class="flex items-center justify-between">
+            <div class="flex items-center">
+              <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <div>
+                <h3 class="font-bold text-lg">Activity Log</h3>
+                <p class="text-sm text-purple-100">{{ simulationStore.activityLog.length }} entries</p>
+              </div>
+            </div>
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
             </svg>
-            Activity Log
-          </h2>
-          <div class="flex-1 overflow-y-auto space-y-2 text-xs">
-            <div v-if="simulationStore.activityLog.length === 0" class="text-gray-500 dark:text-gray-400 text-center py-8">
-              No activities yet. Click "Tick" to start.
-            </div>
-            <div
-              v-for="(log, idx) in simulationStore.recentActivityLog"
-              :key="`log-${log.tick}-${idx}`"
-              class="bg-gray-50 dark:bg-gray-700 p-2 rounded border-l-2 border-purple-400"
-            >
-              <div class="flex justify-between items-start mb-1">
-                <span class="font-mono font-semibold text-purple-600 dark:text-purple-400">
-                  Tick {{ log.tick }}
-                </span>
-                <span class="text-gray-500 dark:text-gray-400 text-[10px]">
-                  {{ new Date(log.timestamp).toLocaleTimeString() }}
-                </span>
-              </div>
-              <div class="text-gray-700 dark:text-gray-300">
-                <span class="font-medium">{{ getCharacterName(log.characterId) }}:</span>
-                <span class="text-blue-600 dark:text-blue-400 font-semibold ml-1">{{ log.action }}</span>
-              </div>
-              <div v-if="log.details" class="text-gray-500 dark:text-gray-400 mt-1">
-                {{ log.details }}
-              </div>
-            </div>
           </div>
-        </div>
+        </router-link>
 
         <!-- Characters & Animals Panel -->
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 flex-1 flex flex-col overflow-hidden">
@@ -195,6 +180,7 @@
                 :entity="character"
                 type="character"
                 :is-active="activeCharacter?.id === character.id && activeCharacterType === 'character'"
+                :show-needs="false"
                 @select="setActiveCharacter(character, 'character')"
               />
             </div>
@@ -209,39 +195,101 @@
                 type="animal"
                 :is-active="activeCharacter?.id === animal.id && activeCharacterType === 'animal'"
                 :show-traits="true"
+                :show-needs="false"
                 @select="setActiveCharacter(animal, 'animal')"
               />
             </div>
           </div>
         </div>
 
-        <!-- Active Character Panel -->
-        <div v-if="activeCharacter" class="rounded-lg shadow-lg p-4 border-2" :class="activeCharacterType === 'animal' ? 'bg-amber-50 border-amber-300' : 'bg-blue-50 dark:bg-blue-900 border-blue-300'">
-          <div class="flex justify-between items-start mb-3">
-            <h3 class="text-md font-bold text-gray-900 dark:text-gray-100">
-              {{ activeCharacterType === 'animal' ? 'Active Animal' : 'Active Character' }}
-            </h3>
-            <button @click="clearActiveCharacter" class="text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:text-gray-300">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+      </div>
+    </div>
+
+    <!-- Active Character Panel - Fixed Bottom Right -->
+    <div v-if="activeCharacter" class="fixed bottom-0 right-0 w-80 bg-white dark:bg-gray-800 shadow-2xl p-4 border-l-2 border-t-2 z-50 max-h-[60vh] overflow-y-auto" :class="activeCharacterType === 'animal' ? 'border-amber-300' : 'border-blue-300'">
+      <div class="flex justify-between items-start mb-3">
+        <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100">
+          {{ activeCharacterType === 'animal' ? '🐾' : '👤' }} {{ activeCharacter.name }}, {{ activeCharacter.age }}
+        </h3>
+        <button @click="clearActiveCharacter" class="text-gray-500 dark:text-gray-300 hover:text-gray-700">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="space-y-3">
+
+        <!-- Needs/Mood Bars (for characters only) -->
+        <div v-if="activeCharacterType === 'character' && getActiveCharacterState" class="mt-3 space-y-3 text-xs">
+          <!-- Self-Actualization -->
+          <div>
+            <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-1.5 text-[10px] uppercase tracking-wider text-gray-500">Self-Actualization</h4>
+            <div class="space-y-1.5">
+              <div v-for="need in selfActualizationNeeds" :key="need.key" class="flex items-center">
+                <span class="mr-2 text-sm">{{ need.icon }}</span>
+                <div class="flex-1 bg-gray-200 dark:bg-gray-600 h-2 rounded-full overflow-hidden">
+                  <div
+                    class="h-full rounded-full transition-all"
+                    :class="getNeedColorClass(getActiveCharacterState.needs[need.key])"
+                    :style="{ width: `${getActiveCharacterState.needs[need.key] * 100}%` }"
+                  />
+                </div>
+                <span class="ml-2 text-gray-600 dark:text-gray-400 w-10 text-right">
+                  {{ Math.round(getActiveCharacterState.needs[need.key] * 100) }}%
+                </span>
+              </div>
+            </div>
           </div>
-          <div class="space-y-2">
-            <p class="font-semibold text-lg">
-              {{ activeCharacterType === 'animal' ? '🐾' : '👤' }} {{ activeCharacter.name }}
-            </p>
-            <p class="text-sm text-gray-700 dark:text-gray-300">Age: {{ activeCharacter.age }}</p>
-            <div v-if="activeCharacterType === 'animal' && activeCharacter.traits && activeCharacter.traits.length > 0" class="text-sm text-gray-700 dark:text-gray-300">
-              <span class="font-medium">Traits:</span> {{ activeCharacter.traits.join(', ') }}
-            </div>
-            <div v-if="activeCharacter.bio" class="mt-3 text-sm text-gray-700 bg-white p-3 rounded">
-              {{ activeCharacter.bio.substring(0, 150) }}{{ activeCharacter.bio.length > 150 ? '...' : '' }}
-            </div>
-            <div v-else class="mt-3 text-sm text-gray-500 dark:text-gray-300 italic">
-              No biography available.
+
+          <!-- Emotional -->
+          <div>
+            <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-1.5 text-[10px] uppercase tracking-wider text-gray-500">Emotional</h4>
+            <div class="space-y-1.5">
+              <div v-for="need in emotionalNeeds" :key="need.key" class="flex items-center">
+                <span class="mr-2 text-sm">{{ need.icon }}</span>
+                <div class="flex-1 bg-gray-200 dark:bg-gray-600 h-2 rounded-full overflow-hidden">
+                  <div
+                    class="h-full rounded-full transition-all"
+                    :class="getNeedColorClass(getActiveCharacterState.needs[need.key])"
+                    :style="{ width: `${getActiveCharacterState.needs[need.key] * 100}%` }"
+                  />
+                </div>
+                <span class="ml-2 text-gray-600 dark:text-gray-400 w-10 text-right">
+                  {{ Math.round(getActiveCharacterState.needs[need.key] * 100) }}%
+                </span>
+              </div>
             </div>
           </div>
+
+          <!-- Basic -->
+          <div>
+            <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-1.5 text-[10px] uppercase tracking-wider text-gray-500">Basic</h4>
+            <div class="space-y-1.5">
+              <div v-for="need in basicNeeds" :key="need.key" class="flex items-center">
+                <span class="mr-2 text-sm">{{ need.icon }}</span>
+                <div class="flex-1 bg-gray-200 dark:bg-gray-600 h-2 rounded-full overflow-hidden">
+                  <div
+                    class="h-full rounded-full transition-all"
+                    :class="getNeedColorClass(getActiveCharacterState.needs[need.key])"
+                    :style="{ width: `${getActiveCharacterState.needs[need.key] * 100}%` }"
+                  />
+                </div>
+                <span class="ml-2 text-gray-600 dark:text-gray-400 w-10 text-right">
+                  {{ Math.round(getActiveCharacterState.needs[need.key] * 100) }}%
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="activeCharacterType === 'animal' && activeCharacter.traits && activeCharacter.traits.length > 0" class="text-sm text-gray-700 dark:text-gray-300">
+          <span class="font-medium">Traits:</span> {{ activeCharacter.traits.join(', ') }}
+        </div>
+        <div v-if="activeCharacter.bio" class="mt-3 text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 p-3 rounded">
+          {{ activeCharacter.bio.substring(0, 150) }}{{ activeCharacter.bio.length > 150 ? '...' : '' }}
+        </div>
+        <div v-else class="mt-3 text-sm text-gray-500 dark:text-gray-300 italic">
+          No biography available.
         </div>
       </div>
     </div>
@@ -390,6 +438,35 @@ const getCharacterName = (characterId) => {
   const character = characters.value.find(c => c.id === characterId)
   const animal = animals.value.find(a => a.id === characterId)
   return character?.name || animal?.name || `Unknown (${characterId})`
+}
+
+// Needs configuration for mood bars (grouped by category)
+const selfActualizationNeeds = [
+  { key: 'fulfillment', icon: '✨' }
+]
+
+const emotionalNeeds = [
+  { key: 'friends', icon: '💬' },
+  { key: 'family', icon: '👨‍👩‍👧' },
+  { key: 'romance', icon: '💕' }
+]
+
+const basicNeeds = [
+  { key: 'food', icon: '🍎' },
+  { key: 'sleep', icon: '😴' },
+  { key: 'health', icon: '💊' }
+]
+
+const getActiveCharacterState = computed(() => {
+  if (!activeCharacter.value || activeCharacterType.value !== 'character') return null
+  return simulationStore.getCharacterState(activeCharacter.value.id)
+})
+
+const getNeedColorClass = (value) => {
+  if (value >= 0.7) return 'bg-green-500'
+  if (value >= 0.4) return 'bg-yellow-500'
+  if (value >= 0.2) return 'bg-orange-500'
+  return 'bg-red-500'
 }
 
 const MUTATION_UPDATE_REGION = gql`

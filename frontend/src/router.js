@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import WorldList from './views/WorldList.vue'
 import RegionList from './views/RegionList.vue'
 import RegionOverview from './views/RegionOverview.vue'
+import ActivityLog from './views/ActivityLog.vue'
 import LotList from './views/LotList.vue'
 import SpaceList from './views/SpaceList.vue'
 import SpaceDetail from './views/SpaceDetail.vue'
@@ -43,6 +44,11 @@ export const router = createRouter({
       path: '/world/:worldId/region/:regionId/overview',
       name: 'region-overview',
       component: RegionOverview
+    },
+    {
+      path: '/world/:worldId/region/:regionId/activity-log',
+      name: 'activity-log',
+      component: ActivityLog
     },
     {
       path: '/world/:worldId/region/:regionId/lot/:lotId',

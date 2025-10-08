@@ -9,7 +9,7 @@
   >
     <div class="flex justify-between items-start">
       <p class="font-medium text-gray-900 dark:text-gray-100 flex-1">
-        {{ icon }} {{ entity.name }}
+        {{ icon }} {{ entity.name }}, {{ entity.age }}
       </p>
       <!-- Status Badge -->
       <span
@@ -21,8 +21,6 @@
       </span>
     </div>
 
-    <p class="text-xs text-gray-600 dark:text-gray-300 mt-1">Age: {{ entity.age }}</p>
-
     <!-- Location -->
     <p v-if="simulationState?.location?.lotName" class="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center">
       <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -33,25 +31,32 @@
       <span v-if="simulationState.location.spaceName" class="ml-1">→ {{ simulationState.location.spaceName }}</span>
     </p>
 
-    <!-- Needs (compact) -->
-    <div v-if="simulationState && showNeeds" class="mt-2 grid grid-cols-2 gap-1 text-[10px]">
-      <div class="flex items-center">
-        <span class="mr-1">🍎</span>
+    <!-- Needs - Show all for active character, compact for others -->
+    <div v-if="simulationState && showNeeds && isActive" class="mt-2 space-y-1 text-[10px]">
+      <div v-for="need in allNeeds" :key="need.key" class="flex items-center">
+        <span class="mr-1">{{ need.icon }}</span>
         <div class="flex-1 bg-gray-200 dark:bg-gray-600 h-1.5 rounded-full overflow-hidden">
           <div
             class="h-full rounded-full transition-all"
-            :class="getNeedColorClass(simulationState.needs.food)"
-            :style="{ width: `${simulationState.needs.food * 100}%` }"
+            :class="getNeedColorClass(simulationState.needs[need.key])"
+            :style="{ width: `${simulationState.needs[need.key] * 100}%` }"
           />
         </div>
+        <span class="ml-1 text-gray-600 dark:text-gray-400 w-8 text-right">
+          {{ Math.round(simulationState.needs[need.key] * 100) }}%
+        </span>
       </div>
-      <div class="flex items-center">
-        <span class="mr-1">😴</span>
+    </div>
+
+    <!-- Compact needs for non-active characters (just food & sleep) -->
+    <div v-else-if="simulationState && showNeeds && !isActive" class="mt-2 grid grid-cols-2 gap-1 text-[10px]">
+      <div v-for="need in compactNeeds" :key="need.key" class="flex items-center">
+        <span class="mr-1">{{ need.icon }}</span>
         <div class="flex-1 bg-gray-200 dark:bg-gray-600 h-1.5 rounded-full overflow-hidden">
           <div
             class="h-full rounded-full transition-all"
-            :class="getNeedColorClass(simulationState.needs.sleep)"
-            :style="{ width: `${simulationState.needs.sleep * 100}%` }"
+            :class="getNeedColorClass(simulationState.needs[need.key])"
+            :style="{ width: `${simulationState.needs[need.key] * 100}%` }"
           />
         </div>
       </div>
@@ -134,4 +139,21 @@ const getNeedColorClass = (value) => {
   if (value >= 0.2) return 'bg-orange-500'
   return 'bg-red-500'
 }
+
+// All needs with their icons (for active character)
+const allNeeds = [
+  { key: 'food', icon: '🍎' },
+  { key: 'sleep', icon: '😴' },
+  { key: 'health', icon: '💊' },
+  { key: 'friends', icon: '💬' },
+  { key: 'family', icon: '👨‍👩‍👧' },
+  { key: 'romance', icon: '💕' },
+  { key: 'fulfillment', icon: '✨' }
+]
+
+// Compact needs (for non-active characters)
+const compactNeeds = [
+  { key: 'food', icon: '🍎' },
+  { key: 'sleep', icon: '😴' }
+]
 </script>

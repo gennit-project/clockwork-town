@@ -160,6 +160,18 @@
       </div>
 
       <div class="mt-3 pt-3 border-t border-yellow-300">
+        <p class="text-xs font-medium text-yellow-900 dark:text-yellow-100 mb-2">
+          🎯 Test Decision Making:
+        </p>
+        <button
+          @click="testSelectBestIntent"
+          class="w-full px-3 py-2 text-xs font-medium rounded bg-emerald-600 hover:bg-emerald-700 text-white"
+        >
+          Select Best Intent (Full Decision)
+        </button>
+      </div>
+
+      <div class="mt-3 pt-3 border-t border-yellow-300">
         <p class="text-xs text-yellow-800 dark:text-yellow-200">
           💡 <strong>Tip:</strong> Watch the character card needs update and check the activity log panel.
           Effects are logged in the browser console.
@@ -296,6 +308,42 @@ const testUtilityCalculation = () => {
     alert(`Best action: ${best.action}\nUtility: ${best.utility}\nItem: ${best.item}\nLocation: ${best.space}\nTravel cost: ${best.travelCost}\n\nCheck console for full details.`)
   } else {
     alert('No available actions found.\n\nCheck console for details.')
+  }
+}
+
+const testSelectBestIntent = () => {
+  if (!selectedCharacterId.value) {
+    alert('Please select a character first')
+    return
+  }
+
+  console.log(`\n🎯 Test selectBestIntent for ${selectedCharacterId.value}`)
+  console.log('=' .repeat(60))
+
+  const charState = simulationStore.characterStates[selectedCharacterId.value]
+  console.log('Current Needs:')
+  Object.entries(charState.needs).forEach(([need, value]) => {
+    console.log(`  ${need}: ${value.toFixed(2)} (deficit: ${(1 - value).toFixed(2)})`)
+  })
+  console.log('\nCurrent Cooldowns:')
+  Object.entries(charState.cooldowns).forEach(([action, ticks]) => {
+    if (ticks > 0) {
+      console.log(`  ${action}: ${ticks} ticks remaining`)
+    }
+  })
+  console.log('')
+
+  // Call selectBestIntent
+  const intent = simulationStore.selectBestIntent(selectedCharacterId.value)
+
+  console.log('\n🏆 Selected Intent:')
+  console.log(intent)
+
+  // Show alert with result
+  if (intent.action === 'idle') {
+    alert(`Character will: IDLE\n\nNo satisfying actions available.\n\nCheck console for full decision log.`)
+  } else {
+    alert(`Character will: ${intent.action.toUpperCase()}\n\nItem: ${intent.itemName}\nLocation: ${intent.targetSpaceName} (${intent.targetLotName})\nTravel cost: ${intent.travelCost}\nUtility: ${intent.utility.toFixed(2)}\n\nCheck console for full decision log.`)
   }
 }
 </script>
