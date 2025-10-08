@@ -11,6 +11,12 @@ CREATE NODE TABLE IF NOT EXISTS Lot(
   id STRING, name STRING, lotType STRING, PRIMARY KEY(id)
 );
 
+CREATE NODE TABLE IF NOT EXISTS LotTemplate(
+  id STRING, name STRING, lotType STRING, description STRING, tags STRING[],
+  indoorRooms STRING, outdoorAreas STRING,
+  PRIMARY KEY(id)
+);
+
 CREATE NODE TABLE IF NOT EXISTS Space(
   id STRING, name STRING, description STRING, isIndoor BOOL, PRIMARY KEY(id)
 );

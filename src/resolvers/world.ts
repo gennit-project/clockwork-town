@@ -81,6 +81,74 @@ export const WorldResolvers = {
 
       return { ...space, items };
     },
+    lotTemplates: async (_: any, { tags }: { tags?: string[] }) => {
+      const transformSpaces = (spaces: any[]) => spaces.map((space: any) => ({
+        name: space.spaceName,
+        description: space.spaceDescription,
+        items: (space.items || []).map((item: any) => ({
+          name: item.itemName,
+          description: item.itemDescription
+        }))
+      }));
+
+      if (tags && tags.length > 0) {
+        // Filter by tags - return templates that have ALL the requested tags
+        const templates = await q(`
+          MATCH (t:LotTemplate)
+          RETURN t.id AS id, t.name AS name, t.lotType AS lotType,
+                 t.description AS description, t.tags AS tags,
+                 t.indoorRooms AS indoorRooms, t.outdoorAreas AS outdoorAreas
+        `);
+
+        // Filter in memory to check if template has all requested tags
+        return templates.filter((t: any) =>
+          tags.every(tag => t.tags?.includes(tag))
+        ).map((t: any) => ({
+          ...t,
+          indoorRooms: transformSpaces(JSON.parse(t.indoorRooms || '[]')),
+          outdoorAreas: transformSpaces(JSON.parse(t.outdoorAreas || '[]'))
+        }));
+      }
+
+      // No tag filter - return all templates
+      const templates = await q(`
+        MATCH (t:LotTemplate)
+        RETURN t.id AS id, t.name AS name, t.lotType AS lotType,
+               t.description AS description, t.tags AS tags,
+               t.indoorRooms AS indoorRooms, t.outdoorAreas AS outdoorAreas
+      `);
+
+      return templates.map((t: any) => ({
+        ...t,
+        indoorRooms: transformSpaces(JSON.parse(t.indoorRooms || '[]')),
+        outdoorAreas: transformSpaces(JSON.parse(t.outdoorAreas || '[]'))
+      }));
+    },
+    lotTemplate: async (_: any, { id }: { id: string }) => {
+      const transformSpaces = (spaces: any[]) => spaces.map((space: any) => ({
+        name: space.spaceName,
+        description: space.spaceDescription,
+        items: (space.items || []).map((item: any) => ({
+          name: item.itemName,
+          description: item.itemDescription
+        }))
+      }));
+
+      const [template] = await q(`
+        MATCH (t:LotTemplate {id:$id})
+        RETURN t.id AS id, t.name AS name, t.lotType AS lotType,
+               t.description AS description, t.tags AS tags,
+               t.indoorRooms AS indoorRooms, t.outdoorAreas AS outdoorAreas
+      `, { id });
+
+      if (!template) return null;
+
+      return {
+        ...template,
+        indoorRooms: transformSpaces(JSON.parse(template.indoorRooms || '[]')),
+        outdoorAreas: transformSpaces(JSON.parse(template.outdoorAreas || '[]'))
+      };
+    },
   },
   Mutation: {
     createWorld: async (_: any, { input }: { input: { id: string; name: string } }) => {
@@ -152,6 +220,169 @@ export const WorldResolvers = {
         RETURN l.id AS id, l.name AS name, l.lotType AS lotType
       `, { id });
       return created;
+    },
+
+    createLotWithSpacesAndItems: async (_: any, { regionId, input }: {
+      regionId: string;
+      input: {
+        lotName: string;
+        lotType: string;
+        lotDescription?: string;
+        indoorRooms?: Array<{
+          spaceName: string;
+          spaceDescription: string;
+          items?: Array<{ itemName: string; itemDescription: string }>;
+        }>;
+        outdoorSpaces?: Array<{
+          spaceName: string;
+          spaceDescription: string;
+          items?: Array<{ itemName: string; itemDescription: string }>;
+        }>;
+      }
+    }) => {
+      const lotId = crypto.randomUUID();
+      const { lotName, lotType, indoorRooms = [], outdoorSpaces = [] } = input;
+
+      await batch(async () => {
+        // Create the lot
+        await q(`CREATE (:Lot {id:$id, name:$name, lotType:$lotType})`, {
+          id: lotId,
+          name: lotName,
+          lotType
+        });
+
+        // Link lot to region
+        await q(`
+          MATCH (r:Region {id:$regionId}), (l:Lot {id:$lotId})
+          CREATE (r)-[:HAS_LOT]->(l)
+        `, { regionId, lotId });
+
+        // Create indoor rooms
+        for (const room of indoorRooms) {
+          const spaceId = crypto.randomUUID();
+
+          // Create space
+          await q(`CREATE (:Space {
+            id: $id,
+            name: $name,
+            description: $description,
+            isIndoor: true
+          })`, {
+            id: spaceId,
+            name: room.spaceName,
+            description: room.spaceDescription
+          });
+
+          // Link space to lot
+          await q(`
+            MATCH (l:Lot {id:$lotId}), (s:Space {id:$spaceId})
+            CREATE (l)-[:HAS_SPACE]->(s)
+          `, { lotId, spaceId });
+
+          // Create items in this space
+          if (room.items && room.items.length > 0) {
+            for (const item of room.items) {
+              const itemId = crypto.randomUUID();
+
+              await q(`CREATE (:Item {
+                id: $id,
+                name: $name,
+                description: $description,
+                canBeUsedByHumans: true,
+                canBeUsedByAnimals: false,
+                canStoreItems: false,
+                cost: 0,
+                satisfiesNeeds: [],
+                allowedActivities: []
+              })`, {
+                id: itemId,
+                name: item.itemName,
+                description: item.itemDescription
+              });
+
+              // Link item to space
+              await q(`
+                MATCH (i:Item {id:$itemId}), (s:Space {id:$spaceId})
+                CREATE (i)-[:ON_SPACE]->(s)
+              `, { itemId, spaceId });
+            }
+          }
+        }
+
+        // Create outdoor spaces
+        for (const space of outdoorSpaces) {
+          const spaceId = crypto.randomUUID();
+
+          // Create space
+          await q(`CREATE (:Space {
+            id: $id,
+            name: $name,
+            description: $description,
+            isIndoor: false
+          })`, {
+            id: spaceId,
+            name: space.spaceName,
+            description: space.spaceDescription
+          });
+
+          // Link space to lot
+          await q(`
+            MATCH (l:Lot {id:$lotId}), (s:Space {id:$spaceId})
+            CREATE (l)-[:HAS_SPACE]->(s)
+          `, { lotId, spaceId });
+
+          // Create items in this space
+          if (space.items && space.items.length > 0) {
+            for (const item of space.items) {
+              const itemId = crypto.randomUUID();
+
+              await q(`CREATE (:Item {
+                id: $id,
+                name: $name,
+                description: $description,
+                canBeUsedByHumans: true,
+                canBeUsedByAnimals: false,
+                canStoreItems: false,
+                cost: 0,
+                satisfiesNeeds: [],
+                allowedActivities: []
+              })`, {
+                id: itemId,
+                name: item.itemName,
+                description: item.itemDescription
+              });
+
+              // Link item to space
+              await q(`
+                MATCH (i:Item {id:$itemId}), (s:Space {id:$spaceId})
+                CREATE (i)-[:ON_SPACE]->(s)
+              `, { itemId, spaceId });
+            }
+          }
+        }
+      });
+
+      // Return the created lot with spaces
+      const [lot] = await q(`
+        MATCH (l:Lot {id:$id})
+        RETURN l.id AS id, l.name AS name, l.lotType AS lotType
+      `, { id: lotId });
+
+      if (!lot) return null;
+
+      const indoorRoomsData = await q(`
+        MATCH (l:Lot {id:$id})-[:HAS_SPACE]->(s:Space)
+        WHERE s.isIndoor = true
+        RETURN s.id AS id, s.name AS name, s.description AS description
+      `, { id: lotId });
+
+      const outdoorAreasData = await q(`
+        MATCH (l:Lot {id:$id})-[:HAS_SPACE]->(s:Space)
+        WHERE s.isIndoor = false
+        RETURN s.id AS id, s.name AS name, s.description AS description
+      `, { id: lotId });
+
+      return { ...lot, indoorRooms: indoorRoomsData, outdoorAreas: outdoorAreasData };
     },
 
     updateLot: async (_: any, { id, name, lotType }: { id: string; name: string; lotType: string }) => {
@@ -232,6 +463,77 @@ export const WorldResolvers = {
 
     deleteItem: async (_: any, { id }: { id: string }) => {
       await q(`MATCH (i:Item {id:$id}) DETACH DELETE i`, { id });
+      return true;
+    },
+
+    createLotTemplate: async (_: any, { input, tags }: {
+      tags: string[];
+      input: {
+        lotName: string;
+        lotType: string;
+        lotDescription?: string;
+        indoorRooms?: Array<{
+          spaceName: string;
+          spaceDescription: string;
+          items?: Array<{ itemName: string; itemDescription: string }>;
+        }>;
+        outdoorSpaces?: Array<{
+          spaceName: string;
+          spaceDescription: string;
+          items?: Array<{ itemName: string; itemDescription: string }>;
+        }>;
+      }
+    }) => {
+      const templateId = crypto.randomUUID();
+      const { lotName, lotType, lotDescription, indoorRooms = [], outdoorSpaces = [] } = input;
+
+      // Serialize the spaces data to JSON strings
+      const indoorRoomsJson = JSON.stringify(indoorRooms);
+      const outdoorAreasJson = JSON.stringify(outdoorSpaces);
+
+      await q(`CREATE (:LotTemplate {
+        id: $id,
+        name: $name,
+        lotType: $lotType,
+        description: $description,
+        tags: $tags,
+        indoorRooms: $indoorRooms,
+        outdoorAreas: $outdoorAreas
+      })`, {
+        id: templateId,
+        name: lotName,
+        lotType,
+        description: lotDescription || '',
+        tags,
+        indoorRooms: indoorRoomsJson,
+        outdoorAreas: outdoorAreasJson
+      });
+
+      const transformSpaces = (spaces: any[]) => spaces.map((space: any) => ({
+        name: space.spaceName,
+        description: space.spaceDescription,
+        items: (space.items || []).map((item: any) => ({
+          name: item.itemName,
+          description: item.itemDescription
+        }))
+      }));
+
+      const [created] = await q(`
+        MATCH (t:LotTemplate {id:$id})
+        RETURN t.id AS id, t.name AS name, t.lotType AS lotType,
+               t.description AS description, t.tags AS tags,
+               t.indoorRooms AS indoorRooms, t.outdoorAreas AS outdoorAreas
+      `, { id: templateId });
+
+      return {
+        ...created,
+        indoorRooms: transformSpaces(JSON.parse(created.indoorRooms || '[]')),
+        outdoorAreas: transformSpaces(JSON.parse(created.outdoorAreas || '[]'))
+      };
+    },
+
+    deleteLotTemplate: async (_: any, { id }: { id: string }) => {
+      await q(`MATCH (t:LotTemplate {id:$id}) DELETE t`, { id });
       return true;
     },
   },

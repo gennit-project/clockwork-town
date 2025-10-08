@@ -1,0 +1,170 @@
+<template>
+  <div>
+    <div v-if="loading" class="text-center py-8">
+      <p class="text-gray-500">Loading template...</p>
+    </div>
+
+    <div v-else-if="error" class="text-center py-8">
+      <p class="text-red-500">Error loading template: {{ error.message }}</p>
+    </div>
+
+    <div v-else-if="template">
+      <!-- Header -->
+      <div class="mb-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="flex items-center gap-3">
+              <router-link
+                to="/library/lots"
+                class="text-gray-400 hover:text-gray-600"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+                </svg>
+              </router-link>
+              <h1 class="text-3xl font-bold text-gray-900">{{ template.name }}</h1>
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                {{ template.lotType }}
+              </span>
+            </div>
+            <p v-if="template.description" class="mt-2 text-gray-600">
+              {{ template.description }}
+            </p>
+          </div>
+          <button
+            type="button"
+            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            Clone to World
+          </button>
+        </div>
+
+        <div v-if="template.tags && template.tags.length > 0" class="mt-3 flex flex-wrap gap-2">
+          <span
+            v-for="tag in template.tags"
+            :key="tag"
+            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-gray-100 text-gray-800"
+          >
+            {{ tag }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Indoor Rooms -->
+      <div v-if="template.indoorRooms && template.indoorRooms.length > 0" class="mb-8">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Indoor Rooms ({{ template.indoorRooms.length }})</h2>
+        <div class="space-y-4">
+          <div
+            v-for="(room, index) in template.indoorRooms"
+            :key="index"
+            class="bg-white shadow rounded-lg p-5"
+          >
+            <h3 class="text-lg font-medium text-gray-900">{{ room.name }}</h3>
+            <p class="mt-1 text-sm text-gray-600">{{ room.description }}</p>
+
+            <div v-if="room.items && room.items.length > 0" class="mt-4">
+              <h4 class="text-sm font-medium text-gray-700 mb-2">Items ({{ room.items.length }})</h4>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div
+                  v-for="(item, itemIndex) in room.items"
+                  :key="itemIndex"
+                  class="bg-gray-50 rounded p-3"
+                >
+                  <p class="text-sm font-medium text-gray-900">{{ item.name }}</p>
+                  <p class="mt-1 text-xs text-gray-500">{{ item.description }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Outdoor Areas -->
+      <div v-if="template.outdoorAreas && template.outdoorAreas.length > 0" class="mb-8">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Outdoor Areas ({{ template.outdoorAreas.length }})</h2>
+        <div class="space-y-4">
+          <div
+            v-for="(area, index) in template.outdoorAreas"
+            :key="index"
+            class="bg-white shadow rounded-lg p-5"
+          >
+            <h3 class="text-lg font-medium text-gray-900">{{ area.name }}</h3>
+            <p class="mt-1 text-sm text-gray-600">{{ area.description }}</p>
+
+            <div v-if="area.items && area.items.length > 0" class="mt-4">
+              <h4 class="text-sm font-medium text-gray-700 mb-2">Items ({{ area.items.length }})</h4>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div
+                  v-for="(item, itemIndex) in area.items"
+                  :key="itemIndex"
+                  class="bg-gray-50 rounded p-3"
+                >
+                  <p class="text-sm font-medium text-gray-900">{{ item.name }}</p>
+                  <p class="mt-1 text-xs text-gray-500">{{ item.description }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty state -->
+      <div v-if="(!template.indoorRooms || template.indoorRooms.length === 0) && (!template.outdoorAreas || template.outdoorAreas.length === 0)" class="text-center py-12 bg-gray-50 rounded-lg">
+        <p class="text-gray-500">This template has no spaces defined.</p>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import { gql } from 'graphql-request'
+import { client } from '../graphql'
+
+const route = useRoute()
+const template = ref(null)
+const loading = ref(true)
+const error = ref(null)
+
+const QUERY_LOT_TEMPLATE = gql`
+  query GetLotTemplate($id: ID!) {
+    lotTemplate(id: $id) {
+      id
+      name
+      lotType
+      description
+      tags
+      indoorRooms {
+        name
+        description
+        items {
+          name
+          description
+        }
+      }
+      outdoorAreas {
+        name
+        description
+        items {
+          name
+          description
+        }
+      }
+    }
+  }
+`
+
+onMounted(async () => {
+  try {
+    const data = await client.request(QUERY_LOT_TEMPLATE, {
+      id: route.params.templateId
+    })
+    template.value = data.lotTemplate
+  } catch (e) {
+    error.value = e
+  } finally {
+    loading.value = false
+  }
+})
+</script>

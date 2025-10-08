@@ -7,6 +7,10 @@ import SpaceList from './views/SpaceList.vue'
 import SpaceDetail from './views/SpaceDetail.vue'
 import HouseholdForm from './views/HouseholdForm.vue'
 import HouseholdDetail from './views/HouseholdDetail.vue'
+import Library from './views/Library.vue'
+import LotTemplates from './views/LotTemplates.vue'
+import LotTemplateDetail from './views/LotTemplateDetail.vue'
+import LibraryStub from './views/LibraryStub.vue'
 
 export const router = createRouter({
   history: createWebHistory(),
@@ -60,6 +64,38 @@ export const router = createRouter({
       path: '/world/:worldId/region/:regionId/household/:householdId',
       name: 'household-detail',
       component: HouseholdDetail
+    },
+    {
+      path: '/library',
+      component: Library,
+      redirect: '/library/lots',
+      children: [
+        {
+          path: 'lots',
+          name: 'library-lots',
+          component: LotTemplates
+        },
+        {
+          path: 'lots/:templateId',
+          name: 'library-lot-detail',
+          component: LotTemplateDetail
+        },
+        {
+          path: 'regions',
+          name: 'library-regions',
+          component: LibraryStub
+        },
+        {
+          path: 'characters',
+          name: 'library-characters',
+          component: LibraryStub
+        },
+        {
+          path: 'items',
+          name: 'library-items',
+          component: LibraryStub
+        }
+      ]
     }
   ]
 })

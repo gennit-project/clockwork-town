@@ -48,6 +48,27 @@ type Lot {
   household: Household       # current household occupying the lot (if any)
 }
 
+type LotTemplate {
+  id: ID!
+  name: String!
+  lotType: LotType!
+  description: String
+  tags: [String!]!
+  indoorRooms: [SpaceTemplate!]!
+  outdoorAreas: [SpaceTemplate!]!
+}
+
+type SpaceTemplate {
+  name: String!
+  description: String!
+  items: [ItemTemplate!]!
+}
+
+type ItemTemplate {
+  name: String!
+  description: String!
+}
+
 type Space {
   id: ID!
   name: String!
@@ -294,6 +315,10 @@ type Query {
 
   # "Who is where & doing what" for a region
   whereIsEveryone(regionId: ID!): [Presence!]!
+
+  # Template library
+  lotTemplates(tags: [String!]): [LotTemplate!]!
+  lotTemplate(id: ID!): LotTemplate
 }
 
 # -----------------------------
@@ -378,6 +403,25 @@ input NewItem {
   description: String!
 }
 
+input ItemInput {
+  itemName: String!
+  itemDescription: String!
+}
+
+input SpaceWithItemsInput {
+  spaceName: String!
+  spaceDescription: String!
+  items: [ItemInput!]
+}
+
+input CreateLotWithSpacesInput {
+  lotName: String!
+  lotType: LotType!
+  lotDescription: String
+  indoorRooms: [SpaceWithItemsInput!]
+  outdoorSpaces: [SpaceWithItemsInput!]
+}
+
 # -----------------------------
 # Mutations
 # -----------------------------
@@ -391,6 +435,7 @@ type Mutation {
   deleteRegion(id: ID!): Boolean!
 
   createLot(input: NewLot!): Lot!
+  createLotWithSpacesAndItems(regionId: ID!, input: CreateLotWithSpacesInput!): Lot!
   updateLot(id: ID!, name: String!, lotType: LotType!): Lot!
   deleteLot(id: ID!): Boolean!
 
@@ -409,6 +454,10 @@ type Mutation {
   moveCharacter(input: MoveInput!): Boolean!
   startActivity(input: PerformInput!): Boolean!
   stopAllActivities(characterId: ID!): Boolean!
+
+  # Template library
+  createLotTemplate(input: CreateLotWithSpacesInput!, tags: [String!]!): LotTemplate!
+  deleteLotTemplate(id: ID!): Boolean!
 
   # Optional if you wire Google Drive:
   backupNow: Boolean!
