@@ -10,6 +10,7 @@ import HouseholdDetail from './views/HouseholdDetail.vue'
 import Library from './views/Library.vue'
 import LotTemplates from './views/LotTemplates.vue'
 import LotTemplateDetail from './views/LotTemplateDetail.vue'
+import LotTemplateEdit from './views/LotTemplateEdit.vue'
 import HouseholdTemplates from './views/HouseholdTemplates.vue'
 import HouseholdTemplateDetail from './views/HouseholdTemplateDetail.vue'
 import LibraryStub from './views/LibraryStub.vue'
@@ -82,6 +83,11 @@ export const router = createRouter({
           path: 'lots/:templateId',
           name: 'library-lot-detail',
           component: LotTemplateDetail
+        },
+        {
+          path: 'lots/:templateId/edit',
+          name: 'library-lot-edit',
+          component: LotTemplateEdit
         },
         {
           path: 'households',

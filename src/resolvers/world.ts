@@ -649,6 +649,72 @@ export const WorldResolvers = {
       };
     },
 
+    updateLotTemplate: async (_: any, { id, input, tags }: {
+      id: string;
+      tags: string[];
+      input: {
+        lotName: string;
+        lotType: string;
+        lotDescription?: string;
+        indoorRooms?: Array<{
+          spaceName: string;
+          spaceDescription: string;
+          items?: Array<{ itemName: string; itemDescription: string }>;
+        }>;
+        outdoorSpaces?: Array<{
+          spaceName: string;
+          spaceDescription: string;
+          items?: Array<{ itemName: string; itemDescription: string }>;
+        }>;
+      }
+    }) => {
+      const { lotName, lotType, lotDescription, indoorRooms = [], outdoorSpaces = [] } = input;
+
+      // Serialize the spaces data to JSON strings
+      const indoorRoomsJson = JSON.stringify(indoorRooms);
+      const outdoorAreasJson = JSON.stringify(outdoorSpaces);
+
+      await q(`
+        MATCH (t:LotTemplate {id:$id})
+        SET t.name = $name,
+            t.lotType = $lotType,
+            t.description = $description,
+            t.tags = $tags,
+            t.indoorRooms = $indoorRooms,
+            t.outdoorAreas = $outdoorAreas
+      `, {
+        id,
+        name: lotName,
+        lotType,
+        description: lotDescription || '',
+        tags,
+        indoorRooms: indoorRoomsJson,
+        outdoorAreas: outdoorAreasJson
+      });
+
+      const transformSpaces = (spaces: any[]) => spaces.map((space: any) => ({
+        name: space.spaceName,
+        description: space.spaceDescription,
+        items: (space.items || []).map((item: any) => ({
+          name: item.itemName,
+          description: item.itemDescription
+        }))
+      }));
+
+      const [updated] = await q(`
+        MATCH (t:LotTemplate {id:$id})
+        RETURN t.id AS id, t.name AS name, t.lotType AS lotType,
+               t.description AS description, t.tags AS tags,
+               t.indoorRooms AS indoorRooms, t.outdoorAreas AS outdoorAreas
+      `, { id });
+
+      return {
+        ...updated,
+        indoorRooms: transformSpaces(JSON.parse(updated.indoorRooms || '[]')),
+        outdoorAreas: transformSpaces(JSON.parse(updated.outdoorAreas || '[]'))
+      };
+    },
+
     deleteLotTemplate: async (_: any, { id }: { id: string }) => {
       await q(`MATCH (t:LotTemplate {id:$id}) DELETE t`, { id });
       return true;

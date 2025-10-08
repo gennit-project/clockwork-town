@@ -11,7 +11,10 @@
           :key="itemIndex"
           class="bg-gray-50 dark:bg-gray-900 rounded p-3"
         >
-          <p class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ item.name }}</p>
+          <div class="flex items-baseline gap-2">
+            <p class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ item.name }}</p>
+            <span v-if="item.count && item.count > 1" class="text-xs text-gray-500 dark:text-gray-400">×{{ item.count }}</span>
+          </div>
           <p class="mt-1 text-xs text-gray-500 dark:text-gray-300">{{ item.description }}</p>
         </div>
       </div>

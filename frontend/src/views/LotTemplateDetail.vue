@@ -31,13 +31,21 @@
               {{ template.description }}
             </p>
           </div>
-          <button
-            type="button"
-            @click="showCloneModal = true"
-            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          >
-            Clone to World
-          </button>
+          <div class="flex gap-3">
+            <router-link
+              :to="`/library/lots/${template.id}/edit`"
+              class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+            >
+              Edit Template
+            </router-link>
+            <button
+              type="button"
+              @click="showCloneModal = true"
+              class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              Clone to World
+            </button>
+          </div>
         </div>
 
         <div v-if="template.tags && template.tags.length > 0" class="mt-3 flex flex-wrap gap-2">

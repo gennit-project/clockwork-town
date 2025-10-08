@@ -503,6 +503,7 @@ type Mutation {
 
   # Template library
   createLotTemplate(input: CreateLotWithSpacesInput!, tags: [String!]!): LotTemplate!
+  updateLotTemplate(id: ID!, input: CreateLotWithSpacesInput!, tags: [String!]!): LotTemplate!
   deleteLotTemplate(id: ID!): Boolean!
   createHouseholdTemplate(input: CreateHouseholdTemplateInput!, tags: [String!]!): HouseholdTemplate!
   updateHouseholdTemplate(id: ID!, input: CreateHouseholdTemplateInput!, tags: [String!]!): HouseholdTemplate!

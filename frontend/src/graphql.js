@@ -396,6 +396,34 @@ export const mutations = {
     }
   `,
 
+  updateLotTemplate: `
+    mutation UpdateLotTemplate($id: ID!, $input: CreateLotWithSpacesInput!, $tags: [String!]!) {
+      updateLotTemplate(id: $id, input: $input, tags: $tags) {
+        id
+        name
+        lotType
+        description
+        tags
+        indoorRooms {
+          name
+          description
+          items {
+            name
+            description
+          }
+        }
+        outdoorAreas {
+          name
+          description
+          items {
+            name
+            description
+          }
+        }
+      }
+    }
+  `,
+
   createHouseholdTemplate: `
     mutation CreateHouseholdTemplate($input: CreateHouseholdTemplateInput!, $tags: [String!]!) {
       createHouseholdTemplate(input: $input, tags: $tags) {
