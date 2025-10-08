@@ -212,7 +212,7 @@
     </div>
 
     <!-- Save as Template Modal -->
-    <div v-if="showSaveTemplateModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div v-if="showSaveTemplateModal" class="fixed inset-0 bg-black dark:text-white bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
         <h2 class="text-2xl font-bold mb-4">Save Lot as Template</h2>
         <form @submit.prevent="saveAsTemplate">

@@ -16,5 +16,6 @@ export const resolvers = {
     ...CharacterResolvers.Mutation,
     ...ActivityResolvers.Mutation,
     ...HouseholdResolvers.Mutation,
-  }
+  },
+  Space: WorldResolvers.Space,
 };

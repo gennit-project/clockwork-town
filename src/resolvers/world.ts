@@ -1,6 +1,22 @@
 import { batch, q } from "../kuzuHelpers";
 
 export const WorldResolvers = {
+  Space: {
+    items: async (parent: any) => {
+      const items = await q(`
+        MATCH (s:Space {id:$id})<-[:ON_SPACE]-(i:Item)
+        RETURN i.id AS id, i.name AS name, i.description AS description
+      `, { id: parent.id });
+      return items;
+    },
+    characters: async (parent: any) => {
+      const characters = await q(`
+        MATCH (s:Space {id:$id})<-[:AT]-(c:Character)
+        RETURN c.id AS id, c.name AS name
+      `, { id: parent.id });
+      return characters;
+    }
+  },
   Query: {
     worlds: () =>
       q(`
