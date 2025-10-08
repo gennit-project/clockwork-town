@@ -87,6 +87,27 @@ const ACTION_EFFECTS = {
 // Log action effects on module load for debugging
 console.log('📊 ACTION_EFFECTS loaded:', ACTION_EFFECTS)
 
+/**
+ * Need weights for utility calculation
+ * Higher weight = more important/urgent
+ */
+const NEED_WEIGHTS = {
+  // Basic needs (physical survival)
+  food: 3.0,
+  sleep: 3.0,
+  health: 2.5,
+
+  // Emotional needs (social connection)
+  friends: 2.0,
+  family: 2.0,
+  romance: 1.5,
+
+  // Self-actualization
+  fulfillment: 1.0
+}
+
+console.log('⚖️  NEED_WEIGHTS loaded:', NEED_WEIGHTS)
+
 export const useSimulationStore = defineStore('simulation', () => {
   // ============================================
   // STATE
@@ -500,6 +521,57 @@ export const useSimulationStore = defineStore('simulation', () => {
     return results
   }
 
+  /**
+   * Calculate utility score for a character performing an action at a specific item
+   * Step 9: Utility = (need weight × need deficit) - travel cost + context bonus
+   *
+   * @param {string} characterId - Character ID
+   * @param {string} action - Action name (e.g., 'eat', 'sleep')
+   * @param {object} itemOption - Item option from findItemsWithAffordance
+   * @returns {number} Utility score (higher is better)
+   */
+  function calculateUtility(characterId, action, itemOption) {
+    const charState = characterStates.value[characterId]
+    if (!charState) {
+      console.warn(`Character ${characterId} not found in characterStates`)
+      return -Infinity
+    }
+
+    const actionData = ACTION_EFFECTS[action]
+    if (!actionData) {
+      console.warn(`Unknown action: ${action}`)
+      return -Infinity
+    }
+
+    // Get the primary need this action satisfies
+    const primaryNeed = actionData.primaryNeed
+    if (!primaryNeed) {
+      // Idle or actions without primary needs have no utility
+      return 0
+    }
+
+    // Calculate need deficit (1.0 - current need value)
+    const currentNeedValue = charState.needs[primaryNeed] || 0
+    const needDeficit = 1.0 - currentNeedValue
+
+    // Get need weight
+    const needWeight = NEED_WEIGHTS[primaryNeed] || 1.0
+
+    // Calculate base utility: needWeight × needDeficit
+    const baseUtility = needWeight * needDeficit
+
+    // Travel penalty (from pathfinding cost)
+    const travelPenalty = itemOption.travelCost
+
+    // Context bonus (will be implemented in Step 14 for trait-based bonuses)
+    const contextBonus = 0
+
+    // Final utility
+    const utility = baseUtility - travelPenalty + contextBonus
+
+    return utility
+  }
+
   return {
     // State
     currentTick,
@@ -523,6 +595,7 @@ export const useSimulationStore = defineStore('simulation', () => {
     resetSimulation,
     updateCharacterLocation,
     loadWorldData,
-    findItemsWithAffordance
+    findItemsWithAffordance,
+    calculateUtility
   }
 })

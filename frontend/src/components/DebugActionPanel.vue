@@ -148,6 +148,18 @@
       </div>
 
       <div class="mt-3 pt-3 border-t border-yellow-300">
+        <p class="text-xs font-medium text-yellow-900 dark:text-yellow-100 mb-2">
+          ⚖️ Test Utility Calculation:
+        </p>
+        <button
+          @click="testUtilityCalculation"
+          class="w-full px-3 py-2 text-xs font-medium rounded bg-indigo-600 hover:bg-indigo-700 text-white"
+        >
+          Calculate Utilities for All Actions
+        </button>
+      </div>
+
+      <div class="mt-3 pt-3 border-t border-yellow-300">
         <p class="text-xs text-yellow-800 dark:text-yellow-200">
           💡 <strong>Tip:</strong> Watch the character card needs update and check the activity log panel.
           Effects are logged in the browser console.
@@ -227,6 +239,63 @@ const testFindItems = (action) => {
     alert(`No items with '${action}' affordance found.\n\nCheck console for details.`)
   } else {
     alert(`Found ${items.length} item(s) with '${action}' affordance:\n• Same space (cost 0): ${cost0.length}\n• Same lot (cost 1): ${cost1.length}\n• Same region (cost 2): ${cost2.length}\n\nCheck console for details.`)
+  }
+}
+
+const testUtilityCalculation = () => {
+  if (!selectedCharacterId.value) {
+    alert('Please select a character first')
+    return
+  }
+
+  console.log(`\n⚖️  Test Utility Calculation for ${selectedCharacterId.value}`)
+  console.log('=' .repeat(60))
+
+  const charState = simulationStore.characterStates[selectedCharacterId.value]
+  console.log('Current Needs:')
+  Object.entries(charState.needs).forEach(([need, value]) => {
+    console.log(`  ${need}: ${value.toFixed(2)} (deficit: ${(1 - value).toFixed(2)})`)
+  })
+  console.log('')
+
+  const actions = ['eat', 'sleep', 'medicate', 'chat_friend', 'call_mom', 'date', 'read', 'write', 'view_art', 'volunteer']
+  const utilities = []
+
+  for (const action of actions) {
+    const items = simulationStore.findItemsWithAffordance(selectedCharacterId.value, action)
+
+    if (items.length > 0) {
+      // Calculate utility for the best (closest) item
+      const bestItem = items[0] // Already sorted by travel cost
+      const utility = simulationStore.calculateUtility(selectedCharacterId.value, action, bestItem)
+
+      utilities.push({
+        action,
+        utility: utility.toFixed(2),
+        item: bestItem.itemName,
+        space: bestItem.spaceName,
+        travelCost: bestItem.travelCost
+      })
+
+      console.log(`${action}:`)
+      console.log(`  Best item: ${bestItem.itemName} in ${bestItem.spaceName} (cost ${bestItem.travelCost})`)
+      console.log(`  Utility: ${utility.toFixed(2)}`)
+    }
+  }
+
+  // Sort by utility (highest first)
+  utilities.sort((a, b) => parseFloat(b.utility) - parseFloat(a.utility))
+
+  console.log('\n📊 Utilities Ranked (highest to lowest):')
+  utilities.forEach((u, i) => {
+    console.log(`  ${i + 1}. ${u.action}: ${u.utility} (${u.item} in ${u.space}, cost ${u.travelCost})`)
+  })
+
+  if (utilities.length > 0) {
+    const best = utilities[0]
+    alert(`Best action: ${best.action}\nUtility: ${best.utility}\nItem: ${best.item}\nLocation: ${best.space}\nTravel cost: ${best.travelCost}\n\nCheck console for full details.`)
+  } else {
+    alert('No available actions found.\n\nCheck console for details.')
   }
 }
 </script>
