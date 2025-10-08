@@ -4,12 +4,20 @@
 
     <div class="flex justify-between items-center mb-6">
       <h1 class="text-3xl font-bold text-gray-900">Region Overview: {{ region?.name || 'Loading...' }}</h1>
-      <router-link
-        :to="`/world/${worldId}/region/${regionId}/lots`"
-        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
-      >
-        Manage Lots & Households
-      </router-link>
+      <div class="flex space-x-3">
+        <button
+          @click="showEditModal = true"
+          class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md"
+        >
+          Edit Region
+        </button>
+        <router-link
+          :to="`/world/${worldId}/region/${regionId}/lots`"
+          class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+        >
+          Manage Lots & Households
+        </router-link>
+      </div>
     </div>
 
     <div v-if="loading" class="text-center py-12">
@@ -205,12 +213,63 @@
         </div>
       </div>
     </div>
+
+    <!-- Edit Region Modal -->
+    <div v-if="showEditModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div class="bg-white rounded-lg p-6 max-w-md w-full">
+        <h2 class="text-2xl font-bold mb-4">Edit Region</h2>
+        <form @submit.prevent="saveRegion">
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Region Name
+            </label>
+            <input
+              v-model="formData.name"
+              type="text"
+              required
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter region name"
+            />
+          </div>
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Type
+            </label>
+            <input
+              v-model="formData.kind"
+              type="text"
+              required
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="e.g., urban, rural, mountain"
+            />
+          </div>
+          <div class="flex justify-end space-x-3">
+            <button
+              type="button"
+              @click="closeEditModal"
+              :disabled="saving"
+              class="px-4 py-2 text-gray-700 hover:text-gray-900"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              :disabled="saving"
+              class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md disabled:opacity-50"
+            >
+              {{ saving ? 'Saving...' : 'Save' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { gql } from 'graphql-request'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
 import { client, queries } from '../graphql'
 
@@ -228,6 +287,9 @@ const activeCharacterType = ref(null)
 const expandedLots = ref({})
 const loading = ref(true)
 const error = ref(null)
+const showEditModal = ref(false)
+const formData = ref({ name: '', kind: '' })
+const saving = ref(false)
 
 const breadcrumbs = computed(() => [
   { label: 'Worlds', to: '/' },
@@ -250,6 +312,39 @@ const clearActiveCharacter = () => {
   activeCharacterType.value = null
 }
 
+const MUTATION_UPDATE_REGION = gql`
+  mutation UpdateRegion($id: ID!, $name: String!, $kind: String!) {
+    updateRegion(id: $id, name: $name, kind: $kind) {
+      id
+      name
+      kind
+    }
+  }
+`
+
+const closeEditModal = () => {
+  showEditModal.value = false
+  formData.value = { name: '', kind: '' }
+}
+
+const saveRegion = async () => {
+  try {
+    saving.value = true
+    await client.request(MUTATION_UPDATE_REGION, {
+      id: regionId.value,
+      name: formData.value.name,
+      kind: formData.value.kind
+    })
+    closeEditModal()
+    await loadData()
+  } catch (e) {
+    error.value = e.message
+    alert('Error updating region: ' + e.message)
+  } finally {
+    saving.value = false
+  }
+}
+
 const loadData = async () => {
   try {
     loading.value = true
@@ -263,6 +358,14 @@ const loadData = async () => {
 
     world.value = worldData.world
     region.value = regionsData.regions.find(r => r.id === regionId.value)
+
+    // Populate form data for editing
+    if (region.value) {
+      formData.value = {
+        name: region.value.name,
+        kind: region.value.kind
+      }
+    }
 
     // Fetch spaces for each lot
     const lots = lotsData.lots || []
