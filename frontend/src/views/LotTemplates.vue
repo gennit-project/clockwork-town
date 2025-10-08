@@ -24,7 +24,7 @@
         >
           <div class="flex items-center justify-between">
             <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">{{ template.name }}</h3>
-            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
               {{ template.lotType }}
             </span>
           </div>
@@ -37,7 +37,7 @@
             <span
               v-for="tag in template.tags"
               :key="tag"
-              class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:text-gray-200"
+              class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:text-gray-200 dark:bg-gray-700"
             >
               {{ tag }}
             </span>

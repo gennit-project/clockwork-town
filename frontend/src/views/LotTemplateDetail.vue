@@ -44,7 +44,7 @@
           <span
             v-for="tag in template.tags"
             :key="tag"
-            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-gray-100 text-gray-800 dark:text-gray-200"
+            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-gray-100 text-gray-800 dark:text-gray-200 dark:bg-gray-700"
           >
             {{ tag }}
           </span>
