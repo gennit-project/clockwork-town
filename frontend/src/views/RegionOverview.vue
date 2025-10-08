@@ -5,10 +5,10 @@
     <div class="flex justify-between items-center mb-6">
       <h1 class="text-3xl font-bold text-gray-900">Region Overview: {{ region?.name || 'Loading...' }}</h1>
       <router-link
-        :to="`/world/${worldId}/region/${regionId}`"
-        class="text-blue-600 hover:text-blue-800 font-medium"
+        :to="`/world/${worldId}/region/${regionId}/lots`"
+        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
       >
-        ← Back to Region
+        Manage Lots & Households
       </router-link>
     </div>
 

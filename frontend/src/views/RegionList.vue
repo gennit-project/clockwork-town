@@ -69,112 +69,15 @@
         </div>
       </div>
 
-      <!-- Region Detail View -->
+      <!-- Region Detail View - Default redirects to overview -->
       <div v-else>
-        <!-- Lots Section -->
-        <div class="mb-8">
-          <div class="flex justify-between items-center mb-4">
-            <h2 class="text-2xl font-bold text-gray-900">Lots</h2>
-            <div class="flex space-x-3">
-              <router-link
-                :to="`/world/${worldId}/region/${regionId}/overview`"
-                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
-              >
-                View Overview
-              </router-link>
-              <router-link
-                :to="`/world/${worldId}/region/${regionId}/lots`"
-                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
-              >
-                Manage Lots
-              </router-link>
-            </div>
-          </div>
-
-          <div v-if="lots.length === 0" class="text-center py-8 bg-white rounded-lg shadow">
-            <p class="text-gray-500">No lots yet. Create your first lot!</p>
-          </div>
-
-          <div v-else class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <div
-              v-for="lot in lots"
-              :key="lot.id"
-              class="bg-white p-4 rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer"
-              @click="viewLot(lot.id)"
-            >
-              <h3 class="text-lg font-semibold text-gray-900">{{ lot.name }}</h3>
-              <p class="text-sm text-gray-500 mb-2">{{ lot.lotType }}</p>
-              <div class="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                View Spaces →
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Households Section -->
-        <div>
-          <div class="flex justify-between items-center mb-4">
-            <h2 class="text-2xl font-bold text-gray-900">Households</h2>
-            <router-link
-              :to="`/world/${worldId}/region/${regionId}/household/new`"
-              class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
-            >
-              Create Household
-            </router-link>
-          </div>
-
-          <div v-if="households.length === 0" class="text-center py-8 bg-white rounded-lg shadow">
-            <p class="text-gray-500">No households yet. Create your first household!</p>
-          </div>
-
-          <div v-else class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <div
-              v-for="household in households"
-              :key="household.id"
-              class="bg-white p-4 rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer"
-              @click="viewHousehold(household.id)"
-            >
-              <div class="flex justify-between items-start mb-2">
-                <div>
-                  <h3 class="text-lg font-semibold text-gray-900">{{ household.name }}</h3>
-                  <p class="text-sm text-gray-500">{{ household.lotName }}</p>
-                  <p class="text-xs text-gray-400 mt-1">{{ household.characters.length }} member(s)</p>
-                </div>
-                <div class="flex space-x-2" @click.stop>
-                  <router-link
-                    :to="`/world/${worldId}/region/${regionId}/household/${household.id}/edit`"
-                    class="text-blue-600 hover:text-blue-800"
-                    title="Edit"
-                  >
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                  </router-link>
-                  <button
-                    @click="confirmDeleteHousehold(household)"
-                    class="text-red-600 hover:text-red-800"
-                    title="Delete"
-                  >
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-              <div v-if="household.characters.length > 0" class="mt-2">
-                <p class="text-xs font-medium text-gray-700 mb-1">Members:</p>
-                <div class="flex flex-wrap gap-1">
-                  <span
-                    v-for="char in household.characters"
-                    :key="char.id"
-                    class="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded"
-                  >
-                    {{ char.name }} ({{ char.age }})
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div class="flex justify-end space-x-3 mb-6">
+          <router-link
+            :to="`/world/${worldId}/region/${regionId}/lots`"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+          >
+            Manage Lots & Households
+          </router-link>
         </div>
       </div>
     </div>
@@ -281,7 +184,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
 import { client, queries, mutations } from '../graphql'
@@ -327,20 +230,21 @@ const loadData = async () => {
     error.value = null
 
     if (isRegionDetailView.value) {
-      const [worldData, regionsData, lotsData, householdsData] = await Promise.all([
+      const [worldData, regionsData] = await Promise.all([
         client.request(queries.getWorld, { id: worldId.value }),
-        client.request(queries.getRegions, { worldId: worldId.value }),
-        client.request(queries.getLots, { regionId: regionId.value }),
-        client.request(queries.getHouseholds, { regionId: regionId.value })
+        client.request(queries.getRegions, { worldId: worldId.value })
       ])
       world.value = worldData.world
       regions.value = regionsData.regions || []
       region.value = regionsData.regions.find(r => r.id === regionId.value)
-      lots.value = lotsData.lots || []
-      households.value = householdsData.households || []
 
       if (region.value) {
         formData.value = { name: region.value.name, kind: region.value.kind }
+      }
+
+      // Redirect to overview if on the base region detail page
+      if (route.path === `/world/${worldId.value}/region/${regionId.value}`) {
+        router.replace(`/world/${worldId.value}/region/${regionId.value}/overview`)
       }
     } else {
       const [worldData, regionsData] = await Promise.all([
@@ -452,6 +356,16 @@ const viewLot = (lotId) => {
 const viewHousehold = (householdId) => {
   router.push(`/world/${worldId.value}/region/${regionId.value}/household/${householdId}`)
 }
+
+// Watch for route changes to reload data and handle redirects
+watch(() => route.path, (newPath, oldPath) => {
+  // Only reload if we're still in the RegionList component context
+  if (newPath.includes('/world/') && newPath.includes('/region/') &&
+      !newPath.includes('/overview') && !newPath.includes('/lots') &&
+      !newPath.includes('/lot/') && !newPath.includes('/household')) {
+    loadData()
+  }
+})
 
 onMounted(loadData)
 </script>
