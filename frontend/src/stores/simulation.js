@@ -105,6 +105,14 @@ export const useSimulationStore = defineStore('simulation', () => {
   // Structure: { [characterId]: { needs: {...}, cooldowns: {...}, currentAction: string, location: {...} } }
   const characterStates = ref({})
 
+  // World data for pathfinding (lots, spaces, items)
+  const worldData = ref({
+    lots: {},      // { [lotId]: { id, name, spaceIds: [] } }
+    spaces: {},    // { [spaceId]: { id, name, lotId, itemIds: [] } }
+    items: {},     // { [itemId]: { id, name, spaceId, lotId, allowedActivities: [] } }
+    itemsByAffordance: {}  // { [action]: [itemId1, itemId2, ...] }
+  })
+
   // ============================================
   // GETTERS
   // ============================================
@@ -337,12 +345,92 @@ export const useSimulationStore = defineStore('simulation', () => {
     }
   }
 
+  /**
+   * Load world data (lots, spaces, items) for pathfinding
+   * @param {Array} lots - Array of lot objects with indoorRooms and outdoorAreas
+   */
+  function loadWorldData(lots) {
+    console.log('🗺️  Loading world data for pathfinding...')
+
+    const newWorldData = {
+      lots: {},
+      spaces: {},
+      items: {},
+      itemsByAffordance: {}
+    }
+
+    // Process each lot
+    for (const lot of lots) {
+      const spaceIds = []
+
+      // Combine indoor rooms and outdoor areas
+      const allSpaces = [
+        ...(lot.indoorRooms || []),
+        ...(lot.outdoorAreas || [])
+      ]
+
+      // Process each space
+      for (const space of allSpaces) {
+        spaceIds.push(space.id)
+
+        const itemIds = []
+
+        // Process each item in the space
+        for (const item of (space.items || [])) {
+          itemIds.push(item.id)
+
+          // Store item data
+          newWorldData.items[item.id] = {
+            id: item.id,
+            name: item.name,
+            spaceId: space.id,
+            lotId: lot.id,
+            allowedActivities: item.allowedActivities || []
+          }
+
+          // Index by affordance
+          for (const action of (item.allowedActivities || [])) {
+            if (!newWorldData.itemsByAffordance[action]) {
+              newWorldData.itemsByAffordance[action] = []
+            }
+            newWorldData.itemsByAffordance[action].push(item.id)
+          }
+        }
+
+        // Store space data
+        newWorldData.spaces[space.id] = {
+          id: space.id,
+          name: space.name,
+          lotId: lot.id,
+          itemIds
+        }
+      }
+
+      // Store lot data
+      newWorldData.lots[lot.id] = {
+        id: lot.id,
+        name: lot.name,
+        spaceIds
+      }
+    }
+
+    worldData.value = newWorldData
+
+    console.log(`✅ World data loaded:`)
+    console.log(`  - ${Object.keys(newWorldData.lots).length} lots`)
+    console.log(`  - ${Object.keys(newWorldData.spaces).length} spaces`)
+    console.log(`  - ${Object.keys(newWorldData.items).length} items`)
+    console.log(`  - ${Object.keys(newWorldData.itemsByAffordance).length} action types with items`)
+    console.log('World data:', newWorldData)
+  }
+
   return {
     // State
     currentTick,
     isPaused,
     activityLog,
     characterStates,
+    worldData,
 
     // Getters
     isRunning,
@@ -357,6 +445,7 @@ export const useSimulationStore = defineStore('simulation', () => {
     startAutoTick,
     pauseAutoTick,
     resetSimulation,
-    updateCharacterLocation
+    updateCharacterLocation,
+    loadWorldData
   }
 })

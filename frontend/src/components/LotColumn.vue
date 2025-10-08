@@ -12,6 +12,7 @@
         :region-id="regionId"
         :is-expanded="expandedLots[lot.id]"
         :characters-at-lot="charactersByLot[lot.id] || []"
+        :characters-by-space="charactersBySpace"
         :variant="variant"
         @toggle-expanded="$emit('toggle-expanded', $event)"
       />
@@ -47,6 +48,10 @@ defineProps({
     required: true
   },
   charactersByLot: {
+    type: Object,
+    default: () => ({})
+  },
+  charactersBySpace: {
     type: Object,
     default: () => ({})
   },

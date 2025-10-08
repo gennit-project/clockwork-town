@@ -69,6 +69,17 @@
             >
               <p class="font-medium text-sm text-gray-900 dark:text-gray-100">{{ room.name }}</p>
               <p class="text-xs text-gray-600 dark:text-gray-300 mt-1">{{ room.description }}</p>
+
+              <!-- Characters in this space -->
+              <div v-if="charactersBySpace[room.id]?.length > 0" class="mt-2 flex flex-wrap gap-1">
+                <span
+                  v-for="char in charactersBySpace[room.id]"
+                  :key="char.id"
+                  class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100"
+                >
+                  👤 {{ char.name }}
+                </span>
+              </div>
             </router-link>
           </div>
         </div>
@@ -90,6 +101,17 @@
             >
               <p class="font-medium text-sm text-gray-900 dark:text-gray-100">{{ area.name }}</p>
               <p class="text-xs text-gray-600 dark:text-gray-300 mt-1">{{ area.description }}</p>
+
+              <!-- Characters in this space -->
+              <div v-if="charactersBySpace[area.id]?.length > 0" class="mt-2 flex flex-wrap gap-1">
+                <span
+                  v-for="char in charactersBySpace[area.id]"
+                  :key="char.id"
+                  class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100"
+                >
+                  👤 {{ char.name }}
+                </span>
+              </div>
             </router-link>
           </div>
         </div>
@@ -133,6 +155,10 @@ const props = defineProps({
   charactersAtLot: {
     type: Array,
     default: () => []
+  },
+  charactersBySpace: {
+    type: Object,
+    default: () => ({})
   },
   variant: {
     type: String,

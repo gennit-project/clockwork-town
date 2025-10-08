@@ -112,6 +112,7 @@
           :region-id="regionId"
           :expanded-lots="expandedLots"
           :characters-by-lot="charactersByLot"
+          :characters-by-space="charactersBySpace"
           variant="blue"
           empty-message="No residential lots yet"
           @toggle-expanded="toggleLotRooms"
@@ -125,13 +126,14 @@
           :region-id="regionId"
           :expanded-lots="expandedLots"
           :characters-by-lot="charactersByLot"
+          :characters-by-space="charactersBySpace"
           variant="green"
           empty-message="No community lots yet"
           @toggle-expanded="toggleLotRooms"
         />
 
         <!-- Transportation Column -->
-        <div class="flex-1 flex flex-col">
+        <div class=" flex flex-col">
           <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 sticky top-0 z-10 pb-2">Transportation</h2>
           <div class="text-center py-8 text-gray-500 dark:text-gray-300">
             Coming soon
@@ -356,6 +358,20 @@ const charactersByLot = computed(() => {
   return byLot
 })
 
+const charactersBySpace = computed(() => {
+  const bySpace = {}
+  characters.value.forEach(char => {
+    const charState = simulationStore.characterStates[char.id]
+    if (charState?.location?.spaceId) {
+      if (!bySpace[charState.location.spaceId]) {
+        bySpace[charState.location.spaceId] = []
+      }
+      bySpace[charState.location.spaceId].push(char)
+    }
+  })
+  return bySpace
+})
+
 const toggleLotRooms = (lotId) => {
   expandedLots.value[lotId] = !expandedLots.value[lotId]
 }
@@ -431,12 +447,12 @@ const loadData = async () => {
       }
     }
 
-    // Fetch spaces for each lot
+    // Fetch spaces and items for each lot
     const lots = lotsData.lots || []
     const lotsWithSpacesData = await Promise.all(
       lots.map(async (lot) => {
         try {
-          const spacesData = await client.request(queries.getSpaces, { lotId: lot.id })
+          const spacesData = await client.request(queries.getSpacesWithItems, { lotId: lot.id })
           return {
             ...lot,
             indoorRooms: spacesData.lot?.indoorRooms || [],
@@ -454,6 +470,9 @@ const loadData = async () => {
     )
 
     lotsWithSpaces.value = lotsWithSpacesData
+
+    // Load world data into simulation store for pathfinding
+    simulationStore.loadWorldData(lotsWithSpacesData)
 
     // Fetch characters and animals in the region
     try {
@@ -505,28 +524,31 @@ const resetSimulation = () => {
 }
 
 // Initialize characters when they load
-watch(characters, async (newCharacters) => {
+watch(characters, (newCharacters) => {
   for (const character of newCharacters) {
     // Initialize character in simulation store
     simulationStore.initializeCharacter(character)
 
     // Update character location if available
     if (character.location) {
-      // Fetch the first indoor room for this lot to set as initial space
-      try {
-        const spacesData = await client.request(queries.getSpaces, { lotId: character.location.id })
-        const firstIndoorRoom = spacesData.lot?.indoorRooms?.[0]
+      // Find the first space in this lot from the loaded world data
+      const lot = simulationStore.worldData.lots[character.location.id]
 
-        if (firstIndoorRoom) {
+      if (lot && lot.spaceIds.length > 0) {
+        // Get the first space
+        const firstSpaceId = lot.spaceIds[0]
+        const firstSpace = simulationStore.worldData.spaces[firstSpaceId]
+
+        if (firstSpace) {
           simulationStore.updateCharacterLocation(
             character.id,
             character.location.id,
             character.location.name,
-            firstIndoorRoom.id,
-            firstIndoorRoom.name
+            firstSpace.id,
+            firstSpace.name
           )
         } else {
-          // No indoor rooms, just set lot-level location
+          // No spaces found, just set lot-level location
           simulationStore.updateCharacterLocation(
             character.id,
             character.location.id,
@@ -535,9 +557,8 @@ watch(characters, async (newCharacters) => {
             null
           )
         }
-      } catch (e) {
-        console.error(`Error loading spaces for character ${character.id}:`, e)
-        // Fallback to lot-level location only
+      } else {
+        // No spaces in lot, just set lot-level location
         simulationStore.updateCharacterLocation(
           character.id,
           character.location.id,
