@@ -19,7 +19,7 @@
     </div>
 
     <div v-else-if="worlds.length === 0" class="text-center py-12 bg-white dark:bg-gray-800 rounded-lg shadow">
-      <p class="text-gray-500 dark:text-gray-400 mb-4">No worlds yet. Create your first world to get started!</p>
+      <p class="text-gray-500 dark:text-gray-300 mb-4">No worlds yet. Create your first world to get started!</p>
     </div>
 
     <div v-else class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -52,7 +52,7 @@
             </button>
           </div>
         </div>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+        <p class="text-sm text-gray-500 dark:text-gray-300 mb-4">
           Created {{ new Date(world.createdAt).toLocaleDateString() }}
         </p>
         <div class="text-blue-600 hover:text-blue-800 font-medium">

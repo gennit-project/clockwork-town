@@ -62,7 +62,7 @@
             </button>
           </div>
 
-          <div v-if="formData.characters.length === 0" class="text-gray-500 dark:text-gray-400 text-sm">
+          <div v-if="formData.characters.length === 0" class="text-gray-500 dark:text-gray-300 text-sm">
             No characters yet. Click "Add Character" to create one.
           </div>
 
@@ -140,7 +140,7 @@
             </button>
           </div>
 
-          <div v-if="formData.animals.length === 0" class="text-gray-500 dark:text-gray-400 text-sm">
+          <div v-if="formData.animals.length === 0" class="text-gray-500 dark:text-gray-300 text-sm">
             No animals yet. Click "Add Animal" to add a pet.
           </div>
 

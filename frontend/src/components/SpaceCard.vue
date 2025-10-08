@@ -1,7 +1,7 @@
 <template>
   <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-5">
     <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">{{ space.name }}</h3>
-    <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">{{ space.description }}</p>
+    <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">{{ space.description }}</p>
 
     <div v-if="space.items && space.items.length > 0" class="mt-4">
       <h4 class="text-sm font-medium text-gray-700 mb-2">Items ({{ space.items.length }})</h4>

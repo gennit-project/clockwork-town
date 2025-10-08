@@ -29,7 +29,7 @@
     </div>
 
     <div v-else-if="lotsWithSpaces.length === 0" class="text-center py-12 bg-white rounded-lg shadow">
-      <p class="text-gray-500 dark:text-gray-400 mb-4">No lots in this region yet.</p>
+      <p class="text-gray-500 dark:text-gray-300 mb-4">No lots in this region yet.</p>
       <router-link
         :to="`/world/${worldId}/region/${regionId}`"
         class="text-blue-600 hover:text-blue-800 font-medium"
@@ -42,217 +42,33 @@
       <!-- Three Column Layout -->
       <div class="flex-1 flex gap-4 p-4 overflow-auto">
         <!-- Residential Column -->
-        <div class="flex-1 flex flex-col">
-          <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 sticky top-0 z-10 pb-2">Residential</h2>
-          <div class="space-y-4">
-            <div
-              v-for="lot in residentialLots"
-              :key="lot.id"
-              class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden"
-            >
-              <!-- Lot Header -->
-              <div class="bg-blue-600 text-white p-4">
-                <div class="flex justify-between items-start">
-                  <div>
-                    <h2 class="text-xl font-bold">{{ lot.name }}</h2>
-                    <p class="text-sm text-blue-100">{{ lot.lotType }}</p>
-                  </div>
-                  <router-link
-                    :to="`/world/${worldId}/region/${regionId}/lot/${lot.id}`"
-                    class="text-white hover:text-blue-100"
-                    title="View Details"
-                  >
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                  </router-link>
-                </div>
-              </div>
-
-              <!-- Spaces Content -->
-              <div class="p-4 bg-gray-50 dark:bg-gray-800">
-                <!-- Show/Hide Rooms Toggle -->
-                <div v-if="lot.indoorRooms.length > 0 || lot.outdoorAreas.length > 0" class="mb-3">
-                  <button
-                    @click="toggleLotRooms(lot.id)"
-                    class="text-sm text-blue-600 hover:text-blue-800 font-medium"
-                  >
-                    {{ expandedLots[lot.id] ? 'Hide rooms' : 'Show rooms' }}
-                  </button>
-                </div>
-
-                <!-- Collapsible Rooms Section -->
-                <div v-show="expandedLots[lot.id]">
-                  <!-- Indoor Rooms -->
-                  <div v-if="lot.indoorRooms.length > 0" class="mb-4">
-                    <h3 class="text-sm font-semibold text-gray-700 mb-2 flex items-center">
-                      <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                      </svg>
-                      Indoor Rooms ({{ lot.indoorRooms.length }})
-                    </h3>
-                    <div class="space-y-2">
-                      <router-link
-                        v-for="room in lot.indoorRooms"
-                        :key="room.id"
-                        :to="`/world/${worldId}/region/${regionId}/lot/${lot.id}/space/${room.id}`"
-                        class="block bg-white border-2 border-blue-200 rounded p-3 hover:border-blue-400 transition-colors cursor-pointer"
-                      >
-                        <p class="font-medium text-sm text-gray-900 dark:text-gray-100">{{ room.name }}</p>
-                        <p class="text-xs text-gray-600 mt-1">{{ room.description }}</p>
-                      </router-link>
-                    </div>
-                  </div>
-
-                  <!-- Outdoor Areas -->
-                  <div v-if="lot.outdoorAreas.length > 0">
-                    <h3 class="text-sm font-semibold text-gray-700 mb-2 flex items-center">
-                      <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      Outdoor Areas ({{ lot.outdoorAreas.length }})
-                    </h3>
-                    <div class="space-y-2">
-                      <router-link
-                        v-for="area in lot.outdoorAreas"
-                        :key="area.id"
-                        :to="`/world/${worldId}/region/${regionId}/lot/${lot.id}/space/${area.id}`"
-                        class="block bg-white border-2 border-green-200 rounded p-3 hover:border-green-400 transition-colors cursor-pointer"
-                      >
-                        <p class="font-medium text-sm text-gray-900 dark:text-gray-100">{{ area.name }}</p>
-                        <p class="text-xs text-gray-600 mt-1">{{ area.description }}</p>
-                      </router-link>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- No Spaces Message -->
-                <div v-if="lot.indoorRooms.length === 0 && lot.outdoorAreas.length === 0" class="text-center py-6">
-                  <p class="text-sm text-gray-500">No spaces yet</p>
-                  <router-link
-                    :to="`/world/${worldId}/region/${regionId}/lot/${lot.id}`"
-                    class="text-xs text-blue-600 hover:text-blue-800 mt-2 inline-block"
-                  >
-                    Add spaces →
-                  </router-link>
-                </div>
-              </div>
-            </div>
-            <div v-if="residentialLots.length === 0" class="text-center py-8 text-gray-500">
-              No residential lots yet
-            </div>
-          </div>
-        </div>
+        <LotColumn
+          title="Residential"
+          :lots="residentialLots"
+          :world-id="worldId"
+          :region-id="regionId"
+          :expanded-lots="expandedLots"
+          variant="blue"
+          empty-message="No residential lots yet"
+          @toggle-expanded="toggleLotRooms"
+        />
 
         <!-- Community Column -->
-        <div class="flex-1 flex flex-col">
-          <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 sticky top-0  z-10 pb-2">Community</h2>
-          <div class="space-y-4">
-            <div
-              v-for="lot in communityLots"
-              :key="lot.id"
-              class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden"
-            >
-              <!-- Lot Header -->
-              <div class="bg-green-600 text-white p-4">
-                <div class="flex justify-between items-start">
-                  <div>
-                    <h2 class="text-xl font-bold">{{ lot.name }}</h2>
-                    <p class="text-sm text-green-100">{{ lot.lotType }}</p>
-                  </div>
-                  <router-link
-                    :to="`/world/${worldId}/region/${regionId}/lot/${lot.id}`"
-                    class="text-white hover:text-green-100"
-                    title="View Details"
-                  >
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                  </router-link>
-                </div>
-              </div>
-
-              <!-- Spaces Content -->
-              <div class="p-4 bg-gray-50 dark:bg-gray-800">
-                <!-- Show/Hide Rooms Toggle -->
-                <div v-if="lot.indoorRooms.length > 0 || lot.outdoorAreas.length > 0" class="mb-3">
-                  <button
-                    @click="toggleLotRooms(lot.id)"
-                    class="text-sm text-green-600 hover:text-green-800 font-medium"
-                  >
-                    {{ expandedLots[lot.id] ? 'Hide rooms' : 'Show rooms' }}
-                  </button>
-                </div>
-
-                <!-- Collapsible Rooms Section -->
-                <div v-show="expandedLots[lot.id]">
-                  <!-- Indoor Rooms -->
-                  <div v-if="lot.indoorRooms.length > 0" class="mb-4">
-                    <h3 class="text-sm font-semibold text-gray-700 mb-2 flex items-center">
-                      <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                      </svg>
-                      Indoor Rooms ({{ lot.indoorRooms.length }})
-                    </h3>
-                    <div class="space-y-2">
-                      <router-link
-                        v-for="room in lot.indoorRooms"
-                        :key="room.id"
-                        :to="`/world/${worldId}/region/${regionId}/lot/${lot.id}/space/${room.id}`"
-                        class="block bg-white border-2 border-green-200 rounded p-3 hover:border-green-400 transition-colors cursor-pointer"
-                      >
-                        <p class="font-medium text-sm text-gray-900 dark:text-gray-100">{{ room.name }}</p>
-                        <p class="text-xs text-gray-600 mt-1">{{ room.description }}</p>
-                      </router-link>
-                    </div>
-                  </div>
-
-                  <!-- Outdoor Areas -->
-                  <div v-if="lot.outdoorAreas.length > 0">
-                    <h3 class="text-sm font-semibold text-gray-700 mb-2 flex items-center">
-                      <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      Outdoor Areas ({{ lot.outdoorAreas.length }})
-                    </h3>
-                    <div class="space-y-2">
-                      <router-link
-                        v-for="area in lot.outdoorAreas"
-                        :key="area.id"
-                        :to="`/world/${worldId}/region/${regionId}/lot/${lot.id}/space/${area.id}`"
-                        class="block bg-white border-2 border-green-200 rounded p-3 hover:border-green-400 transition-colors cursor-pointer"
-                      >
-                        <p class="font-medium text-sm text-gray-900 dark:text-gray-100">{{ area.name }}</p>
-                        <p class="text-xs text-gray-600 mt-1">{{ area.description }}</p>
-                      </router-link>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- No Spaces Message -->
-                <div v-if="lot.indoorRooms.length === 0 && lot.outdoorAreas.length === 0" class="text-center py-6">
-                  <p class="text-sm text-gray-500">No spaces yet</p>
-                  <router-link
-                    :to="`/world/${worldId}/region/${regionId}/lot/${lot.id}`"
-                    class="text-xs text-green-600 hover:text-green-800 mt-2 inline-block"
-                  >
-                    Add spaces →
-                  </router-link>
-                </div>
-              </div>
-            </div>
-            <div v-if="communityLots.length === 0" class="text-center py-8 text-gray-500">
-              No community lots yet
-            </div>
-          </div>
-        </div>
+        <LotColumn
+          title="Community"
+          :lots="communityLots"
+          :world-id="worldId"
+          :region-id="regionId"
+          :expanded-lots="expandedLots"
+          variant="green"
+          empty-message="No community lots yet"
+          @toggle-expanded="toggleLotRooms"
+        />
 
         <!-- Transportation Column -->
         <div class="flex-1 flex flex-col">
           <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 sticky top-0 z-10 pb-2">Transportation</h2>
-          <div class="text-center py-8 text-gray-500">
+          <div class="text-center py-8 text-gray-500 dark:text-gray-300">
             Coming soon
           </div>
         </div>
@@ -270,34 +86,28 @@
             <!-- Characters Section -->
             <div v-if="characters.length > 0">
               <h3 class="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase mb-2">Characters</h3>
-              <button
+              <CharacterListItem
                 v-for="character in characters"
                 :key="'char-' + character.id"
-                @click="setActiveCharacter(character, 'character')"
-                class="w-full text-left p-3 rounded hover:bg-blue-50 transition-colors border border-gray-200 mb-2"
-                :class="{ 'bg-blue-100 border-blue-400': activeCharacter?.id === character.id && activeCharacterType === 'character' }"
-              >
-                <p class="font-medium text-gray-900 dark:text-gray-100">👤 {{ character.name }}</p>
-                <p class="text-xs text-gray-600 dark:text-gray-400">Age: {{ character.age }}</p>
-              </button>
+                :entity="character"
+                type="character"
+                :is-active="activeCharacter?.id === character.id && activeCharacterType === 'character'"
+                @select="setActiveCharacter(character, 'character')"
+              />
             </div>
 
             <!-- Animals Section -->
             <div v-if="animals.length > 0" :class="{ 'mt-4': characters.length > 0 }">
-              <h3 class="text-xs font-semibold text-gray-600 dark:text-gray-600 uppercase mb-2">Animals</h3>
-              <button
+              <h3 class="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase mb-2">Animals</h3>
+              <CharacterListItem
                 v-for="animal in animals"
                 :key="'animal-' + animal.id"
-                @click="setActiveCharacter(animal, 'animal')"
-                class="w-full text-left p-3 rounded hover:bg-amber-50 transition-colors border border-gray-200 mb-2"
-                :class="{ 'bg-amber-100 border-amber-400': activeCharacter?.id === animal.id && activeCharacterType === 'animal' }"
-              >
-                <p class="font-medium text-gray-900 dark:text-gray-100">🐾 {{ animal.name }}</p>
-                <p class="text-xs text-gray-600 dark:text-gray-400">Age: {{ animal.age }}</p>
-                <p v-if="animal.traits && animal.traits.length > 0" class="text-xs text-gray-500">
-                  {{ animal.traits.join(', ') }}
-                </p>
-              </button>
+                :entity="animal"
+                type="animal"
+                :is-active="activeCharacter?.id === animal.id && activeCharacterType === 'animal'"
+                :show-traits="true"
+                @select="setActiveCharacter(animal, 'animal')"
+              />
             </div>
           </div>
         </div>
@@ -308,7 +118,7 @@
             <h3 class="text-md font-bold text-gray-900 dark:text-gray-100">
               {{ activeCharacterType === 'animal' ? 'Active Animal' : 'Active Character' }}
             </h3>
-            <button @click="clearActiveCharacter" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300">
+            <button @click="clearActiveCharacter" class="text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:text-gray-300">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -325,7 +135,7 @@
             <div v-if="activeCharacter.bio" class="mt-3 text-sm text-gray-700 bg-white p-3 rounded">
               {{ activeCharacter.bio.substring(0, 150) }}{{ activeCharacter.bio.length > 150 ? '...' : '' }}
             </div>
-            <div v-else class="mt-3 text-sm text-gray-500 dark:text-gray-400 italic">
+            <div v-else class="mt-3 text-sm text-gray-500 dark:text-gray-300 italic">
               No biography available.
             </div>
           </div>
@@ -390,6 +200,8 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { gql } from 'graphql-request'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
+import LotColumn from '../components/LotColumn.vue'
+import CharacterListItem from '../components/CharacterListItem.vue'
 import { client, queries } from '../graphql'
 
 const route = useRoute()

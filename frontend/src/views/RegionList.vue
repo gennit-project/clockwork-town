@@ -26,7 +26,7 @@
       <!-- Region List View -->
       <div v-if="!isRegionDetailView">
         <div v-if="regions.length === 0" class="text-center py-12 bg-white rounded-lg shadow">
-          <p class="text-gray-500 dark:text-gray-400 mb-4">No regions yet. Create your first region!</p>
+          <p class="text-gray-500 dark:text-gray-300 mb-4">No regions yet. Create your first region!</p>
         </div>
 
         <div v-else class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

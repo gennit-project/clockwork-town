@@ -21,7 +21,7 @@
     </div>
 
     <div v-else-if="allSpaces.length === 0" class="text-center py-12 bg-white rounded-lg shadow">
-      <p class="text-gray-500 dark:text-gray-400 mb-4">No spaces yet. Create your first space!</p>
+      <p class="text-gray-500 dark:text-gray-300 mb-4">No spaces yet. Create your first space!</p>
     </div>
 
     <div v-else>
@@ -71,7 +71,7 @@
                 </button>
               </div>
             </div>
-            <p class="text-sm text-gray-600 dark:text-gray-400">{{ space.description }}</p>
+            <p class="text-sm text-gray-600 dark:text-gray-300">{{ space.description }}</p>
           </div>
         </div>
       </div>
@@ -108,7 +108,7 @@
                 </button>
               </div>
             </div>
-            <p class="text-sm text-gray-600 dark:text-gray-400">{{ space.description }}</p>
+            <p class="text-sm text-gray-600 dark:text-gray-300">{{ space.description }}</p>
           </div>
         </div>
       </div>

@@ -28,7 +28,7 @@
       <div class="mb-8">
         <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Characters</h2>
 
-        <div v-if="household.characters.length === 0" class="text-gray-500 dark:text-gray-400 text-center py-8 bg-white dark:bg-gray-800 rounded-lg shadow">
+        <div v-if="household.characters.length === 0" class="text-gray-500 dark:text-gray-300 text-center py-8 bg-white dark:bg-gray-800 rounded-lg shadow">
           No characters in this household.
         </div>
 
@@ -51,7 +51,7 @@
                 <MarkdownRenderer :text="character.bio" fontSize="small" />
               </div>
             </div>
-            <div v-else class="text-gray-500 dark:text-gray-400 italic text-sm">
+            <div v-else class="text-gray-500 dark:text-gray-300 italic text-sm">
               No biography available.
             </div>
           </div>
@@ -70,15 +70,15 @@
             <div class="flex justify-between items-start mb-4">
               <div>
                 <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100">{{ animal.name }}</h3>
-                <p class="text-sm text-gray-600 dark:text-gray-400">Age: {{ animal.age }}</p>
-                <p class="text-sm text-gray-600 dark:text-gray-400" v-if="animal.traits && animal.traits.length > 0">
+                <p class="text-sm text-gray-600 dark:text-gray-300">Age: {{ animal.age }}</p>
+                <p class="text-sm text-gray-600 dark:text-gray-300" v-if="animal.traits && animal.traits.length > 0">
                   Traits: {{ animal.traits.join(', ') }}
                 </p>
               </div>
             </div>
 
             <div v-if="animal.bio" class="mt-4">
-              <div class="bg-white dark:bg-gray-700 p-4 rounded-md">
+              <div class="bg-white dark:bg-gray-900 p-4 rounded-md">
                 <MarkdownRenderer :text="animal.bio" fontSize="small" />
               </div>
             </div>

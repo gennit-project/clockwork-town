@@ -29,7 +29,7 @@
     </div>
 
     <div v-else-if="lots.length === 0" class="text-center py-12 bg-white rounded-lg shadow">
-      <p class="text-gray-500 dark:text-gray-400 mb-4">No lots yet. Create your first lot!</p>
+      <p class="text-gray-500 dark:text-gray-300 mb-4">No lots yet. Create your first lot!</p>
     </div>
 
     <div v-else class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -44,7 +44,7 @@
             <p class="text-sm text-gray-500">{{ lot.lotType }}</p>
             <div v-if="getHouseholdForLot(lot.id)" class="mt-2">
               <p class="text-xs font-medium text-gray-700 dark:text-gray-300">Household:</p>
-              <p class="text-xs text-gray-600 dark:text-gray-400">{{ getHouseholdForLot(lot.id).name }}</p>
+              <p class="text-xs text-gray-600 dark:text-gray-300">{{ getHouseholdForLot(lot.id).name }}</p>
               <p class="text-xs text-gray-500">{{ getHouseholdForLot(lot.id).characters.length }} member(s)</p>
             </div>
           </div>
