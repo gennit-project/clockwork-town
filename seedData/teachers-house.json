@@ -1,0 +1,106 @@
+{
+  "tags": ["education"],
+  "input": {
+  "lotName": "The Arroyo House",
+  "lotType": "RESIDENTIAL",
+  "lotDescription": "A single-story stucco home near the dry arroyo at the edge of town. The teacher lives here with their spouse and young daughter. The place feels full of life — books, drawings, the smell of dinner cooking — and a steady breeze through open windows.",
+  "indoorRooms": [
+    {
+      "spaceName": "Living Room",
+      "spaceDescription": "A cozy, sunlit space that serves as the heart of the home. Shelves overflow with books, toys, and half-finished crafts. A ceiling fan hums overhead.",
+      "items": [
+        { "itemName": "Sofa", "itemDescription": "Worn but comfortable, draped with a handmade quilt.", "itemCount": 1 },
+        { "itemName": "Coffee Table", "itemDescription": "Scattered with magazines, colored pencils, and a homework sheet.", "itemCount": 1 },
+        { "itemName": "Bookshelf", "itemDescription": "Packed with novels, children’s books, and teaching materials.", "itemCount": 2 },
+        { "itemName": "Ceiling Fan", "itemDescription": "Keeps the desert heat at bay, occasionally wobbles.", "itemCount": 1 },
+        { "itemName": "Toy Bin", "itemDescription": "Overflowing with wooden blocks, dolls, and crayons.", "itemCount": 1 },
+        { "itemName": "Framed Photos", "itemDescription": "Family snapshots on the wall — school events, picnics, holidays.", "itemCount": 5 }
+      ]
+    },
+    {
+      "spaceName": "Kitchen",
+      "spaceDescription": "Small but cheerful, painted in pale yellow. It smells like coffee in the morning and roasted vegetables at night. The teacher’s spouse keeps it spotless.",
+      "items": [
+        { "itemName": "Dining Table", "itemDescription": "Round wooden table with three mismatched chairs.", "itemCount": 1 },
+        { "itemName": "Refrigerator", "itemDescription": "Magnets hold school notices, drawings, and grocery lists.", "itemCount": 1 },
+        { "itemName": "Stove", "itemDescription": "Gas burners with a slight tilt to the left, oven used daily.", "itemCount": 1 },
+        { "itemName": "Cupboard", "itemDescription": "Stocked with staples — rice, beans, spices, and canned goods.", "itemCount": 2 },
+        { "itemName": "Dish Rack", "itemDescription": "Always has a mug drying on it.", "itemCount": 1 },
+        { "itemName": "Window Herb Garden", "itemDescription": "Small pots of basil, mint, and rosemary on the sill.", "itemCount": 3 }
+      ]
+    },
+    {
+      "spaceName": "Teacher’s Study",
+      "spaceDescription": "A converted spare bedroom filled with papers, lesson plans, and stacks of books. The teacher works here late at night grading assignments.",
+      "items": [
+        { "itemName": "Desk", "itemDescription": "Covered in notebooks, red pens, and a half-empty coffee mug.", "itemCount": 1 },
+        { "itemName": "Chair", "itemDescription": "Old swivel chair with cracked vinyl.", "itemCount": 1 },
+        { "itemName": "Filing Cabinet", "itemDescription": "Contains school forms and old student essays.", "itemCount": 1 },
+        { "itemName": "Bookshelves", "itemDescription": "Stacked with literature, science guides, and binders.", "itemCount": 2 },
+        { "itemName": "Desk Lamp", "itemDescription": "Warm yellow glow that spills over late-night work.", "itemCount": 1 },
+        { "itemName": "Wall Calendar", "itemDescription": "Filled with lesson notes, birthdays, and PTA meetings.", "itemCount": 1 }
+      ]
+    },
+    {
+      "spaceName": "Child’s Bedroom",
+      "spaceDescription": "Bright and cluttered. The walls are covered in colorful drawings and glow-in-the-dark stars. Stuffed animals crowd the bed.",
+      "items": [
+        { "itemName": "Bed", "itemDescription": "Covered with cartoon-print sheets and a pile of stuffed animals.", "itemCount": 1 },
+        { "itemName": "Toy Chest", "itemDescription": "Painted blue with stickers of planets and animals.", "itemCount": 1 },
+        { "itemName": "Bookshelf", "itemDescription": "Filled with bedtime stories and picture books.", "itemCount": 1 },
+        { "itemName": "Crayon Set", "itemDescription": "Scattered across the small desk near the window.", "itemCount": 1 },
+        { "itemName": "Drawing Taped to Wall", "itemDescription": "Depicts the schoolhouse with the family standing in front.", "itemCount": 3 }
+      ]
+    },
+    {
+      "spaceName": "Bedroom",
+      "spaceDescription": "Peaceful space with light curtains, a shared dresser, and a quilted bedspread sewn by the teacher’s mother. The window looks out toward the arroyo.",
+      "items": [
+        { "itemName": "Bed", "itemDescription": "Queen-sized bed with hand-sewn quilt.", "itemCount": 1 },
+        { "itemName": "Nightstand", "itemDescription": "Holds a book, lamp, and a framed wedding photo.", "itemCount": 2 },
+        { "itemName": "Dresser", "itemDescription": "Top drawer sticks; mirror slightly fogged around the edges.", "itemCount": 1 },
+        { "itemName": "Closet", "itemDescription": "Shared space for clothes and boxes of family memorabilia.", "itemCount": 1 },
+        { "itemName": "Lamp", "itemDescription": "Soft yellow light, casting warm glow in the evenings.", "itemCount": 1 }
+      ]
+    },
+    {
+      "spaceName": "Bathroom",
+      "spaceDescription": "Small, tiled room with a skylight. Smells faintly of soap and desert air. The child’s toothbrush has stickers of stars on the handle.",
+      "items": [
+        { "itemName": "Sink", "itemDescription": "White porcelain, with two mismatched cups beside it.", "itemCount": 1 },
+        { "itemName": "Toilet", "itemDescription": "Old but well-kept.", "itemCount": 1 },
+        { "itemName": "Shower", "itemDescription": "Tiled, with a curtain patterned with desert wildflowers.", "itemCount": 1 },
+        { "itemName": "Mirror Cabinet", "itemDescription": "Contains toothpaste, aspirin, and sunscreen.", "itemCount": 1 },
+        { "itemName": "Towel Rack", "itemDescription": "Three towels in different colors hanging neatly.", "itemCount": 1 }
+      ]
+    }
+  ],
+  "outdoorSpaces": [
+    {
+      "spaceName": "Front Yard",
+      "spaceDescription": "A gravel lot with desert plants, a low wooden fence, and a small covered porch with wind chimes. The daughter’s tricycle is often left near the steps.",
+      "items": [
+        { "itemName": "Porch Swing", "itemDescription": "Swaying gently in the breeze, shaded by the awning.", "itemCount": 1 },
+        { "itemName": "Wind Chime", "itemDescription": "Made from colored glass pieces that tinkle softly.", "itemCount": 1 },
+        { "itemName": "Tricycle", "itemDescription": "Red and shiny, slightly dusty from outdoor play.", "itemCount": 1 },
+        { "itemName": "Cactus Garden", "itemDescription": "Small bed of prickly pear and desert marigold.", "itemCount": 1 },
+        { "itemName": "Mailbox", "itemDescription": "Hand-painted with the family’s last name.", "itemCount": 1 }
+      ]
+    },
+    {
+      "spaceName": "Backyard",
+      "spaceDescription": "Fenced yard that backs up to the arroyo. The ground is sandy, with a few potted plants and a laundry line stretched between two poles.",
+      "items": [
+        { "itemName": "Laundry Line", "itemDescription": "Held up by two wooden poles, hung with clothes and sheets.", "itemCount": 1 },
+        { "itemName": "Potted Plants", "itemDescription": "Mixture of succulents and flowers in chipped ceramic pots.", "itemCount": 5 },
+        { "itemName": "Picnic Table", "itemDescription": "Used for weekend breakfasts and crafts.", "itemCount": 1 },
+        { "itemName": "Sandbox", "itemDescription": "Homemade wooden box filled with sand and toy shovels.", "itemCount": 1 },
+        { "itemName": "Fence", "itemDescription": "Low wooden fence with a gate leading to the arroyo trail.", "itemCount": 1 }
+      ]
+    }
+  ]
+}
+
+
+
+}

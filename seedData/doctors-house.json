@@ -1,0 +1,87 @@
+{
+  "lotName": "Dr. Lin’s House",
+  "lotDescription": "A neat adobe bungalow tucked a few streets behind Desert Willow Clinic. The doctor lives alone but keeps the place orderly and welcoming — the kind of home that smells faintly of mint tea and books. The desert light filters through pale curtains, softening every edge.",
+  "indoorRooms": [
+    {
+      "spaceName": "Living Room",
+      "spaceDescription": "A calm, uncluttered space with desert-colored walls and a few personal touches — a stack of medical journals beside a guitar, a couch that looks more sat-on than slept in.",
+      "items": [
+        { "itemName": "Sofa", "itemDescription": "Simple gray fabric, comfortable but showing wear.", "itemCount": 1 },
+        { "itemName": "Coffee Table", "itemDescription": "Stacked with medical journals, a ceramic mug, and a small potted plant.", "itemCount": 1 },
+        { "itemName": "Bookshelf", "itemDescription": "Holds a mix of novels, anatomy texts, and desert field guides.", "itemCount": 2 },
+        { "itemName": "Guitar", "itemDescription": "Used occasionally on quiet evenings; slightly out of tune.", "itemCount": 1 },
+        { "itemName": "Lamp", "itemDescription": "Tall floor lamp with warm light.", "itemCount": 1 },
+        { "itemName": "Framed Photograph", "itemDescription": "A snapshot of the medical school graduating class.", "itemCount": 1 }
+      ]
+    },
+    {
+      "spaceName": "Kitchen",
+      "spaceDescription": "Compact and efficient, with everything neatly labeled. The counter holds a kettle and an empty fruit bowl. The fridge hums softly.",
+      "items": [
+        { "itemName": "Refrigerator", "itemDescription": "Contains leftovers, bottled water, and small containers labeled by day.", "itemCount": 1 },
+        { "itemName": "Stove", "itemDescription": "Gas burners spotless, rarely used except for heating soup.", "itemCount": 1 },
+        { "itemName": "Kettle", "itemDescription": "Used daily to make mint tea.", "itemCount": 1 },
+        { "itemName": "Cupboard", "itemDescription": "Lined with mugs, rice, and canned soup.", "itemCount": 2 },
+        { "itemName": "Table and Chair", "itemDescription": "Small dining nook near the window, usually covered in notes or unopened mail.", "itemCount": 1 },
+        { "itemName": "Wall Clock", "itemDescription": "Quiet ticking fills the kitchen during late nights.", "itemCount": 1 }
+      ]
+    },
+    {
+      "spaceName": "Bedroom",
+      "spaceDescription": "Clean and minimalist — a small sanctuary after long days at the clinic. The bed is always neatly made, the air faintly scented with eucalyptus.",
+      "items": [
+        { "itemName": "Bed", "itemDescription": "Simple bed with gray sheets and a folded blanket at the foot.", "itemCount": 1 },
+        { "itemName": "Nightstand", "itemDescription": "Holds a lamp, a half-read novel, and a box of earplugs.", "itemCount": 1 },
+        { "itemName": "Wardrobe", "itemDescription": "Contains a handful of pressed shirts and one white lab coat.", "itemCount": 1 },
+        { "itemName": "Mirror", "itemDescription": "Tall, thin mirror beside the door.", "itemCount": 1 },
+        { "itemName": "Alarm Clock", "itemDescription": "Set to go off fifteen minutes earlier than necessary.", "itemCount": 1 }
+      ]
+    },
+    {
+      "spaceName": "Bathroom",
+      "spaceDescription": "Brightly tiled, surprisingly cheerful. Everything is in its place — toothbrush, razor, and a half-empty bottle of eucalyptus shampoo.",
+      "items": [
+        { "itemName": "Sink", "itemDescription": "Porcelain basin, spotless.", "itemCount": 1 },
+        { "itemName": "Shower", "itemDescription": "Tiled, with a small shelf of travel-sized products.", "itemCount": 1 },
+        { "itemName": "Mirror Cabinet", "itemDescription": "Contains aspirin, floss, and a small bottle of cologne.", "itemCount": 1 },
+        { "itemName": "Laundry Basket", "itemDescription": "Half-full, clothes neatly folded inside.", "itemCount": 1 },
+        { "itemName": "Towel Rack", "itemDescription": "Two towels, one white and one blue.", "itemCount": 1 }
+      ]
+    },
+    {
+      "spaceName": "Office",
+      "spaceDescription": "A quiet workspace lined with papers and reference books. The desk faces a window that overlooks the desert. Sometimes, Dr. Lin falls asleep here while charting notes.",
+      "items": [
+        { "itemName": "Desk", "itemDescription": "Covered with paperwork, a laptop, and a mug ring stain.", "itemCount": 1 },
+        { "itemName": "Office Chair", "itemDescription": "Ergonomic but creaky.", "itemCount": 1 },
+        { "itemName": "Medical Textbooks", "itemDescription": "Open to highlighted pages on cardiology and anatomy.", "itemCount": 4 },
+        { "itemName": "Filing Cabinet", "itemDescription": "Labeled folders for clinic finances and continuing education.", "itemCount": 1 },
+        { "itemName": "Potted Plant", "itemDescription": "A single jade plant on the windowsill, thriving in the dry light.", "itemCount": 1 }
+      ]
+    }
+  ],
+  "outdoorSpaces": [
+    {
+      "spaceName": "Front Yard",
+      "spaceDescription": "A small gravel lot with a desert willow tree and a narrow path leading to the porch. The mailbox leans slightly, and the porch light hums faintly at dusk.",
+      "items": [
+        { "itemName": "Desert Willow Tree", "itemDescription": "Provides shade and drops thin seed pods on the ground.", "itemCount": 1 },
+        { "itemName": "Pathway", "itemDescription": "Stone path leading to the front door, swept clean.", "itemCount": 1 },
+        { "itemName": "Porch Light", "itemDescription": "Buzzes when switched on, attracts small moths.", "itemCount": 1 },
+        { "itemName": "Mailbox", "itemDescription": "Small metal box, slightly dented.", "itemCount": 1 },
+        { "itemName": "Welcome Mat", "itemDescription": "Plain and well-used.", "itemCount": 1 }
+      ]
+    },
+    {
+      "spaceName": "Back Patio",
+      "spaceDescription": "A modest concrete patio with two folding chairs and a string of old lights. Dr. Lin sometimes sits out here late, listening to the wind.",
+      "items": [
+        { "itemName": "Folding Chairs", "itemDescription": "Metal frame with faded canvas seats.", "itemCount": 2 },
+        { "itemName": "String Lights", "itemDescription": "Half the bulbs burned out, but still pretty when lit.", "itemCount": 1 },
+        { "itemName": "Potted Succulents", "itemDescription": "Assorted small plants arranged neatly on the ledge.", "itemCount": 4 },
+        { "itemName": "Side Table", "itemDescription": "Holds a glass, book, and sometimes a teacup.", "itemCount": 1 },
+        { "itemName": "Back Gate", "itemDescription": "Wooden, leading out to an alley that runs behind the houses.", "itemCount": 1 }
+      ]
+    }
+  ]
+}
