@@ -468,5 +468,11 @@ export const mutations = {
     mutation DeleteHouseholdTemplate($id: ID!) {
       deleteHouseholdTemplate(id: $id)
     }
+  `,
+
+  moveCharacter: `
+    mutation MoveCharacter($input: MoveInput!) {
+      moveCharacter(input: $input)
+    }
   `
 }

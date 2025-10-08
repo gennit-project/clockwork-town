@@ -396,11 +396,15 @@ const communityLots = computed(() =>
 const charactersByLot = computed(() => {
   const byLot = {}
   characters.value.forEach(char => {
-    if (char.location?.id) {
-      if (!byLot[char.location.id]) {
-        byLot[char.location.id] = []
+    // Use simulation store for current location (reactive to movement)
+    const charState = simulationStore.characterStates[char.id]
+    const lotId = charState?.location?.lotId || char.location?.id
+
+    if (lotId) {
+      if (!byLot[lotId]) {
+        byLot[lotId] = []
       }
-      byLot[char.location.id].push(char)
+      byLot[lotId].push(char)
     }
   })
   return byLot

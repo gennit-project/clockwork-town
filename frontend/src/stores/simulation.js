@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { client, mutations } from '../graphql'
 
 // ============================================
 // ACTION EFFECTS DATA (from TICKS.md)
@@ -197,7 +198,7 @@ export const useSimulationStore = defineStore('simulation', () => {
   /**
    * Execute a single tick of the simulation
    */
-  function executeTick() {
+  async function executeTick() {
     currentTick.value++
 
     console.log(`\n========== TICK ${currentTick.value} ==========`)
@@ -241,9 +242,11 @@ export const useSimulationStore = defineStore('simulation', () => {
 
     // Phase 3: Execution
     console.log('\n--- Phase 3: Execution ---')
+    const executionPromises = []
     for (const characterId in intents) {
-      executeAction(characterId, intents[characterId])
+      executionPromises.push(executeAction(characterId, intents[characterId]))
     }
+    await Promise.all(executionPromises)
 
     // Log full state to console for debugging
     console.log('Character States:', JSON.parse(JSON.stringify(characterStates.value)))
@@ -330,12 +333,12 @@ export const useSimulationStore = defineStore('simulation', () => {
 
   /**
    * Execute an action for a character based on their intent
-   * Step 12: Applies effects, sets cooldown, updates state, creates memory
+   * Step 12-13: Applies effects, handles movement, sets cooldown, updates state, creates memory
    *
    * @param {string} characterId - The character performing the action
    * @param {object} intent - The intent object from selectBestIntent()
    */
-  function executeAction(characterId, intent) {
+  async function executeAction(characterId, intent) {
     const state = characterStates.value[characterId]
     if (!state) {
       console.error(`❌ Character not found: ${characterId}`)
@@ -350,6 +353,41 @@ export const useSimulationStore = defineStore('simulation', () => {
       logActivity(characterId, 'idle', 'No satisfying actions available')
       console.log(`  ${characterId}: idle (no actions available)`)
       return
+    }
+
+    // Step 13: Handle movement if needed (travelCost > 0)
+    if (intent.travelCost > 0) {
+      const currentLotId = state.location?.lotId
+      const targetLotId = intent.targetLotId
+
+      if (currentLotId !== targetLotId) {
+        console.log(`  🚶 Moving ${characterId} from ${state.location?.lotName || 'unknown'} to ${intent.targetLotName}`)
+
+        try {
+          // Call GraphQL mutation to update database
+          await client.request(mutations.moveCharacter, {
+            input: {
+              characterId,
+              lotId: targetLotId
+            }
+          })
+
+          // Update Pinia state
+          updateCharacterLocation(
+            characterId,
+            state.location?.regionId, // Keep same region
+            targetLotId,
+            intent.targetLotName,
+            intent.targetSpaceId,
+            intent.targetSpaceName
+          )
+
+          console.log(`  ✓ Moved to ${intent.targetLotName} (${intent.targetSpaceName})`)
+        } catch (error) {
+          console.error(`  ❌ Failed to move character: ${error.message}`)
+          // Continue with action even if movement fails
+        }
+      }
     }
 
     // Apply action effects (updates needs, sets cooldown, updates currentAction, logs activity)

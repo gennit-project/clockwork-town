@@ -59,7 +59,7 @@
               class="cursor-pointer"
               @click="viewSpace(space)"
             >
-              <SpaceCard :space="space" />
+              <SpaceCard :space="space" :characters="charactersBySpace[space.id] || []" />
             </div>
             <div class="absolute top-5 right-5 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity" @click.stop>
               <button
@@ -97,7 +97,7 @@
               class="cursor-pointer"
               @click="viewSpace(space)"
             >
-              <SpaceCard :space="space" />
+              <SpaceCard :space="space" :characters="charactersBySpace[space.id] || []" />
             </div>
             <div class="absolute top-5 right-5 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity" @click.stop>
               <button
@@ -263,11 +263,14 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
 import SpaceCard from '../components/SpaceCard.vue'
 import { client, queries, mutations } from '../graphql'
+import { useSimulationStore } from '../stores/simulation'
+
+const simulationStore = useSimulationStore()
 
 const route = useRoute()
 const router = useRouter()
@@ -281,6 +284,7 @@ const world = ref(null)
 const region = ref(null)
 const lot = ref(null)
 const household = ref(null)
+const characters = ref([])
 const loading = ref(true)
 const error = ref(null)
 const showCreateModal = ref(false)
@@ -293,6 +297,20 @@ const templateData = ref({ description: '', tagsInput: '' })
 
 const allSpaces = computed(() => [...indoorSpaces.value, ...outdoorSpaces.value])
 
+const charactersBySpace = computed(() => {
+  const bySpace = {}
+  characters.value.forEach(char => {
+    const charState = simulationStore.characterStates[char.id]
+    if (charState?.location?.spaceId) {
+      if (!bySpace[charState.location.spaceId]) {
+        bySpace[charState.location.spaceId] = []
+      }
+      bySpace[charState.location.spaceId].push(char)
+    }
+  })
+  return bySpace
+})
+
 const breadcrumbs = computed(() => [
   { label: 'Worlds', to: '/' },
   { label: world.value?.name || 'Loading...', to: `/world/${worldId.value}` },
@@ -304,12 +322,13 @@ const loadData = async () => {
   try {
     loading.value = true
     error.value = null
-    const [worldData, regionsData, lotsData, spacesData, householdsData] = await Promise.all([
+    const [worldData, regionsData, lotsData, spacesData, householdsData, regionData] = await Promise.all([
       client.request(queries.getWorld, { id: worldId.value }),
       client.request(queries.getRegions, { worldId: worldId.value }),
       client.request(queries.getLots, { regionId: regionId.value }),
       client.request(queries.getSpacesWithItems, { lotId: lotId.value }),
-      client.request(queries.getHouseholds, { regionId: regionId.value })
+      client.request(queries.getHouseholds, { regionId: regionId.value }),
+      client.request(queries.getRegion, { id: regionId.value })
     ])
     world.value = worldData.world
     region.value = regionsData.regions.find(r => r.id === regionId.value)
@@ -317,6 +336,7 @@ const loadData = async () => {
     indoorSpaces.value = spacesData.lot?.indoorRooms || []
     outdoorSpaces.value = spacesData.lot?.outdoorAreas || []
     household.value = householdsData.households.find(h => h.lotId === lotId.value) || null
+    characters.value = regionData.region?.characters || []
   } catch (e) {
     error.value = e.message
   } finally {
@@ -443,6 +463,36 @@ const saveAsTemplate = async () => {
     saving.value = false
   }
 }
+
+// Initialize characters in simulation store when they load
+watch(characters, (newCharacters) => {
+  for (const character of newCharacters) {
+    simulationStore.initializeCharacter(character)
+
+    // Update character location if available
+    if (character.location) {
+      // Find the first space in this lot from the loaded world data
+      const lotData = simulationStore.worldData.lots[character.location.id]
+
+      if (lotData && lotData.spaceIds.length > 0) {
+        // Get the first space
+        const firstSpaceId = lotData.spaceIds[0]
+        const firstSpace = simulationStore.worldData.spaces[firstSpaceId]
+
+        if (firstSpace) {
+          simulationStore.updateCharacterLocation(
+            character.id,
+            regionId.value,
+            character.location.id,
+            character.location.name,
+            firstSpace.id,
+            firstSpace.name
+          )
+        }
+      }
+    }
+  }
+}, { immediate: true })
 
 onMounted(loadData)
 </script>
