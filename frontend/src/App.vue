@@ -28,7 +28,7 @@
     <!-- Main Content Area -->
     <div class="flex-1 flex flex-col">
       <nav class="bg-white shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mx-auto px-4 sm:px-6 lg:px-8">
           <div class="flex justify-between h-16">
             <div class="flex items-center">
               <span class="text-xl font-bold text-gray-900">
@@ -39,7 +39,7 @@
         </div>
       </nav>
 
-      <main class="flex-1 max-w-7xl w-full mx-auto py-6 sm:px-6 lg:px-8">
+      <main class="flex-1 w-full mx-auto py-6 sm:px-6 lg:px-8">
         <router-view />
       </main>
     </div>
