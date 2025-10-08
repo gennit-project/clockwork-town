@@ -223,14 +223,25 @@ export const useSimulationStore = defineStore('simulation', () => {
       }
     }
 
-    // Phase 2-3: Decision & Execution (stub for now)
-    // TODO: Implement utility-based decision making and action execution
+    // Phase 2: Decision Making
+    console.log('\n--- Phase 2: Decision Making ---')
     for (const characterId in characterStates.value) {
-      const state = characterStates.value[characterId]
+      // Select the best intent for this character
+      const intent = selectBestIntent(characterId)
 
-      // For now, just log that character is idle
-      logActivity(characterId, 'idle', 'Waiting for tick engine implementation')
+      // Log the intent (execution will be implemented in Step 12)
+      if (intent.action === 'idle') {
+        logActivity(characterId, 'idle', 'No satisfying actions available')
+        console.log(`  ${characterId}: intends to idle (no satisfying actions)`)
+      } else {
+        const intentDetails = `intends to ${intent.action} at ${intent.itemName} (${intent.targetSpaceName}, ${intent.targetLotName}) - utility: ${intent.utility.toFixed(2)}`
+        logActivity(characterId, intent.action, intentDetails)
+        console.log(`  ${characterId}: ${intentDetails}`)
+      }
     }
+
+    // Phase 3: Execution (will be implemented in Step 12)
+    console.log('\n--- Phase 3: Execution (not yet implemented) ---')
 
     // Log full state to console for debugging
     console.log('Character States:', JSON.parse(JSON.stringify(characterStates.value)))
