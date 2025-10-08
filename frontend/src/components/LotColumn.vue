@@ -3,7 +3,7 @@
     <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 sticky top-0 z-10 pb-2 bg-white dark:bg-gray-800 border-b border-gray-300 dark:border-gray-700">
       {{ title }}
     </h2>
-    <div class="space-y-4">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <LotCard
         v-for="lot in lots"
         :key="lot.id"
@@ -16,7 +16,7 @@
         :variant="variant"
         @toggle-expanded="$emit('toggle-expanded', $event)"
       />
-      <div v-if="lots.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-300">
+      <div v-if="lots.length === 0" class="col-span-2 text-center py-8 text-gray-500 dark:text-gray-300">
         {{ emptyMessage }}
       </div>
     </div>
