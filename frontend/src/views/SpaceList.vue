@@ -26,13 +26,13 @@
 
     <div v-else>
       <!-- Household Info Banner -->
-      <div v-if="household" class="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h2 class="text-lg font-semibold text-blue-900 mb-2">{{ household.name }}</h2>
+      <div v-if="household" class="mb-6 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+        <h2 class="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-2">{{ household.name }}</h2>
         <div v-if="household.characters.length > 0" class="flex flex-wrap gap-2">
           <span
             v-for="char in household.characters"
             :key="char.id"
-            class="text-sm bg-blue-100 text-blue-800 px-3 py-1 rounded-full"
+            class="text-sm bg-blue-100 dark:bg-blue-900 text-blue-800  dark:text-blue-100 px-3 py-1 rounded-full"
           >
             {{ char.name }} ({{ char.age }})
           </span>

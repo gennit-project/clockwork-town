@@ -37,7 +37,7 @@
         </div>
 
         <!-- Add Item Form -->
-        <div v-if="showAddItemForm" class="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+        <div v-if="showAddItemForm" class="mb-6 p-4 bg-blue-50 dark:bg-blue-900 rounded-lg border border-blue-200">
           <form @submit.prevent="addItem" class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">

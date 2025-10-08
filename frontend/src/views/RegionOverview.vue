@@ -113,7 +113,7 @@
         </div>
 
         <!-- Active Character Panel -->
-        <div v-if="activeCharacter" class="rounded-lg shadow-lg p-4 border-2" :class="activeCharacterType === 'animal' ? 'bg-amber-50 border-amber-300' : 'bg-blue-50 border-blue-300'">
+        <div v-if="activeCharacter" class="rounded-lg shadow-lg p-4 border-2" :class="activeCharacterType === 'animal' ? 'bg-amber-50 border-amber-300' : 'bg-blue-50 dark:bg-blue-900 border-blue-300'">
           <div class="flex justify-between items-start mb-3">
             <h3 class="text-md font-bold text-gray-900 dark:text-gray-100">
               {{ activeCharacterType === 'animal' ? 'Active Animal' : 'Active Character' }}

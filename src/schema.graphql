@@ -67,6 +67,7 @@ type SpaceTemplate {
 type ItemTemplate {
   name: String!
   description: String!
+  count: Int!
 }
 
 type Space {
@@ -104,6 +105,7 @@ type Item {
   allowedActivities: [String!]!
   storedItems: [Item!]!      # items contained within this item (bags/chests/fridges/etc.)
   cost: Int!
+  count: Int!
 
   # Derived via USING edges (query-only, not stored as arrays):
   activeUsers: [Character!]!
@@ -406,6 +408,7 @@ input NewItem {
 input ItemInput {
   itemName: String!
   itemDescription: String!
+  itemCount: Int!
 }
 
 input SpaceWithItemsInput {
@@ -444,6 +447,7 @@ type Mutation {
   deleteSpace(id: ID!): Boolean!
 
   createItem(input: NewItem!): Item!
+  createManyItems(spaceId: ID!, items: [ItemInput!]!): [Item!]!
   deleteItem(id: ID!): Boolean!
 
   createHousehold(input: NewHousehold!, characters: [NewCharacterSimple!]!, animals: [NewAnimalSimple!]): Household!

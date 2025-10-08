@@ -4,7 +4,12 @@
     <div class="text-white p-4" :class="headerBgClass">
       <div class="flex justify-between items-start">
         <div>
-          <h2 class="text-xl font-bold">{{ lot.name }}</h2>
+          <router-link
+            :to="`/world/${worldId}/region/${regionId}/lot/${lot.id}`"
+            class="text-xl font-bold hover:underline cursor-pointer"
+          >
+            {{ lot.name }}
+          </router-link>
           <p class="text-sm" :class="subtitleClass">{{ lot.lotType }}</p>
         </div>
         <router-link
@@ -128,7 +133,7 @@ const toggleExpanded = () => {
 }
 
 const headerBgClass = computed(() => {
-  return props.variant === 'blue' ? 'bg-blue-600' : 'bg-green-600'
+  return props.variant === 'blue' ? 'bg-blue-600 dark:bg-blue-800' : 'bg-green-600 dark:bg-green-800'
 })
 
 const subtitleClass = computed(() => {

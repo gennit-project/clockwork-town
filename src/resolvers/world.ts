@@ -443,6 +443,7 @@ export const WorldResolvers = {
           canBeUsedByAnimals: false,
           canStoreItems: false,
           cost: 0,
+          count: 1,
           satisfiesNeeds: [],
           allowedActivities: []
         })`, { id, name, description });
@@ -459,6 +460,43 @@ export const WorldResolvers = {
         RETURN i.id AS id, i.name AS name, i.description AS description
       `, { id });
       return created;
+    },
+
+    createManyItems: async (_: any, { spaceId, items }: {
+      spaceId: string;
+      items: Array<{ itemName: string; itemDescription: string; itemCount: number }>;
+    }) => {
+      const createdItems: Array<{ id: string; name: string; description: string; count: number }> = [];
+
+      await batch(async () => {
+        for (const item of items) {
+          const itemId = crypto.randomUUID();
+
+          // Create item with basic properties
+          await q(`CREATE (:Item {
+            id: $id,
+            name: $name,
+            description: $description,
+            canBeUsedByHumans: true,
+            canBeUsedByAnimals: false,
+            canStoreItems: false,
+            cost: 0,
+            count: $count,
+            satisfiesNeeds: [],
+            allowedActivities: []
+          })`, { id: itemId, name: item.itemName, description: item.itemDescription, count: item.itemCount });
+
+          // Link to space
+          await q(`
+            MATCH (i:Item {id:$id}), (s:Space {id:$spaceId})
+            CREATE (i)-[:ON_SPACE]->(s)
+          `, { id: itemId, spaceId });
+
+          createdItems.push({ id: itemId, name: item.itemName, description: item.itemDescription, count: item.itemCount });
+        }
+      });
+
+      return createdItems;
     },
 
     deleteItem: async (_: any, { id }: { id: string }) => {

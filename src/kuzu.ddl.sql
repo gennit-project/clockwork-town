@@ -30,7 +30,7 @@ CREATE NODE TABLE IF NOT EXISTS Item(
   canBeUsedByHumans BOOL, canBeUsedByAnimals BOOL,
   minimumAgeToUse INT64, maxSimultaneousUsers INT64,
   satisfiesNeeds STRING[], allowedActivities STRING[],
-  canStoreItems BOOL, cost INT64,
+  canStoreItems BOOL, cost INT64, count INT64,
   PRIMARY KEY(id)
 );
 
