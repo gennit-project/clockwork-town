@@ -49,7 +49,7 @@
 
       <div v-if="indoorSpaces.length > 0" class="mb-8">
         <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Indoor Rooms ({{ indoorSpaces.length }})</h2>
-        <div class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           <div
             v-for="space in indoorSpaces"
             :key="space.id"
@@ -87,7 +87,7 @@
 
       <div v-if="outdoorSpaces.length > 0">
         <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Outdoor Areas ({{ outdoorSpaces.length }})</h2>
-        <div class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           <div
             v-for="space in outdoorSpaces"
             :key="space.id"

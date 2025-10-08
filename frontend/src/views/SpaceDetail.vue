@@ -86,7 +86,7 @@
           <p class="text-gray-400 text-sm mt-2">Click "Add Item" to place something here.</p>
         </div>
 
-        <div v-else-if="items.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div v-else-if="items.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           <div
             v-for="item in items"
             :key="item.id"
