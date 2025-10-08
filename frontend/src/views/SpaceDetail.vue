@@ -12,12 +12,19 @@
 
     <div v-else class="max-w-4xl mx-auto">
       <!-- Space Header -->
-      <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ space?.name || 'Loading...' }}</h1>
+      <div class="mb-6">
+        <div class="flex items-center gap-3 mb-2">
+          <h1 class="text-3xl font-bold text-gray-900">{{ space?.name || 'Loading...' }}</h1>
+          <span class="text-2xl">
+            {{ space?.isIndoor ? '🏠' : '🌳' }}
+          </span>
+        </div>
         <p class="text-gray-600">{{ space?.description }}</p>
-        <p class="text-sm text-gray-500 mt-2">
-          {{ space?.isIndoor ? '🏠 Indoor Room' : '🌳 Outdoor Area' }}
-        </p>
+      </div>
+
+      <!-- Space Card View -->
+      <div class="mb-6">
+        <SpaceCard :space="{ name: space?.name, description: space?.description, items }" :show-empty-state="true" />
       </div>
 
       <!-- Items Section -->
@@ -119,6 +126,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
+import SpaceCard from '../components/SpaceCard.vue'
 import { client, queries, mutations } from '../graphql'
 
 const route = useRoute()

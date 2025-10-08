@@ -54,28 +54,11 @@
       <div v-if="template.indoorRooms && template.indoorRooms.length > 0" class="mb-8">
         <h2 class="text-xl font-semibold text-gray-900 mb-4">Indoor Rooms ({{ template.indoorRooms.length }})</h2>
         <div class="space-y-4">
-          <div
+          <SpaceCard
             v-for="(room, index) in template.indoorRooms"
             :key="index"
-            class="bg-white shadow rounded-lg p-5"
-          >
-            <h3 class="text-lg font-medium text-gray-900">{{ room.name }}</h3>
-            <p class="mt-1 text-sm text-gray-600">{{ room.description }}</p>
-
-            <div v-if="room.items && room.items.length > 0" class="mt-4">
-              <h4 class="text-sm font-medium text-gray-700 mb-2">Items ({{ room.items.length }})</h4>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div
-                  v-for="(item, itemIndex) in room.items"
-                  :key="itemIndex"
-                  class="bg-gray-50 rounded p-3"
-                >
-                  <p class="text-sm font-medium text-gray-900">{{ item.name }}</p>
-                  <p class="mt-1 text-xs text-gray-500">{{ item.description }}</p>
-                </div>
-              </div>
-            </div>
-          </div>
+            :space="room"
+          />
         </div>
       </div>
 
@@ -83,28 +66,11 @@
       <div v-if="template.outdoorAreas && template.outdoorAreas.length > 0" class="mb-8">
         <h2 class="text-xl font-semibold text-gray-900 mb-4">Outdoor Areas ({{ template.outdoorAreas.length }})</h2>
         <div class="space-y-4">
-          <div
+          <SpaceCard
             v-for="(area, index) in template.outdoorAreas"
             :key="index"
-            class="bg-white shadow rounded-lg p-5"
-          >
-            <h3 class="text-lg font-medium text-gray-900">{{ area.name }}</h3>
-            <p class="mt-1 text-sm text-gray-600">{{ area.description }}</p>
-
-            <div v-if="area.items && area.items.length > 0" class="mt-4">
-              <h4 class="text-sm font-medium text-gray-700 mb-2">Items ({{ area.items.length }})</h4>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div
-                  v-for="(item, itemIndex) in area.items"
-                  :key="itemIndex"
-                  class="bg-gray-50 rounded p-3"
-                >
-                  <p class="text-sm font-medium text-gray-900">{{ item.name }}</p>
-                  <p class="mt-1 text-xs text-gray-500">{{ item.description }}</p>
-                </div>
-              </div>
-            </div>
-          </div>
+            :space="area"
+          />
         </div>
       </div>
 
@@ -121,6 +87,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { gql } from 'graphql-request'
 import { client } from '../graphql'
+import SpaceCard from '../components/SpaceCard.vue'
 
 const route = useRoute()
 const template = ref(null)

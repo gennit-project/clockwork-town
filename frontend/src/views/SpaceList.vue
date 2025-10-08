@@ -45,11 +45,12 @@
           <div
             v-for="space in indoorSpaces"
             :key="space.id"
-            class="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-shadow"
+            class="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer"
+            @click="viewSpace(space)"
           >
             <div class="flex justify-between items-start mb-2">
               <h3 class="text-xl font-semibold text-gray-900">{{ space.name }}</h3>
-              <div class="flex space-x-2">
+              <div class="flex space-x-2" @click.stop>
                 <button
                   @click="editSpace(space)"
                   class="text-blue-600 hover:text-blue-800"
@@ -81,11 +82,12 @@
           <div
             v-for="space in outdoorSpaces"
             :key="space.id"
-            class="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-shadow"
+            class="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer"
+            @click="viewSpace(space)"
           >
             <div class="flex justify-between items-start mb-2">
               <h3 class="text-xl font-semibold text-gray-900">{{ space.name }}</h3>
-              <div class="flex space-x-2">
+              <div class="flex space-x-2" @click.stop>
                 <button
                   @click="editSpace(space)"
                   class="text-blue-600 hover:text-blue-800"
@@ -205,11 +207,12 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
 import { client, queries, mutations } from '../graphql'
 
 const route = useRoute()
+const router = useRouter()
 const worldId = computed(() => route.params.worldId)
 const regionId = computed(() => route.params.regionId)
 const lotId = computed(() => route.params.lotId)
@@ -321,6 +324,10 @@ const deleteSpace = async () => {
   } finally {
     saving.value = false
   }
+}
+
+const viewSpace = (space) => {
+  router.push(`/world/${worldId.value}/region/${regionId.value}/lot/${lotId.value}/space/${space.id}`)
 }
 
 onMounted(loadData)
