@@ -17,6 +17,12 @@
           <h2 class="text-2xl font-bold text-gray-900">Lots</h2>
           <div class="flex space-x-3">
             <router-link
+              to="/library/lots"
+              class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md"
+            >
+              Create Lot from Template
+            </router-link>
+            <router-link
               :to="`/world/${worldId}/region/${regionId}/overview`"
               class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
             >
