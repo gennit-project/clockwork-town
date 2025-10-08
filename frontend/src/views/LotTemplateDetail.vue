@@ -16,18 +16,18 @@
             <div class="flex items-center gap-3">
               <router-link
                 to="/library/lots"
-                class="text-gray-400 hover:text-gray-600"
+                class="text-gray-400 hover:text-gray-600 dark:text-gray-400"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                   <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
                 </svg>
               </router-link>
-              <h1 class="text-3xl font-bold text-gray-900">{{ template.name }}</h1>
+              <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">{{ template.name }}</h1>
               <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
                 {{ template.lotType }}
               </span>
             </div>
-            <p v-if="template.description" class="mt-2 text-gray-600">
+            <p v-if="template.description" class="mt-2 text-gray-600 dark:text-gray-400">
               {{ template.description }}
             </p>
           </div>
@@ -44,7 +44,7 @@
           <span
             v-for="tag in template.tags"
             :key="tag"
-            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-gray-100 text-gray-800"
+            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-gray-100 text-gray-800 dark:text-gray-200"
           >
             {{ tag }}
           </span>
@@ -53,7 +53,7 @@
 
       <!-- Indoor Rooms -->
       <div v-if="template.indoorRooms && template.indoorRooms.length > 0" class="mb-8">
-        <h2 class="text-xl font-semibold text-gray-900 mb-4">Indoor Rooms ({{ template.indoorRooms.length }})</h2>
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Indoor Rooms ({{ template.indoorRooms.length }})</h2>
         <div class="space-y-4">
           <SpaceCard
             v-for="(room, index) in template.indoorRooms"
@@ -65,7 +65,7 @@
 
       <!-- Outdoor Areas -->
       <div v-if="template.outdoorAreas && template.outdoorAreas.length > 0" class="mb-8">
-        <h2 class="text-xl font-semibold text-gray-900 mb-4">Outdoor Areas ({{ template.outdoorAreas.length }})</h2>
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Outdoor Areas ({{ template.outdoorAreas.length }})</h2>
         <div class="space-y-4">
           <SpaceCard
             v-for="(area, index) in template.outdoorAreas"
@@ -76,15 +76,15 @@
       </div>
 
       <!-- Empty state -->
-      <div v-if="(!template.indoorRooms || template.indoorRooms.length === 0) && (!template.outdoorAreas || template.outdoorAreas.length === 0)" class="text-center py-12 bg-gray-50 rounded-lg">
+      <div v-if="(!template.indoorRooms || template.indoorRooms.length === 0) && (!template.outdoorAreas || template.outdoorAreas.length === 0)" class="text-center py-12 bg-gray-50 dark:bg-gray-900 rounded-lg">
         <p class="text-gray-500">This template has no spaces defined.</p>
       </div>
     </div>
 
     <!-- Clone to World Modal -->
     <div v-if="showCloneModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div class="bg-white rounded-lg p-6 max-w-md w-full">
-        <h2 class="text-2xl font-bold mb-4 text-gray-900">Clone Template to World</h2>
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
+        <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">Clone Template to World</h2>
 
         <form @submit.prevent="cloneTemplate">
           <div class="mb-4">
@@ -125,7 +125,7 @@
               type="button"
               @click="closeCloneModal"
               :disabled="cloning"
-              class="px-4 py-2 text-gray-700 hover:text-gray-900 disabled:opacity-50"
+              class="px-4 py-2 text-gray-700 hover:text-gray-900 dark:text-gray-100 disabled:opacity-50"
             >
               Cancel
             </button>

@@ -3,7 +3,7 @@
     <Breadcrumbs :crumbs="breadcrumbs" />
 
     <div class="flex justify-between items-center mb-6">
-      <h1 class="text-3xl font-bold text-gray-900">
+      <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">
         {{ isRegionDetailView ? (region?.name || 'Region') : 'Regions' }}
       </h1>
       <button
@@ -26,19 +26,19 @@
       <!-- Region List View -->
       <div v-if="!isRegionDetailView">
         <div v-if="regions.length === 0" class="text-center py-12 bg-white rounded-lg shadow">
-          <p class="text-gray-500 mb-4">No regions yet. Create your first region!</p>
+          <p class="text-gray-500 dark:text-gray-400 mb-4">No regions yet. Create your first region!</p>
         </div>
 
         <div v-else class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <div
             v-for="reg in regions"
             :key="reg.id"
-            class="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer"
+            class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer"
             @click="viewRegion(reg.id)"
           >
             <div class="flex justify-between items-start mb-2">
               <div>
-                <h2 class="text-xl font-semibold text-gray-900">{{ reg.name }}</h2>
+                <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">{{ reg.name }}</h2>
                 <p class="text-sm text-gray-500">{{ reg.kind }}</p>
               </div>
               <div class="flex space-x-2" @click.stop>
@@ -84,7 +84,7 @@
 
     <!-- Create/Edit Modal -->
     <div v-if="showCreateModal || editingRegion" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div class="bg-white rounded-lg p-6 max-w-md w-full">
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
         <h2 class="text-2xl font-bold mb-4">
           {{ editingRegion ? 'Edit Region' : 'Create Region' }}
         </h2>
@@ -117,7 +117,7 @@
             <button
               type="button"
               @click="closeModal"
-              class="px-4 py-2 text-gray-700 hover:text-gray-900"
+              class="px-4 py-2 text-gray-700 hover:text-gray-900 dark:text-gray-100"
             >
               Cancel
             </button>
@@ -135,14 +135,14 @@
 
     <!-- Delete Region Confirmation Modal -->
     <div v-if="deletingRegion" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div class="bg-white rounded-lg p-6 max-w-md w-full">
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
         <h2 class="text-2xl font-bold mb-4">Delete Region</h2>
         <p class="mb-4">Are you sure you want to delete "{{ deletingRegion.name }}"?</p>
         <div class="flex justify-end space-x-3">
           <button
             type="button"
             @click="deletingRegion = null"
-            class="px-4 py-2 text-gray-700 hover:text-gray-900"
+            class="px-4 py-2 text-gray-700 hover:text-gray-900 dark:text-gray-100"
           >
             Cancel
           </button>
@@ -159,14 +159,14 @@
 
     <!-- Delete Household Confirmation Modal -->
     <div v-if="deletingHousehold" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div class="bg-white rounded-lg p-6 max-w-md w-full">
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
         <h2 class="text-2xl font-bold mb-4">Delete Household</h2>
         <p class="mb-4">Are you sure you want to delete "{{ deletingHousehold.name }}"? This will also delete all characters in the household.</p>
         <div class="flex justify-end space-x-3">
           <button
             type="button"
             @click="deletingHousehold = null"
-            class="px-4 py-2 text-gray-700 hover:text-gray-900"
+            class="px-4 py-2 text-gray-700 hover:text-gray-900 dark:text-gray-100"
           >
             Cancel
           </button>

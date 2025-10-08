@@ -3,7 +3,7 @@
     <Breadcrumbs :crumbs="breadcrumbs" />
 
     <div class="max-w-2xl mx-auto">
-      <h1 class="text-3xl font-bold text-gray-900 mb-6">
+      <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6">
         {{ isEditing ? 'Edit Household' : 'Create Household' }}
       </h1>
 
@@ -15,7 +15,7 @@
         <p class="text-red-800">Error: {{ error }}</p>
       </div>
 
-      <form v-else @submit.prevent="saveHousehold" class="bg-white shadow rounded-lg p-6">
+      <form v-else @submit.prevent="saveHousehold" class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
         <!-- Household Name -->
         <div class="mb-6">
           <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -50,7 +50,7 @@
         <!-- Characters Section -->
         <div class="mb-6">
           <div class="flex justify-between items-center mb-3">
-            <label class="block text-sm font-medium text-gray-700">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Characters
             </label>
             <button
@@ -62,7 +62,7 @@
             </button>
           </div>
 
-          <div v-if="formData.characters.length === 0" class="text-gray-500 text-sm">
+          <div v-if="formData.characters.length === 0" class="text-gray-500 dark:text-gray-400 text-sm">
             No characters yet. Click "Add Character" to create one.
           </div>
 
@@ -128,7 +128,7 @@
         <!-- Animals Section -->
         <div class="mb-6">
           <div class="flex justify-between items-center mb-3">
-            <label class="block text-sm font-medium text-gray-700">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Animals (Pets)
             </label>
             <button
@@ -140,7 +140,7 @@
             </button>
           </div>
 
-          <div v-if="formData.animals.length === 0" class="text-gray-500 text-sm">
+          <div v-if="formData.animals.length === 0" class="text-gray-500 dark:text-gray-400 text-sm">
             No animals yet. Click "Add Animal" to add a pet.
           </div>
 
@@ -234,7 +234,7 @@
           <button
             type="button"
             @click="goBack"
-            class="px-4 py-2 text-gray-700 hover:text-gray-900"
+            class="px-4 py-2 text-gray-700 hover:text-gray-900 dark:text-gray-100"
           >
             Cancel
           </button>

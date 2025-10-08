@@ -13,7 +13,7 @@
     <div v-else-if="household" class="max-w-4xl mx-auto">
       <div class="flex justify-between items-center mb-6">
         <div>
-          <h1 class="text-3xl font-bold text-gray-900">{{ household.name }}</h1>
+          <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">{{ household.name }}</h1>
           <p class="text-gray-600 mt-1">{{ household.lotName }}</p>
         </div>
         <router-link
@@ -26,9 +26,9 @@
 
       <!-- Characters Section -->
       <div class="mb-8">
-        <h2 class="text-2xl font-bold text-gray-900 mb-4">Characters</h2>
+        <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Characters</h2>
 
-        <div v-if="household.characters.length === 0" class="text-gray-500 text-center py-8 bg-white rounded-lg shadow">
+        <div v-if="household.characters.length === 0" class="text-gray-500 dark:text-gray-400 text-center py-8 bg-white dark:bg-gray-800 rounded-lg shadow">
           No characters in this household.
         </div>
 
@@ -36,22 +36,22 @@
           <div
             v-for="character in household.characters"
             :key="character.id"
-            class="bg-white p-6 rounded-lg shadow"
+            class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow"
           >
             <div class="flex justify-between items-start mb-4">
               <div>
-                <h3 class="text-xl font-semibold text-gray-900">{{ character.name }}</h3>
+                <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100">{{ character.name }}</h3>
                 <p class="text-sm text-gray-500">Age: {{ character.age }}</p>
               </div>
             </div>
 
             <div v-if="character.bio" class="mt-4">
              
-              <div class="bg-gray-50 p-4 rounded-md">
+              <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-md">
                 <MarkdownRenderer :text="character.bio" fontSize="small" />
               </div>
             </div>
-            <div v-else class="text-gray-500 italic text-sm">
+            <div v-else class="text-gray-500 dark:text-gray-400 italic text-sm">
               No biography available.
             </div>
           </div>
@@ -60,7 +60,7 @@
 
       <!-- Animals Section -->
       <div v-if="household.animals && household.animals.length > 0" class="mb-8">
-        <h2 class="text-2xl font-bold text-gray-900 mb-4">Pets</h2>
+        <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Pets</h2>
         <div class="space-y-6">
           <div
             v-for="animal in household.animals"
@@ -69,16 +69,16 @@
           >
             <div class="flex justify-between items-start mb-4">
               <div>
-                <h3 class="text-xl font-semibold text-gray-900">{{ animal.name }}</h3>
-                <p class="text-sm text-gray-600">Age: {{ animal.age }}</p>
-                <p class="text-sm text-gray-600" v-if="animal.traits && animal.traits.length > 0">
+                <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100">{{ animal.name }}</h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Age: {{ animal.age }}</p>
+                <p class="text-sm text-gray-600 dark:text-gray-400" v-if="animal.traits && animal.traits.length > 0">
                   Traits: {{ animal.traits.join(', ') }}
                 </p>
               </div>
             </div>
 
             <div v-if="animal.bio" class="mt-4">
-              <div class="bg-white p-4 rounded-md">
+              <div class="bg-white dark:bg-gray-700 p-4 rounded-md">
                 <MarkdownRenderer :text="animal.bio" fontSize="small" />
               </div>
             </div>

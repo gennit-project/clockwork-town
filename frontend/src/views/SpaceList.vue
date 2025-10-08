@@ -3,7 +3,7 @@
     <Breadcrumbs :crumbs="breadcrumbs" />
 
     <div class="flex justify-between items-center mb-6">
-      <h1 class="text-3xl font-bold text-gray-900">Spaces</h1>
+      <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Spaces</h1>
       <button
         @click="showCreateModal = true"
         class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
@@ -21,7 +21,7 @@
     </div>
 
     <div v-else-if="allSpaces.length === 0" class="text-center py-12 bg-white rounded-lg shadow">
-      <p class="text-gray-500 mb-4">No spaces yet. Create your first space!</p>
+      <p class="text-gray-500 dark:text-gray-400 mb-4">No spaces yet. Create your first space!</p>
     </div>
 
     <div v-else>
@@ -40,16 +40,16 @@
       </div>
 
       <div v-if="indoorSpaces.length > 0" class="mb-8">
-        <h2 class="text-2xl font-semibold mb-4 text-gray-800">Indoor Rooms</h2>
+        <h2 class="text-2xl font-semibold mb-4 text-gray-800 dark:text-gray-200">Indoor Rooms</h2>
         <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <div
             v-for="space in indoorSpaces"
             :key="space.id"
-            class="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer"
+            class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer"
             @click="viewSpace(space)"
           >
             <div class="flex justify-between items-start mb-2">
-              <h3 class="text-xl font-semibold text-gray-900">{{ space.name }}</h3>
+              <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100">{{ space.name }}</h3>
               <div class="flex space-x-2" @click.stop>
                 <button
                   @click="editSpace(space)"
@@ -71,22 +71,22 @@
                 </button>
               </div>
             </div>
-            <p class="text-sm text-gray-600">{{ space.description }}</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">{{ space.description }}</p>
           </div>
         </div>
       </div>
 
       <div v-if="outdoorSpaces.length > 0">
-        <h2 class="text-2xl font-semibold mb-4 text-gray-800">Outdoor Areas</h2>
+        <h2 class="text-2xl font-semibold mb-4 text-gray-800 dark:text-gray-200">Outdoor Areas</h2>
         <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <div
             v-for="space in outdoorSpaces"
             :key="space.id"
-            class="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer"
+            class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer"
             @click="viewSpace(space)"
           >
             <div class="flex justify-between items-start mb-2">
-              <h3 class="text-xl font-semibold text-gray-900">{{ space.name }}</h3>
+              <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100">{{ space.name }}</h3>
               <div class="flex space-x-2" @click.stop>
                 <button
                   @click="editSpace(space)"
@@ -108,7 +108,7 @@
                 </button>
               </div>
             </div>
-            <p class="text-sm text-gray-600">{{ space.description }}</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">{{ space.description }}</p>
           </div>
         </div>
       </div>
@@ -116,7 +116,7 @@
 
     <!-- Create/Edit Modal -->
     <div v-if="showCreateModal || editingSpace" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div class="bg-white rounded-lg p-6 max-w-md w-full">
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
         <h2 class="text-2xl font-bold mb-4">
           {{ editingSpace ? 'Edit Space' : 'Create Space' }}
         </h2>
@@ -163,7 +163,7 @@
             <button
               type="button"
               @click="closeModal"
-              class="px-4 py-2 text-gray-700 hover:text-gray-900"
+              class="px-4 py-2 text-gray-700 hover:text-gray-900 dark:text-gray-100"
             >
               Cancel
             </button>
@@ -181,14 +181,14 @@
 
     <!-- Delete Confirmation Modal -->
     <div v-if="deletingSpace" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div class="bg-white rounded-lg p-6 max-w-md w-full">
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
         <h2 class="text-2xl font-bold mb-4">Delete Space</h2>
         <p class="mb-4">Are you sure you want to delete "{{ deletingSpace.name }}"?</p>
         <div class="flex justify-end space-x-3">
           <button
             type="button"
             @click="deletingSpace = null"
-            class="px-4 py-2 text-gray-700 hover:text-gray-900"
+            class="px-4 py-2 text-gray-700 hover:text-gray-900 dark:text-gray-100"
           >
             Cancel
           </button>

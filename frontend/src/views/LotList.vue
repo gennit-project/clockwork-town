@@ -3,7 +3,7 @@
     <Breadcrumbs :crumbs="breadcrumbs" />
 
     <div class="flex justify-between items-center mb-6">
-      <h1 class="text-3xl font-bold text-gray-900">Lots</h1>
+      <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Lots</h1>
       <div class="flex space-x-3">
         <router-link
           :to="`/world/${worldId}/region/${regionId}/overview`"
@@ -29,22 +29,22 @@
     </div>
 
     <div v-else-if="lots.length === 0" class="text-center py-12 bg-white rounded-lg shadow">
-      <p class="text-gray-500 mb-4">No lots yet. Create your first lot!</p>
+      <p class="text-gray-500 dark:text-gray-400 mb-4">No lots yet. Create your first lot!</p>
     </div>
 
     <div v-else class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       <div
         v-for="lot in lots"
         :key="lot.id"
-        class="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-shadow"
+        class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow hover:shadow-lg transition-shadow"
       >
         <div class="flex justify-between items-start mb-2">
           <div>
-            <h2 class="text-xl font-semibold text-gray-900">{{ lot.name }}</h2>
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">{{ lot.name }}</h2>
             <p class="text-sm text-gray-500">{{ lot.lotType }}</p>
             <div v-if="getHouseholdForLot(lot.id)" class="mt-2">
-              <p class="text-xs font-medium text-gray-700">Household:</p>
-              <p class="text-xs text-gray-600">{{ getHouseholdForLot(lot.id).name }}</p>
+              <p class="text-xs font-medium text-gray-700 dark:text-gray-300">Household:</p>
+              <p class="text-xs text-gray-600 dark:text-gray-400">{{ getHouseholdForLot(lot.id).name }}</p>
               <p class="text-xs text-gray-500">{{ getHouseholdForLot(lot.id).characters.length }} member(s)</p>
             </div>
           </div>
@@ -80,7 +80,7 @@
 
     <!-- Create/Edit Modal -->
     <div v-if="showCreateModal || editingLot" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div class="bg-white rounded-lg p-6 max-w-md w-full">
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
         <h2 class="text-2xl font-bold mb-4">
           {{ editingLot ? 'Edit Lot' : 'Create Lot' }}
         </h2>
@@ -116,7 +116,7 @@
             <button
               type="button"
               @click="closeModal"
-              class="px-4 py-2 text-gray-700 hover:text-gray-900"
+              class="px-4 py-2 text-gray-700 hover:text-gray-900 dark:text-gray-100"
             >
               Cancel
             </button>
@@ -134,14 +134,14 @@
 
     <!-- Delete Confirmation Modal -->
     <div v-if="deletingLot" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div class="bg-white rounded-lg p-6 max-w-md w-full">
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
         <h2 class="text-2xl font-bold mb-4">Delete Lot</h2>
         <p class="mb-4">Are you sure you want to delete "{{ deletingLot.name }}"?</p>
         <div class="flex justify-end space-x-3">
           <button
             type="button"
             @click="deletingLot = null"
-            class="px-4 py-2 text-gray-700 hover:text-gray-900"
+            class="px-4 py-2 text-gray-700 hover:text-gray-900 dark:text-gray-100"
           >
             Cancel
           </button>

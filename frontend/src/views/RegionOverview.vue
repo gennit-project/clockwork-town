@@ -3,7 +3,7 @@
     <Breadcrumbs :crumbs="breadcrumbs" />
 
     <div class="flex justify-between items-center mb-6">
-      <h1 class="text-3xl font-bold text-gray-900">Region Overview: {{ region?.name || 'Loading...' }}</h1>
+      <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Region Overview: {{ region?.name || 'Loading...' }}</h1>
       <div class="flex space-x-3">
         <button
           @click="showEditModal = true"
@@ -29,7 +29,7 @@
     </div>
 
     <div v-else-if="lotsWithSpaces.length === 0" class="text-center py-12 bg-white rounded-lg shadow">
-      <p class="text-gray-500 mb-4">No lots in this region yet.</p>
+      <p class="text-gray-500 dark:text-gray-400 mb-4">No lots in this region yet.</p>
       <router-link
         :to="`/world/${worldId}/region/${regionId}`"
         class="text-blue-600 hover:text-blue-800 font-medium"
@@ -43,12 +43,12 @@
       <div class="flex-1 flex gap-4 p-4 overflow-auto">
         <!-- Residential Column -->
         <div class="flex-1 flex flex-col">
-          <h2 class="text-xl font-bold text-gray-900 mb-4 sticky top-0 bg-white z-10 pb-2">Residential</h2>
+          <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 sticky top-0 z-10 pb-2">Residential</h2>
           <div class="space-y-4">
             <div
               v-for="lot in residentialLots"
               :key="lot.id"
-              class="bg-white rounded-lg shadow-lg overflow-hidden"
+              class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden"
             >
               <!-- Lot Header -->
               <div class="bg-blue-600 text-white p-4">
@@ -71,7 +71,7 @@
               </div>
 
               <!-- Spaces Content -->
-              <div class="p-4 bg-gray-50">
+              <div class="p-4 bg-gray-50 dark:bg-gray-800">
                 <!-- Show/Hide Rooms Toggle -->
                 <div v-if="lot.indoorRooms.length > 0 || lot.outdoorAreas.length > 0" class="mb-3">
                   <button
@@ -99,7 +99,7 @@
                         :to="`/world/${worldId}/region/${regionId}/lot/${lot.id}/space/${room.id}`"
                         class="block bg-white border-2 border-blue-200 rounded p-3 hover:border-blue-400 transition-colors cursor-pointer"
                       >
-                        <p class="font-medium text-sm text-gray-900">{{ room.name }}</p>
+                        <p class="font-medium text-sm text-gray-900 dark:text-gray-100">{{ room.name }}</p>
                         <p class="text-xs text-gray-600 mt-1">{{ room.description }}</p>
                       </router-link>
                     </div>
@@ -120,7 +120,7 @@
                         :to="`/world/${worldId}/region/${regionId}/lot/${lot.id}/space/${area.id}`"
                         class="block bg-white border-2 border-green-200 rounded p-3 hover:border-green-400 transition-colors cursor-pointer"
                       >
-                        <p class="font-medium text-sm text-gray-900">{{ area.name }}</p>
+                        <p class="font-medium text-sm text-gray-900 dark:text-gray-100">{{ area.name }}</p>
                         <p class="text-xs text-gray-600 mt-1">{{ area.description }}</p>
                       </router-link>
                     </div>
@@ -147,12 +147,12 @@
 
         <!-- Community Column -->
         <div class="flex-1 flex flex-col">
-          <h2 class="text-xl font-bold text-gray-900 mb-4 sticky top-0 bg-white z-10 pb-2">Community</h2>
+          <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 sticky top-0  z-10 pb-2">Community</h2>
           <div class="space-y-4">
             <div
               v-for="lot in communityLots"
               :key="lot.id"
-              class="bg-white rounded-lg shadow-lg overflow-hidden"
+              class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden"
             >
               <!-- Lot Header -->
               <div class="bg-green-600 text-white p-4">
@@ -175,7 +175,7 @@
               </div>
 
               <!-- Spaces Content -->
-              <div class="p-4 bg-gray-50">
+              <div class="p-4 bg-gray-50 dark:bg-gray-800">
                 <!-- Show/Hide Rooms Toggle -->
                 <div v-if="lot.indoorRooms.length > 0 || lot.outdoorAreas.length > 0" class="mb-3">
                   <button
@@ -203,7 +203,7 @@
                         :to="`/world/${worldId}/region/${regionId}/lot/${lot.id}/space/${room.id}`"
                         class="block bg-white border-2 border-green-200 rounded p-3 hover:border-green-400 transition-colors cursor-pointer"
                       >
-                        <p class="font-medium text-sm text-gray-900">{{ room.name }}</p>
+                        <p class="font-medium text-sm text-gray-900 dark:text-gray-100">{{ room.name }}</p>
                         <p class="text-xs text-gray-600 mt-1">{{ room.description }}</p>
                       </router-link>
                     </div>
@@ -224,7 +224,7 @@
                         :to="`/world/${worldId}/region/${regionId}/lot/${lot.id}/space/${area.id}`"
                         class="block bg-white border-2 border-green-200 rounded p-3 hover:border-green-400 transition-colors cursor-pointer"
                       >
-                        <p class="font-medium text-sm text-gray-900">{{ area.name }}</p>
+                        <p class="font-medium text-sm text-gray-900 dark:text-gray-100">{{ area.name }}</p>
                         <p class="text-xs text-gray-600 mt-1">{{ area.description }}</p>
                       </router-link>
                     </div>
@@ -251,7 +251,7 @@
 
         <!-- Transportation Column -->
         <div class="flex-1 flex flex-col">
-          <h2 class="text-xl font-bold text-gray-900 mb-4 sticky top-0 bg-white z-10 pb-2">Transportation</h2>
+          <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 sticky top-0 z-10 pb-2">Transportation</h2>
           <div class="text-center py-8 text-gray-500">
             Coming soon
           </div>
@@ -259,17 +259,17 @@
       </div>
 
       <!-- Right Sidebar - Characters & Animals List -->
-      <div class="w-80 space-y-4 p-4 bg-gray-100 overflow-auto">
+      <div class="w-80 space-y-4 p-4 overflow-auto">
         <!-- Characters & Animals Panel -->
-        <div class="bg-white rounded-lg shadow-lg p-4">
-          <h2 class="text-lg font-bold text-gray-900 mb-3">Characters & Animals</h2>
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4">
+          <h2 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">Characters & Animals</h2>
           <div v-if="characters.length === 0 && animals.length === 0" class="text-sm text-gray-500">
             No characters or animals in this region yet.
           </div>
           <div v-else class="space-y-2">
             <!-- Characters Section -->
             <div v-if="characters.length > 0">
-              <h3 class="text-xs font-semibold text-gray-600 uppercase mb-2">Characters</h3>
+              <h3 class="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase mb-2">Characters</h3>
               <button
                 v-for="character in characters"
                 :key="'char-' + character.id"
@@ -277,14 +277,14 @@
                 class="w-full text-left p-3 rounded hover:bg-blue-50 transition-colors border border-gray-200 mb-2"
                 :class="{ 'bg-blue-100 border-blue-400': activeCharacter?.id === character.id && activeCharacterType === 'character' }"
               >
-                <p class="font-medium text-gray-900">👤 {{ character.name }}</p>
-                <p class="text-xs text-gray-600">Age: {{ character.age }}</p>
+                <p class="font-medium text-gray-900 dark:text-gray-100">👤 {{ character.name }}</p>
+                <p class="text-xs text-gray-600 dark:text-gray-400">Age: {{ character.age }}</p>
               </button>
             </div>
 
             <!-- Animals Section -->
             <div v-if="animals.length > 0" :class="{ 'mt-4': characters.length > 0 }">
-              <h3 class="text-xs font-semibold text-gray-600 uppercase mb-2">Animals</h3>
+              <h3 class="text-xs font-semibold text-gray-600 dark:text-gray-600 uppercase mb-2">Animals</h3>
               <button
                 v-for="animal in animals"
                 :key="'animal-' + animal.id"
@@ -292,8 +292,8 @@
                 class="w-full text-left p-3 rounded hover:bg-amber-50 transition-colors border border-gray-200 mb-2"
                 :class="{ 'bg-amber-100 border-amber-400': activeCharacter?.id === animal.id && activeCharacterType === 'animal' }"
               >
-                <p class="font-medium text-gray-900">🐾 {{ animal.name }}</p>
-                <p class="text-xs text-gray-600">Age: {{ animal.age }}</p>
+                <p class="font-medium text-gray-900 dark:text-gray-100">🐾 {{ animal.name }}</p>
+                <p class="text-xs text-gray-600 dark:text-gray-400">Age: {{ animal.age }}</p>
                 <p v-if="animal.traits && animal.traits.length > 0" class="text-xs text-gray-500">
                   {{ animal.traits.join(', ') }}
                 </p>
@@ -305,10 +305,10 @@
         <!-- Active Character Panel -->
         <div v-if="activeCharacter" class="rounded-lg shadow-lg p-4 border-2" :class="activeCharacterType === 'animal' ? 'bg-amber-50 border-amber-300' : 'bg-blue-50 border-blue-300'">
           <div class="flex justify-between items-start mb-3">
-            <h3 class="text-md font-bold text-gray-900">
+            <h3 class="text-md font-bold text-gray-900 dark:text-gray-100">
               {{ activeCharacterType === 'animal' ? 'Active Animal' : 'Active Character' }}
             </h3>
-            <button @click="clearActiveCharacter" class="text-gray-500 hover:text-gray-700">
+            <button @click="clearActiveCharacter" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -318,14 +318,14 @@
             <p class="font-semibold text-lg">
               {{ activeCharacterType === 'animal' ? '🐾' : '👤' }} {{ activeCharacter.name }}
             </p>
-            <p class="text-sm text-gray-700">Age: {{ activeCharacter.age }}</p>
-            <div v-if="activeCharacterType === 'animal' && activeCharacter.traits && activeCharacter.traits.length > 0" class="text-sm text-gray-700">
+            <p class="text-sm text-gray-700 dark:text-gray-300">Age: {{ activeCharacter.age }}</p>
+            <div v-if="activeCharacterType === 'animal' && activeCharacter.traits && activeCharacter.traits.length > 0" class="text-sm text-gray-700 dark:text-gray-300">
               <span class="font-medium">Traits:</span> {{ activeCharacter.traits.join(', ') }}
             </div>
             <div v-if="activeCharacter.bio" class="mt-3 text-sm text-gray-700 bg-white p-3 rounded">
               {{ activeCharacter.bio.substring(0, 150) }}{{ activeCharacter.bio.length > 150 ? '...' : '' }}
             </div>
-            <div v-else class="mt-3 text-sm text-gray-500 italic">
+            <div v-else class="mt-3 text-sm text-gray-500 dark:text-gray-400 italic">
               No biography available.
             </div>
           </div>
@@ -335,7 +335,7 @@
 
     <!-- Edit Region Modal -->
     <div v-if="showEditModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div class="bg-white rounded-lg p-6 max-w-md w-full">
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
         <h2 class="text-2xl font-bold mb-4">Edit Region</h2>
         <form @submit.prevent="saveRegion">
           <div class="mb-4">
@@ -367,7 +367,7 @@
               type="button"
               @click="closeEditModal"
               :disabled="saving"
-              class="px-4 py-2 text-gray-700 hover:text-gray-900"
+              class="px-4 py-2 text-gray-700 hover:text-gray-900 dark:text-gray-100"
             >
               Cancel
             </button>

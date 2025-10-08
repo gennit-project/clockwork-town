@@ -14,9 +14,9 @@
       <!-- Space Header -->
       <div class="mb-6">
         <div class="flex items-center gap-3 mb-2">
-          <h1 class="text-3xl font-bold text-gray-900">{{ space?.name || 'Loading...' }}</h1>
+          <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">{{ space?.name || 'Loading...' }}</h1>
         </div>
-        <p class="text-gray-600">{{ space?.description }}</p>
+        <p class="text-gray-600 dark:text-gray-400">{{ space?.description }}</p>
       </div>
 
       <!-- Space Card View -->
@@ -25,9 +25,9 @@
       </div>
 
       <!-- Items Section -->
-      <div class="bg-white rounded-lg shadow-lg p-6">
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-2xl font-bold text-gray-900">Items in this Space</h2>
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Items in this Space</h2>
           <button
             @click="showAddItemForm = !showAddItemForm"
             class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
@@ -87,7 +87,7 @@
           <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
           </svg>
-          <p class="text-gray-500 text-lg">This room is empty.</p>
+          <p class="text-gray-500 dark:text-gray-400 text-lg">This room is empty.</p>
           <p class="text-gray-400 text-sm mt-2">Click "Add Item" to place something here.</p>
         </div>
 
@@ -95,11 +95,11 @@
           <div
             v-for="item in items"
             :key="item.id"
-            class="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors bg-gray-50"
+            class="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors bg-gray-50 dark:bg-gray-800"
           >
             <div class="flex justify-between items-start">
               <div class="flex-1">
-                <h3 class="font-semibold text-lg text-gray-900">{{ item.name }}</h3>
+                <h3 class="font-semibold text-lg text-gray-900 dark:text-gray-100">{{ item.name }}</h3>
                 <p class="text-sm text-gray-600 mt-1">{{ item.description }}</p>
               </div>
               <button

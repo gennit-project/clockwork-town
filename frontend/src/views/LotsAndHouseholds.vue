@@ -14,7 +14,7 @@
       <!-- Lots Section -->
       <div class="mb-8">
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-2xl font-bold text-gray-900">Lots</h2>
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Lots</h2>
           <div class="flex space-x-3">
             <router-link
               to="/library/lots"
@@ -39,11 +39,11 @@
           <div
             v-for="lot in lots"
             :key="lot.id"
-            class="bg-white p-4 rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer"
+            class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer"
             @click="viewLot(lot.id)"
           >
-            <h3 class="text-lg font-semibold text-gray-900">{{ lot.name }}</h3>
-            <p class="text-sm text-gray-500 mb-2">{{ lot.lotType }}</p>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ lot.name }}</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">{{ lot.lotType }}</p>
             <div class="text-blue-600 hover:text-blue-800 text-sm font-medium">
               View Spaces →
             </div>
@@ -54,7 +54,7 @@
       <!-- Households Section -->
       <div>
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-2xl font-bold text-gray-900">Households</h2>
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Households</h2>
           <router-link
             :to="`/world/${worldId}/region/${regionId}/household/new`"
             class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
@@ -71,12 +71,12 @@
           <div
             v-for="household in households"
             :key="household.id"
-            class="bg-white p-4 rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer"
+            class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer"
             @click="viewHousehold(household.id)"
           >
             <div class="flex justify-between items-start mb-2">
               <div>
-                <h3 class="text-lg font-semibold text-gray-900">{{ household.name }}</h3>
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ household.name }}</h3>
                 <p class="text-sm text-gray-500">{{ household.lotName }}</p>
                 <p class="text-xs text-gray-400 mt-1">{{ household.characters.length }} member(s)</p>
               </div>
@@ -120,14 +120,14 @@
 
     <!-- Delete Household Confirmation Modal -->
     <div v-if="deletingHousehold" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div class="bg-white rounded-lg p-6 max-w-md w-full">
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
         <h2 class="text-2xl font-bold mb-4">Delete Household</h2>
         <p class="mb-4">Are you sure you want to delete "{{ deletingHousehold.name }}"? This will also delete all characters in the household.</p>
         <div class="flex justify-end space-x-3">
           <button
             type="button"
             @click="deletingHousehold = null"
-            class="px-4 py-2 text-gray-700 hover:text-gray-900"
+            class="px-4 py-2 text-gray-700 hover:text-gray-900 dark:text-gray-100"
           >
             Cancel
           </button>

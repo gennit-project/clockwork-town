@@ -16,14 +16,14 @@
       <div
         v-for="template in templates"
         :key="template.id"
-        class="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow relative group"
+        class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow relative group"
       >
         <router-link
           :to="`/library/lots/${template.id}`"
           class="block p-5"
         >
           <div class="flex items-center justify-between">
-            <h3 class="text-lg font-medium text-gray-900">{{ template.name }}</h3>
+            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">{{ template.name }}</h3>
             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
               {{ template.lotType }}
             </span>
@@ -37,7 +37,7 @@
             <span
               v-for="tag in template.tags"
               :key="tag"
-              class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800"
+              class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:text-gray-200"
             >
               {{ tag }}
             </span>
@@ -46,11 +46,11 @@
           <div class="mt-4 grid grid-cols-2 gap-4 text-sm">
             <div>
               <p class="text-gray-500">Indoor Rooms</p>
-              <p class="font-medium text-gray-900">{{ template.indoorRooms?.length || 0 }}</p>
+              <p class="font-medium text-gray-900 dark:text-gray-100">{{ template.indoorRooms?.length || 0 }}</p>
             </div>
             <div>
               <p class="text-gray-500">Outdoor Areas</p>
-              <p class="font-medium text-gray-900">{{ template.outdoorAreas?.length || 0 }}</p>
+              <p class="font-medium text-gray-900 dark:text-gray-100">{{ template.outdoorAreas?.length || 0 }}</p>
             </div>
           </div>
 
@@ -74,9 +74,9 @@
 
     <!-- Delete Confirmation Modal -->
     <div v-if="deletingTemplate" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div class="bg-white rounded-lg p-6 max-w-md w-full">
-        <h2 class="text-2xl font-bold mb-4 text-gray-900">Delete Template</h2>
-        <p class="mb-2 text-gray-700">Are you sure you want to delete "{{ deletingTemplate.name }}"?</p>
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
+        <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">Delete Template</h2>
+        <p class="mb-2 text-gray-700 dark:text-gray-300">Are you sure you want to delete "{{ deletingTemplate.name }}"?</p>
         <p class="mb-4 text-sm text-gray-500">
           This will permanently delete the template along with all {{ (deletingTemplate.indoorRooms?.length || 0) + (deletingTemplate.outdoorAreas?.length || 0) }} spaces and their items.
         </p>
@@ -85,7 +85,7 @@
             type="button"
             @click="deletingTemplate = null"
             :disabled="deleting"
-            class="px-4 py-2 text-gray-700 hover:text-gray-900 disabled:opacity-50"
+            class="px-4 py-2 text-gray-700 hover:text-gray-900 dark:text-gray-100 disabled:opacity-50"
           >
             Cancel
           </button>
