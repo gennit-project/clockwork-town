@@ -29,6 +29,7 @@ type Region {
   lots: [Lot!]!
   naturalAreas: [NaturalArea!]!
   characters: [Character!]!  # derived via AT edges through lots/spaces
+  animals: [Animal!]!        # derived via ANIMAL_AT edges through lots
 }
 
 type NaturalArea {
@@ -51,6 +52,7 @@ type Space {
   id: ID!
   name: String!
   description: String!
+  isIndoor: Boolean!
   items: [Item!]!
   characters: [Character!]!
 }
@@ -279,8 +281,10 @@ type Query {
   worlds: [World!]!
   world(id: ID!): World
   regions(worldId: ID!): [Region!]!
+  region(id: ID!): Region
   lots(regionId: ID!): [Lot!]!
   lot(id: ID!): Lot
+  space(id: ID!): Space
   households(regionId: ID!): [Household!]!
   household(id: ID!): Household
 
@@ -367,6 +371,13 @@ input PerformInput {
   note: String
 }
 
+input NewItem {
+  id: ID!
+  spaceId: ID!
+  name: String!
+  description: String!
+}
+
 # -----------------------------
 # Mutations
 # -----------------------------
@@ -386,6 +397,9 @@ type Mutation {
   createSpace(input: NewSpace!): Space!
   updateSpace(id: ID!, name: String!, description: String!): Space!
   deleteSpace(id: ID!): Boolean!
+
+  createItem(input: NewItem!): Item!
+  deleteItem(id: ID!): Boolean!
 
   createHousehold(input: NewHousehold!, characters: [NewCharacterSimple!]!, animals: [NewAnimalSimple!]): Household!
   updateHousehold(id: ID!, name: String!, lotId: ID!, characters: [NewCharacterSimple!], animals: [NewAnimalSimple!]): Household!

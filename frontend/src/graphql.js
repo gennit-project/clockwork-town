@@ -38,9 +38,43 @@ export const queries = {
     }
   `,
 
+  getRegion: `
+    query GetRegion($id: ID!) {
+      region(id: $id) {
+        id
+        name
+        worldId
+        kind
+        characters {
+          id
+          name
+          age
+          bio
+        }
+        animals {
+          id
+          name
+          age
+          traits
+          bio
+        }
+      }
+    }
+  `,
+
   getLots: `
     query GetLots($regionId: ID!) {
       lots(regionId: $regionId) {
+        id
+        name
+        lotType
+      }
+    }
+  `,
+
+  getLot: `
+    query GetLot($id: ID!) {
+      lot(id: $id) {
         id
         name
         lotType
@@ -57,6 +91,22 @@ export const queries = {
           description
         }
         outdoorAreas {
+          id
+          name
+          description
+        }
+      }
+    }
+  `,
+
+  getSpace: `
+    query GetSpace($id: ID!) {
+      space(id: $id) {
+        id
+        name
+        description
+        isIndoor
+        items {
           id
           name
           description
@@ -210,6 +260,22 @@ export const mutations = {
   deleteSpace: `
     mutation DeleteSpace($id: ID!) {
       deleteSpace(id: $id)
+    }
+  `,
+
+  createItem: `
+    mutation CreateItem($input: NewItem!) {
+      createItem(input: $input) {
+        id
+        name
+        description
+      }
+    }
+  `,
+
+  deleteItem: `
+    mutation DeleteItem($id: ID!) {
+      deleteItem(id: $id)
     }
   `,
 

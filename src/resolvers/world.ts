@@ -20,6 +20,27 @@ export const WorldResolvers = {
         MATCH (w:World {id:$worldId})-[:HAS_REGION]->(r:Region)
         RETURN r.id AS id, r.name AS name, r.worldId AS worldId, r.kind AS kind
       `, { worldId }),
+    region: async (_: any, { id }: { id: string }) => {
+      const [region] = await q(`
+        MATCH (r:Region {id:$id})
+        RETURN r.id AS id, r.name AS name, r.worldId AS worldId, r.kind AS kind
+      `, { id });
+      if (!region) return null;
+
+      // Get characters in the region (via lots and AT edges)
+      const characters = await q(`
+        MATCH (r:Region {id:$id})-[:HAS_LOT]->(l:Lot)<-[:AT]-(c:Character)
+        RETURN DISTINCT c.id AS id, c.name AS name, c.age AS age, c.bio AS bio
+      `, { id });
+
+      // Get animals in the region (via lots and ANIMAL_AT edges)
+      const animals = await q(`
+        MATCH (r:Region {id:$id})-[:HAS_LOT]->(l:Lot)<-[:ANIMAL_AT]-(a:Animal)
+        RETURN DISTINCT a.id AS id, a.name AS name, a.age AS age, a.traits AS traits, a.bio AS bio
+      `, { id });
+
+      return { ...region, characters, animals };
+    },
     lots: (_: any, { regionId }: { regionId: string }) =>
       q(`
         MATCH (r:Region {id:$regionId})-[:HAS_LOT]->(l:Lot)
@@ -45,6 +66,20 @@ export const WorldResolvers = {
       `, { id });
 
       return { ...lot, indoorRooms, outdoorAreas };
+    },
+    space: async (_: any, { id }: { id: string }) => {
+      const [space] = await q(`
+        MATCH (s:Space {id:$id})
+        RETURN s.id AS id, s.name AS name, s.description AS description, s.isIndoor AS isIndoor
+      `, { id });
+      if (!space) return null;
+
+      const items = await q(`
+        MATCH (s:Space {id:$id})<-[:ON_SPACE]-(i:Item)
+        RETURN i.id AS id, i.name AS name, i.description AS description
+      `, { id });
+
+      return { ...space, items };
     },
   },
   Mutation: {
@@ -162,6 +197,41 @@ export const WorldResolvers = {
 
     deleteSpace: async (_: any, { id }: { id: string }) => {
       await q(`MATCH (s:Space {id:$id}) DETACH DELETE s`, { id });
+      return true;
+    },
+
+    createItem: async (_: any, { input }: { input: { id: string; spaceId: string; name: string; description: string } }) => {
+      const { id, spaceId, name, description } = input;
+      await batch(async () => {
+        // Create item with basic properties (other fields can be null/default)
+        await q(`CREATE (:Item {
+          id: $id,
+          name: $name,
+          description: $description,
+          canBeUsedByHumans: true,
+          canBeUsedByAnimals: false,
+          canStoreItems: false,
+          cost: 0,
+          satisfiesNeeds: [],
+          allowedActivities: []
+        })`, { id, name, description });
+
+        // Link to space
+        await q(`
+          MATCH (i:Item {id:$id}), (s:Space {id:$spaceId})
+          CREATE (i)-[:ON_SPACE]->(s)
+        `, { id, spaceId });
+      });
+
+      const [created] = await q(`
+        MATCH (i:Item {id:$id})
+        RETURN i.id AS id, i.name AS name, i.description AS description
+      `, { id });
+      return created;
+    },
+
+    deleteItem: async (_: any, { id }: { id: string }) => {
+      await q(`MATCH (i:Item {id:$id}) DETACH DELETE i`, { id });
       return true;
     },
   },

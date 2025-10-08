@@ -1,0 +1,226 @@
+<template>
+  <div>
+    <Breadcrumbs :crumbs="breadcrumbs" />
+
+    <div v-if="loading" class="text-center py-12">
+      <p class="text-gray-500">Loading...</p>
+    </div>
+
+    <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-md p-4">
+      <p class="text-red-800">Error: {{ error }}</p>
+    </div>
+
+    <div v-else class="max-w-4xl mx-auto">
+      <!-- Space Header -->
+      <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ space?.name || 'Loading...' }}</h1>
+        <p class="text-gray-600">{{ space?.description }}</p>
+        <p class="text-sm text-gray-500 mt-2">
+          {{ space?.isIndoor ? '🏠 Indoor Room' : '🌳 Outdoor Area' }}
+        </p>
+      </div>
+
+      <!-- Items Section -->
+      <div class="bg-white rounded-lg shadow-lg p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-2xl font-bold text-gray-900">Items in this Space</h2>
+          <button
+            @click="showAddItemForm = !showAddItemForm"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+          >
+            {{ showAddItemForm ? 'Cancel' : '+ Add Item' }}
+          </button>
+        </div>
+
+        <!-- Add Item Form -->
+        <div v-if="showAddItemForm" class="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <form @submit.prevent="addItem" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                Item Name *
+              </label>
+              <input
+                v-model="newItem.name"
+                type="text"
+                required
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter item name"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                Description *
+              </label>
+              <textarea
+                v-model="newItem.description"
+                required
+                rows="3"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Describe the item"
+              ></textarea>
+            </div>
+            <div class="flex gap-4">
+              <button
+                type="submit"
+                :disabled="saving"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium disabled:opacity-50"
+              >
+                {{ saving ? 'Adding...' : 'Add Item' }}
+              </button>
+              <button
+                type="button"
+                @click="showAddItemForm = false"
+                class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md text-sm font-medium"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Items List -->
+        <div v-if="items.length === 0 && !showAddItemForm" class="text-center py-12">
+          <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+          </svg>
+          <p class="text-gray-500 text-lg">This room is empty.</p>
+          <p class="text-gray-400 text-sm mt-2">Click "Add Item" to place something here.</p>
+        </div>
+
+        <div v-else-if="items.length > 0" class="space-y-3">
+          <div
+            v-for="item in items"
+            :key="item.id"
+            class="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors bg-gray-50"
+          >
+            <div class="flex justify-between items-start">
+              <div class="flex-1">
+                <h3 class="font-semibold text-lg text-gray-900">{{ item.name }}</h3>
+                <p class="text-sm text-gray-600 mt-1">{{ item.description }}</p>
+              </div>
+              <button
+                @click="removeItem(item.id)"
+                class="text-red-600 hover:text-red-800 ml-4"
+                title="Remove item"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import Breadcrumbs from '../components/Breadcrumbs.vue'
+import { client, queries, mutations } from '../graphql'
+
+const route = useRoute()
+const worldId = computed(() => route.params.worldId)
+const regionId = computed(() => route.params.regionId)
+const lotId = computed(() => route.params.lotId)
+const spaceId = computed(() => route.params.spaceId)
+
+const space = ref(null)
+const items = ref([])
+const world = ref(null)
+const region = ref(null)
+const lot = ref(null)
+const loading = ref(true)
+const error = ref(null)
+const showAddItemForm = ref(false)
+const saving = ref(false)
+
+const newItem = ref({
+  name: '',
+  description: ''
+})
+
+const breadcrumbs = computed(() => [
+  { label: 'Worlds', to: '/' },
+  { label: world.value?.name || 'Loading...', to: `/world/${worldId.value}` },
+  { label: region.value?.name || 'Loading...', to: `/world/${worldId.value}/region/${regionId.value}` },
+  { label: 'Overview', to: `/world/${worldId.value}/region/${regionId.value}/overview` },
+  { label: space.value?.name || 'Loading...', to: '#' }
+])
+
+const loadData = async () => {
+  try {
+    loading.value = true
+    error.value = null
+
+    const [worldData, regionsData, lotData, spaceData] = await Promise.all([
+      client.request(queries.getWorld, { id: worldId.value }),
+      client.request(queries.getRegions, { worldId: worldId.value }),
+      client.request(queries.getLot, { id: lotId.value }),
+      client.request(queries.getSpace, { id: spaceId.value })
+    ])
+
+    world.value = worldData.world
+    region.value = regionsData.regions.find(r => r.id === regionId.value)
+    lot.value = lotData.lot
+    space.value = spaceData.space
+    items.value = spaceData.space?.items || []
+  } catch (e) {
+    error.value = e.message
+  } finally {
+    loading.value = false
+  }
+}
+
+const addItem = async () => {
+  try {
+    saving.value = true
+    error.value = null
+
+    const itemId = crypto.randomUUID()
+
+    await client.request(mutations.createItem, {
+      input: {
+        id: itemId,
+        spaceId: spaceId.value,
+        name: newItem.value.name,
+        description: newItem.value.description
+      }
+    })
+
+    // Add to local array
+    items.value.push({
+      id: itemId,
+      name: newItem.value.name,
+      description: newItem.value.description
+    })
+
+    // Reset form
+    newItem.value = { name: '', description: '' }
+    showAddItemForm.value = false
+  } catch (e) {
+    error.value = e.message
+  } finally {
+    saving.value = false
+  }
+}
+
+const removeItem = async (itemId) => {
+  if (!confirm('Are you sure you want to remove this item?')) return
+
+  try {
+    error.value = null
+
+    await client.request(mutations.deleteItem, { id: itemId })
+
+    // Remove from local array
+    items.value = items.value.filter(i => i.id !== itemId)
+  } catch (e) {
+    error.value = e.message
+  }
+}
+
+onMounted(loadData)
+</script>

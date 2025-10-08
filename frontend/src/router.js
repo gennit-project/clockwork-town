@@ -4,6 +4,7 @@ import RegionList from './views/RegionList.vue'
 import RegionOverview from './views/RegionOverview.vue'
 import LotList from './views/LotList.vue'
 import SpaceList from './views/SpaceList.vue'
+import SpaceDetail from './views/SpaceDetail.vue'
 import HouseholdForm from './views/HouseholdForm.vue'
 import HouseholdDetail from './views/HouseholdDetail.vue'
 
@@ -39,6 +40,11 @@ export const router = createRouter({
       path: '/world/:worldId/region/:regionId/lot/:lotId',
       name: 'spaces',
       component: SpaceList
+    },
+    {
+      path: '/world/:worldId/region/:regionId/lot/:lotId/space/:spaceId',
+      name: 'space-detail',
+      component: SpaceDetail
     },
     {
       path: '/world/:worldId/region/:regionId/household/new',
