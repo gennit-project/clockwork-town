@@ -225,23 +225,25 @@ export const useSimulationStore = defineStore('simulation', () => {
 
     // Phase 2: Decision Making
     console.log('\n--- Phase 2: Decision Making ---')
+    const intents = {}
     for (const characterId in characterStates.value) {
       // Select the best intent for this character
       const intent = selectBestIntent(characterId)
+      intents[characterId] = intent
 
-      // Log the intent (execution will be implemented in Step 12)
+      // Log the intent
       if (intent.action === 'idle') {
-        logActivity(characterId, 'idle', 'No satisfying actions available')
         console.log(`  ${characterId}: intends to idle (no satisfying actions)`)
       } else {
-        const intentDetails = `intends to ${intent.action} at ${intent.itemName} (${intent.targetSpaceName}, ${intent.targetLotName}) - utility: ${intent.utility.toFixed(2)}`
-        logActivity(characterId, intent.action, intentDetails)
-        console.log(`  ${characterId}: ${intentDetails}`)
+        console.log(`  ${characterId}: intends to ${intent.action} at ${intent.itemName} (${intent.targetSpaceName}, ${intent.targetLotName}) - utility: ${intent.utility.toFixed(2)}`)
       }
     }
 
-    // Phase 3: Execution (will be implemented in Step 12)
-    console.log('\n--- Phase 3: Execution (not yet implemented) ---')
+    // Phase 3: Execution
+    console.log('\n--- Phase 3: Execution ---')
+    for (const characterId in intents) {
+      executeAction(characterId, intents[characterId])
+    }
 
     // Log full state to console for debugging
     console.log('Character States:', JSON.parse(JSON.stringify(characterStates.value)))
@@ -324,6 +326,56 @@ export const useSimulationStore = defineStore('simulation', () => {
     logActivity(characterId, action, details)
 
     console.log(`✅ Action "${action}" applied successfully`)
+  }
+
+  /**
+   * Execute an action for a character based on their intent
+   * Step 12: Applies effects, sets cooldown, updates state, creates memory
+   *
+   * @param {string} characterId - The character performing the action
+   * @param {object} intent - The intent object from selectBestIntent()
+   */
+  function executeAction(characterId, intent) {
+    const state = characterStates.value[characterId]
+    if (!state) {
+      console.error(`❌ Character not found: ${characterId}`)
+      return
+    }
+
+    console.log(`\n⚡ Executing action for ${characterId}`)
+
+    // Handle idle case
+    if (intent.action === 'idle') {
+      state.currentAction = 'idle'
+      logActivity(characterId, 'idle', 'No satisfying actions available')
+      console.log(`  ${characterId}: idle (no actions available)`)
+      return
+    }
+
+    // Apply action effects (updates needs, sets cooldown, updates currentAction, logs activity)
+    applyActionEffects(characterId, intent.action, intent.itemName)
+
+    // Create memory
+    const memory = {
+      tick: currentTick.value,
+      action: intent.action,
+      item: intent.itemName,
+      location: `${intent.targetSpaceName} (${intent.targetLotName})`,
+      utility: intent.utility
+    }
+
+    // Store memory in character state (for future reference)
+    if (!state.memories) {
+      state.memories = []
+    }
+    state.memories.push(memory)
+
+    // Keep only last 20 memories to avoid memory bloat
+    if (state.memories.length > 20) {
+      state.memories = state.memories.slice(-20)
+    }
+
+    console.log(`  📝 Memory created: ${intent.action} at ${intent.itemName}`)
   }
 
   /**
@@ -680,6 +732,7 @@ export const useSimulationStore = defineStore('simulation', () => {
     executeTick,
     logActivity,
     applyActionEffects,
+    executeAction,
     startAutoTick,
     pauseAutoTick,
     resetSimulation,
