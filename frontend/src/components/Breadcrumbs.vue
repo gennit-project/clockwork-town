@@ -8,7 +8,7 @@
         <router-link
           v-if="index < crumbs.length - 1"
           :to="crumb.to"
-          class="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800"
+          class="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-white"
         >
           {{ crumb.label }}
         </router-link>

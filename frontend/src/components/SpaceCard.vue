@@ -4,7 +4,7 @@
     <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">{{ space.description }}</p>
 
     <div v-if="space.items && space.items.length > 0" class="mt-4">
-      <h4 class="text-sm font-medium text-gray-700 mb-2">Items ({{ space.items.length }})</h4>
+      <h4 class="text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Items ({{ space.items.length }})</h4>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div
           v-for="(item, itemIndex) in space.items"
@@ -12,7 +12,7 @@
           class="bg-gray-50 dark:bg-gray-900 rounded p-3"
         >
           <p class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ item.name }}</p>
-          <p class="mt-1 text-xs text-gray-500">{{ item.description }}</p>
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-300">{{ item.description }}</p>
         </div>
       </div>
     </div>

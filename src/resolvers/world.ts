@@ -292,6 +292,7 @@ export const WorldResolvers = {
                 canBeUsedByAnimals: false,
                 canStoreItems: false,
                 cost: 0,
+                count: 1,
                 satisfiesNeeds: [],
                 allowedActivities: []
               })`, {
@@ -344,6 +345,7 @@ export const WorldResolvers = {
                 canBeUsedByAnimals: false,
                 canStoreItems: false,
                 cost: 0,
+                count: 1,
                 satisfiesNeeds: [],
                 allowedActivities: []
               })`, {
