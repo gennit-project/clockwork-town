@@ -107,9 +107,9 @@ export const useSimulationStore = defineStore('simulation', () => {
 
   // World data for pathfinding (lots, spaces, items)
   const worldData = ref({
-    lots: {},      // { [lotId]: { id, name, spaceIds: [] } }
+    lots: {},      // { [lotId]: { id, name, regionId, spaceIds: [] } }
     spaces: {},    // { [spaceId]: { id, name, lotId, itemIds: [] } }
-    items: {},     // { [itemId]: { id, name, spaceId, lotId, allowedActivities: [] } }
+    items: {},     // { [itemId]: { id, name, spaceId, lotId, regionId, allowedActivities: [] } }
     itemsByAffordance: {}  // { [action]: [itemId1, itemId2, ...] }
   })
 
@@ -334,9 +334,10 @@ export const useSimulationStore = defineStore('simulation', () => {
   /**
    * Update character location
    */
-  function updateCharacterLocation(characterId, lotId, lotName, spaceId, spaceName) {
+  function updateCharacterLocation(characterId, regionId, lotId, lotName, spaceId, spaceName) {
     if (characterStates.value[characterId]) {
       characterStates.value[characterId].location = {
+        regionId,
         lotId,
         lotName,
         spaceId,
@@ -348,8 +349,9 @@ export const useSimulationStore = defineStore('simulation', () => {
   /**
    * Load world data (lots, spaces, items) for pathfinding
    * @param {Array} lots - Array of lot objects with indoorRooms and outdoorAreas
+   * @param {string} regionId - Region ID that these lots belong to
    */
-  function loadWorldData(lots) {
+  function loadWorldData(lots, regionId) {
     console.log('🗺️  Loading world data for pathfinding...')
 
     const newWorldData = {
@@ -385,6 +387,7 @@ export const useSimulationStore = defineStore('simulation', () => {
             name: item.name,
             spaceId: space.id,
             lotId: lot.id,
+            regionId: regionId,
             allowedActivities: item.allowedActivities || []
           }
 
@@ -410,6 +413,7 @@ export const useSimulationStore = defineStore('simulation', () => {
       newWorldData.lots[lot.id] = {
         id: lot.id,
         name: lot.name,
+        regionId: regionId,
         spaceIds
       }
     }
@@ -426,7 +430,7 @@ export const useSimulationStore = defineStore('simulation', () => {
 
   /**
    * Find items with a specific affordance (action) accessible to a character
-   * Step 7: Same space (cost 0) + Same lot (cost 1)
+   * Step 8: Same space (cost 0) + Same lot (cost 1) + Same region (cost 2)
    *
    * @param {string} characterId - Character ID
    * @param {string} action - Action name (e.g., 'eat', 'sleep')
@@ -441,7 +445,8 @@ export const useSimulationStore = defineStore('simulation', () => {
 
     const currentSpaceId = charState.location?.spaceId
     const currentLotId = charState.location?.lotId
-    if (!currentSpaceId || !currentLotId) {
+    const currentRegionId = charState.location?.regionId
+    if (!currentSpaceId || !currentLotId || !currentRegionId) {
       console.warn(`Character ${characterId} has incomplete location data`)
       return []
     }
@@ -467,6 +472,10 @@ export const useSimulationStore = defineStore('simulation', () => {
       else if (item.lotId === currentLotId) {
         travelCost = 1
       }
+      // Same region, different lot (cost 2)
+      else if (item.regionId === currentRegionId) {
+        travelCost = 2
+      }
 
       // If accessible, add to results
       if (travelCost !== null) {
@@ -486,7 +495,7 @@ export const useSimulationStore = defineStore('simulation', () => {
     results.sort((a, b) => a.travelCost - b.travelCost)
 
     console.log(`🔍 findItemsWithAffordance('${characterId}', '${action}'):`)
-    console.log(`  Found ${results.length} items (cost 0: ${results.filter(r => r.travelCost === 0).length}, cost 1: ${results.filter(r => r.travelCost === 1).length})`)
+    console.log(`  Found ${results.length} items (cost 0: ${results.filter(r => r.travelCost === 0).length}, cost 1: ${results.filter(r => r.travelCost === 1).length}, cost 2: ${results.filter(r => r.travelCost === 2).length})`)
     console.log('  Results:', results)
     return results
   }

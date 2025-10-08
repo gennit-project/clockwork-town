@@ -472,7 +472,7 @@ const loadData = async () => {
     lotsWithSpaces.value = lotsWithSpacesData
 
     // Load world data into simulation store for pathfinding
-    simulationStore.loadWorldData(lotsWithSpacesData)
+    simulationStore.loadWorldData(lotsWithSpacesData, regionId.value)
 
     // Fetch characters and animals in the region
     try {
@@ -542,6 +542,7 @@ watch(characters, (newCharacters) => {
         if (firstSpace) {
           simulationStore.updateCharacterLocation(
             character.id,
+            regionId.value,
             character.location.id,
             character.location.name,
             firstSpace.id,
@@ -551,6 +552,7 @@ watch(characters, (newCharacters) => {
           // No spaces found, just set lot-level location
           simulationStore.updateCharacterLocation(
             character.id,
+            regionId.value,
             character.location.id,
             character.location.name,
             null,
@@ -561,6 +563,7 @@ watch(characters, (newCharacters) => {
         // No spaces in lot, just set lot-level location
         simulationStore.updateCharacterLocation(
           character.id,
+          regionId.value,
           character.location.id,
           character.location.name,
           null,
