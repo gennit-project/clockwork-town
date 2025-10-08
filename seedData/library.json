@@ -1,0 +1,246 @@
+{
+  "tags": [
+    "library"
+  ],
+  "input": {
+    "lotType": "COMMUNITY",
+    "lotName": "Desert Willow Public Library",
+    "lotDescription": "A single-story adobe building that smells of paper, dust, and coffee. Sunlight filters through tall windows onto worn carpet and rows of donated books. The library is small but well-loved — a haven for readers, students, and anyone seeking a little quiet in the desert heat.",
+    "indoorRooms": [
+      {
+        "spaceName": "Main Reading Room",
+        "spaceDescription": "A wide open space filled with bookshelves, tables, and the quiet hum of the ceiling fans. The afternoon light makes soft stripes across the floor.",
+        "items": [
+          {
+            "itemName": "Bookshelves",
+            "itemDescription": "Tall wooden shelves packed with fiction, nonfiction, and local history titles.",
+            "itemCount": 12
+          },
+          {
+            "itemName": "Reading Tables",
+            "itemDescription": "Sturdy oak tables surrounded by mismatched chairs.",
+            "itemCount": 4
+          },
+          {
+            "itemName": "Ceiling Fans",
+            "itemDescription": "Old metal fans that rattle gently in the heat.",
+            "itemCount": 3
+          },
+          {
+            "itemName": "Newspaper Rack",
+            "itemDescription": "Holds the latest local papers and community newsletters.",
+            "itemCount": 1
+          },
+          {
+            "itemName": "Display Shelf",
+            "itemDescription": "Showcases staff picks and local authors.",
+            "itemCount": 1
+          },
+          {
+            "itemName": "Potted Plants",
+            "itemDescription": "Small succulents kept near the windowsills.",
+            "itemCount": 5
+          }
+        ]
+      },
+      {
+        "spaceName": "Reception Desk",
+        "spaceDescription": "The hub of the library — where books are checked out, questions are answered, and gossip about town events circulates quietly behind the counter.",
+        "items": [
+          {
+            "itemName": "Checkout Computer",
+            "itemDescription": "Old desktop terminal with a barcode scanner.",
+            "itemCount": 1
+          },
+          {
+            "itemName": "Card Catalog Cabinet",
+            "itemDescription": "Still used by habit, though the drawers are half empty.",
+            "itemCount": 1
+          },
+          {
+            "itemName": "Phone",
+            "itemDescription": "Desk phone with a cord stretched to its limit.",
+            "itemCount": 1
+          },
+          {
+            "itemName": "Donation Jar",
+            "itemDescription": "Labeled 'For New Books,' half-full of loose change.",
+            "itemCount": 1
+          },
+          {
+            "itemName": "Stamp and Ink Pad",
+            "itemDescription": "Used for date stamps on borrowed books.",
+            "itemCount": 1
+          },
+          {
+            "itemName": "Desk Lamp",
+            "itemDescription": "Casts a warm circle of light on late evenings.",
+            "itemCount": 1
+          }
+        ]
+      },
+      {
+        "spaceName": "Children’s Corner",
+        "spaceDescription": "A bright nook with beanbag chairs, picture books, and crayon drawings taped to the walls. Sometimes the local teacher brings her class here on field trips.",
+        "items": [
+          {
+            "itemName": "Bookshelf",
+            "itemDescription": "Low shelf filled with picture books and early readers.",
+            "itemCount": 3
+          },
+          {
+            "itemName": "Beanbag Chairs",
+            "itemDescription": "Colorful and slightly flattened from years of use.",
+            "itemCount": 4
+          },
+          {
+            "itemName": "Rug",
+            "itemDescription": "Round rug patterned with letters of the alphabet.",
+            "itemCount": 1
+          },
+          {
+            "itemName": "Toy Bin",
+            "itemDescription": "Contains wooden puzzles and building blocks.",
+            "itemCount": 2
+          },
+          {
+            "itemName": "Storytime Chair",
+            "itemDescription": "Large, cozy chair used during reading sessions.",
+            "itemCount": 1
+          },
+          {
+            "itemName": "Drawing Board",
+            "itemDescription": "Covered in taped crayon drawings by local kids.",
+            "itemCount": 1
+          }
+        ]
+      },
+      {
+        "spaceName": "Computer Lab",
+        "spaceDescription": "A small side room with a few aging desktop computers, used mostly by students after school or older residents checking email.",
+        "items": [
+          {
+            "itemName": "Computers",
+            "itemDescription": "Public access terminals with slow internet but reliable keyboards.",
+            "itemCount": 6
+          },
+          {
+            "itemName": "Printer",
+            "itemDescription": "Used for resumes, homework, and the occasional flyer.",
+            "itemCount": 1
+          },
+          {
+            "itemName": "Chairs",
+            "itemDescription": "Basic plastic chairs that squeak on the tile floor.",
+            "itemCount": 6
+          },
+          {
+            "itemName": "Wall Clock",
+            "itemDescription": "Keeps steady time, faintly ticking.",
+            "itemCount": 1
+          },
+          {
+            "itemName": "Air Conditioner",
+            "itemDescription": "Wall unit that hums constantly during summer months.",
+            "itemCount": 1
+          }
+        ]
+      },
+      {
+        "spaceName": "Office",
+        "spaceDescription": "A small back room shared by the librarian and volunteers. It smells like old paper, ink, and coffee. There’s always a small fan running in the corner.",
+        "items": [
+          {
+            "itemName": "Desk",
+            "itemDescription": "Cluttered with pens, forms, and a coffee mug labeled 'Shhh.'",
+            "itemCount": 1
+          },
+          {
+            "itemName": "Filing Cabinet",
+            "itemDescription": "Contains membership forms, invoices, and old event posters.",
+            "itemCount": 2
+          },
+          {
+            "itemName": "Books to Repair",
+            "itemDescription": "Stack of worn titles waiting for tape and glue.",
+            "itemCount": 10
+          },
+          {
+            "itemName": "Corkboard",
+            "itemDescription": "Pinned with sticky notes, schedules, and a calendar of library events.",
+            "itemCount": 1
+          },
+          {
+            "itemName": "Fan",
+            "itemDescription": "Old desk fan that rattles when it starts up.",
+            "itemCount": 1
+          }
+        ]
+      }
+    ],
+    "outdoorSpaces": [
+      {
+        "spaceName": "Front Porch",
+        "spaceDescription": "Shaded entrance with a wooden bench and two planters. The library’s hours are handwritten on a sign taped to the glass door.",
+        "items": [
+          {
+            "itemName": "Bench",
+            "itemDescription": "Wooden bench where readers sit with borrowed books on cool mornings.",
+            "itemCount": 1
+          },
+          {
+            "itemName": "Planters",
+            "itemDescription": "Filled with desert marigolds and succulents.",
+            "itemCount": 2
+          },
+          {
+            "itemName": "Notice Board",
+            "itemDescription": "Displays flyers for book clubs, literacy nights, and lost cats.",
+            "itemCount": 1
+          },
+          {
+            "itemName": "Library Hours Sign",
+            "itemDescription": "Handwritten sign taped to the front door.",
+            "itemCount": 1
+          },
+          {
+            "itemName": "Outdoor Light",
+            "itemDescription": "Flickers softly after dusk.",
+            "itemCount": 1
+          }
+        ]
+      },
+      {
+        "spaceName": "Back Patio",
+        "spaceDescription": "A quiet outdoor space used for book clubs and small readings. String lights hang above a few tables, and the air smells faintly of sage.",
+        "items": [
+          {
+            "itemName": "Tables",
+            "itemDescription": "Metal tables with mismatched chairs.",
+            "itemCount": 3
+          },
+          {
+            "itemName": "String Lights",
+            "itemDescription": "Hung between the walls, glowing warm amber at night.",
+            "itemCount": 1
+          },
+          {
+            "itemName": "Potted Sage Plants",
+            "itemDescription": "Grown from cuttings donated by a local gardener.",
+            "itemCount": 4
+          },
+          {
+            "itemName": "Bookshelf Cart",
+            "itemDescription": "Used to wheel books outside during community readings.",
+            "itemCount": 1
+          },
+          {
+            "itemName": "Fence Gate",
+            "itemDescription": "Leads to a dirt path toward the community center.",
+            "itemCount": 1
+          }
+        ]
+      }
+    ]
+  }
+}

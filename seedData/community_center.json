@@ -1,0 +1,102 @@
+{
+  "tags": ["community_center"],
+  "input": {
+  "lotName": "Desert Willow Community Center",
+  "lotType": "COMMUNITY",
+  "lotDescription": "A low stucco building near the heart of town where residents gather for meetings, events, and weekend activities. The air smells of dust, floor wax, and brewed coffee. Its walls are covered with community flyers and faded photos of softball teams from decades past.",
+  "indoorRooms": [
+    {
+      "spaceName": "Main Hall",
+      "spaceDescription": "A wide, echoing room with folding chairs, a wooden stage, and a polished linoleum floor. Used for town meetings, yoga classes, and children’s theater rehearsals.",
+      "items": [
+        { "itemName": "Folding Chairs", "itemDescription": "Stacked neatly against the wall when not in use.", "itemCount": 40 },
+        { "itemName": "Folding Tables", "itemDescription": "Long, collapsible tables for events and potlucks.", "itemCount": 6 },
+        { "itemName": "Stage", "itemDescription": "Small raised platform with a curtain that doesn’t quite close.", "itemCount": 1 },
+        { "itemName": "Podium", "itemDescription": "Wooden podium with a faint coffee ring on the corner.", "itemCount": 1 },
+        { "itemName": "Ceiling Fans", "itemDescription": "Four large fans that hum loudly in summer.", "itemCount": 4 },
+        { "itemName": "Bulletin Board", "itemDescription": "Covered with flyers for tutoring, lost pets, and potluck sign-ups.", "itemCount": 1 }
+      ]
+    },
+    {
+      "spaceName": "Kitchen",
+      "spaceDescription": "A narrow room used for community meals and bake sales. Everything is functional, if a little mismatched.",
+      "items": [
+        { "itemName": "Refrigerator", "itemDescription": "Hums constantly; filled with pitchers and condiments from various events.", "itemCount": 1 },
+        { "itemName": "Oven and Stove", "itemDescription": "Well-used, especially during chili cook-offs.", "itemCount": 1 },
+        { "itemName": "Coffee Urns", "itemDescription": "Large percolators used for meetings and morning gatherings.", "itemCount": 2 },
+        { "itemName": "Serving Trays", "itemDescription": "Stacked metal trays for potlucks and bake sales.", "itemCount": 6 },
+        { "itemName": "Sink", "itemDescription": "Double-basin sink with an always-damp sponge.", "itemCount": 1 },
+        { "itemName": "Cabinets", "itemDescription": "Hold paper plates, utensils, and mismatched mugs.", "itemCount": 3 }
+      ]
+    },
+    {
+      "spaceName": "Game Room",
+      "spaceDescription": "A small side room with a pool table, board games, and an old television. Teenagers and retirees share the space depending on the time of day.",
+      "items": [
+        { "itemName": "Pool Table", "itemDescription": "Green felt worn thin at the corners.", "itemCount": 1 },
+        { "itemName": "Dartboard", "itemDescription": "Mounted slightly off-center on the far wall.", "itemCount": 1 },
+        { "itemName": "Board Games", "itemDescription": "Scrabble, Monopoly, and a half-finished puzzle.", "itemCount": 5 },
+        { "itemName": "TV", "itemDescription": "Old flat-screen used for local news and sports.", "itemCount": 1 },
+        { "itemName": "Folding Chairs", "itemDescription": "Lightweight metal chairs for casual gatherings.", "itemCount": 4 },
+        { "itemName": "Corkboard", "itemDescription": "Covered with Polaroids of past community events.", "itemCount": 1 }
+      ]
+    },
+    {
+      "spaceName": "Office",
+      "spaceDescription": "A small room used by the community coordinator and volunteers. Smells of ink, paper, and coffee.",
+      "items": [
+        { "itemName": "Desk", "itemDescription": "Cluttered with donation forms, pens, and a rotary phone.", "itemCount": 1 },
+        { "itemName": "Filing Cabinet", "itemDescription": "Contains community event permits and maintenance records.", "itemCount": 2 },
+        { "itemName": "Computer", "itemDescription": "Old desktop model used for scheduling events.", "itemCount": 1 },
+        { "itemName": "Printer", "itemDescription": "Always low on toner.", "itemCount": 1 },
+        { "itemName": "Whiteboard", "itemDescription": "Lists weekly activities: yoga, town meeting, kids’ art night.", "itemCount": 1 }
+      ]
+    },
+    {
+      "spaceName": "Storage Room",
+      "spaceDescription": "Dimly lit space filled with extra chairs, seasonal decorations, and supplies from forgotten events.",
+      "items": [
+        { "itemName": "Holiday Decorations", "itemDescription": "Boxes labeled ‘Halloween,’ ‘Christmas,’ and ‘Town Fair.’", "itemCount": 5 },
+        { "itemName": "Cleaning Supplies", "itemDescription": "Mops, brooms, and buckets with faded labels.", "itemCount": 3 },
+        { "itemName": "Event Supplies", "itemDescription": "Plastic tubs filled with tablecloths, banners, and markers.", "itemCount": 4 },
+        { "itemName": "Extra Chairs", "itemDescription": "Folding metal chairs stacked against the wall.", "itemCount": 20 }
+      ]
+    }
+  ],
+  "outdoorSpaces": [
+    {
+      "spaceName": "Front Courtyard",
+      "spaceDescription": "A shaded patio with benches, a flagpole, and a mural painted by local kids. People gather here before meetings or after evening events.",
+      "items": [
+        { "itemName": "Benches", "itemDescription": "Two concrete benches under the eaves.", "itemCount": 2 },
+        { "itemName": "Flagpole", "itemDescription": "Holds the town flag, slightly frayed at the edges.", "itemCount": 1 },
+        { "itemName": "Mural", "itemDescription": "Colorful desert scene painted by students years ago.", "itemCount": 1 },
+        { "itemName": "Notice Board", "itemDescription": "Announces upcoming events and volunteer calls.", "itemCount": 1 }
+      ]
+    },
+    {
+      "spaceName": "Recreation Field",
+      "spaceDescription": "A dusty open field behind the building used for local softball games and weekend fairs. The grass is patchy, but the view of the mountains is perfect.",
+      "items": [
+        { "itemName": "Bleachers", "itemDescription": "Two rows of aluminum seating facing the field.", "itemCount": 2 },
+        { "itemName": "Softball Diamond", "itemDescription": "Simple dirt diamond marked with chalk lines.", "itemCount": 1 },
+        { "itemName": "Storage Shed", "itemDescription": "Holds sports gear and field maintenance tools.", "itemCount": 1 },
+        { "itemName": "Picnic Tables", "itemDescription": "Used for fairs, bake sales, and family gatherings.", "itemCount": 3 },
+        { "itemName": "Outdoor Lights", "itemDescription": "Tall poles that flicker to life at dusk.", "itemCount": 4 }
+      ]
+    },
+    {
+      "spaceName": "Side Garden",
+      "spaceDescription": "A small garden maintained by volunteers and the local elementary class. Rows of succulents, sage, and a few stubborn sunflowers grow there.",
+      "items": [
+        { "itemName": "Garden Beds", "itemDescription": "Wooden frames filled with soil and desert plants.", "itemCount": 4 },
+        { "itemName": "Compost Bin", "itemDescription": "Large plastic drum for garden waste.", "itemCount": 1 },
+        { "itemName": "Water Barrel", "itemDescription": "Collects rainwater from the roof for irrigation.", "itemCount": 1 },
+        { "itemName": "Tool Shed", "itemDescription": "Holds trowels, gloves, and watering cans.", "itemCount": 1 }
+      ]
+    }
+  ]
+}
+
+
+}
