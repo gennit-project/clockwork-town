@@ -46,7 +46,7 @@
             </div>
 
             <div v-if="character.bio" class="mt-4">
-              <h1 class="text-3xl font-medium text-gray-700 mb-2">Biography</h1>
+             
               <div class="bg-gray-50 p-4 rounded-md">
                 <MarkdownRenderer :text="character.bio" fontSize="small" />
               </div>
@@ -58,20 +58,33 @@
         </div>
       </div>
 
-      <!-- Animals Section (if any exist in future) -->
+      <!-- Animals Section -->
       <div v-if="household.animals && household.animals.length > 0" class="mb-8">
         <h2 class="text-2xl font-bold text-gray-900 mb-4">Pets</h2>
-        <div class="grid gap-4 md:grid-cols-2">
+        <div class="space-y-6">
           <div
             v-for="animal in household.animals"
             :key="animal.id"
-            class="bg-amber-50 p-4 rounded-lg shadow border border-amber-200"
+            class="bg-amber-50 p-6 rounded-lg shadow border border-amber-200"
           >
-            <h3 class="text-lg font-semibold text-gray-900">{{ animal.name }}</h3>
-            <p class="text-sm text-gray-600">Age: {{ animal.age }}</p>
-            <p class="text-sm text-gray-600" v-if="animal.traits && animal.traits.length > 0">
-              Traits: {{ animal.traits.join(', ') }}
-            </p>
+            <div class="flex justify-between items-start mb-4">
+              <div>
+                <h3 class="text-xl font-semibold text-gray-900">{{ animal.name }}</h3>
+                <p class="text-sm text-gray-600">Age: {{ animal.age }}</p>
+                <p class="text-sm text-gray-600" v-if="animal.traits && animal.traits.length > 0">
+                  Traits: {{ animal.traits.join(', ') }}
+                </p>
+              </div>
+            </div>
+
+            <div v-if="animal.bio" class="mt-4">
+              <div class="bg-white p-4 rounded-md">
+                <MarkdownRenderer :text="animal.bio" fontSize="small" />
+              </div>
+            </div>
+            <div v-else class="text-gray-600 italic text-sm">
+              No biography available.
+            </div>
           </div>
         </div>
       </div>

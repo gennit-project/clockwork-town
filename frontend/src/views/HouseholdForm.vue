@@ -203,7 +203,7 @@
                   </option>
                 </select>
               </div>
-              <div>
+              <div class="mb-3">
                 <label class="block text-xs font-medium text-gray-700 mb-1">
                   Traits (comma separated)
                 </label>
@@ -212,6 +212,17 @@
                   type="text"
                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                   placeholder="e.g., friendly, playful, loyal"
+                />
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">
+                  Biography
+                </label>
+                <textarea
+                  v-model="animal.bio"
+                  rows="6"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="Write about this animal's personality, history, etc. (supports markdown)"
                 />
               </div>
             </div>
@@ -310,7 +321,14 @@ const loadData = async () => {
             age: c.age,
             bio: c.bio || ''
           })),
-          animals: []  // TODO: Load animals when we add them to the household query
+          animals: household.animals.map(a => ({
+            id: a.id,
+            name: a.name,
+            age: a.age,
+            ownerId: a.ownerId || '',
+            traitsString: (a.traits || []).join(', '),
+            bio: a.bio || ''
+          }))
         }
       }
     }
@@ -369,7 +387,8 @@ const saveHousehold = async () => {
           name: a.name,
           age: a.age,
           ownerId: a.ownerId,
-          traits: a.traitsString ? a.traitsString.split(',').map(t => t.trim()).filter(t => t) : []
+          traits: a.traitsString ? a.traitsString.split(',').map(t => t.trim()).filter(t => t) : [],
+          bio: a.bio || null
         }))
       })
     } else {
@@ -391,7 +410,8 @@ const saveHousehold = async () => {
           name: a.name,
           age: a.age,
           ownerId: a.ownerId,
-          traits: a.traitsString ? a.traitsString.split(',').map(t => t.trim()).filter(t => t) : []
+          traits: a.traitsString ? a.traitsString.split(',').map(t => t.trim()).filter(t => t) : [],
+          bio: a.bio || null
         }))
       })
     }

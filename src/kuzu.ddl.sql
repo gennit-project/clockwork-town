@@ -48,7 +48,7 @@ CREATE NODE TABLE IF NOT EXISTS Character(
 );
 
 CREATE NODE TABLE IF NOT EXISTS Animal(
-  id STRING, name STRING, age INT64, traits STRING[],
+  id STRING, name STRING, age INT64, traits STRING[], bio STRING,
   PRIMARY KEY(id)
 );
 

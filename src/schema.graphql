@@ -235,7 +235,9 @@ type Animal {
   name: String!
   age: Int!
   traits: [String!]!
+  bio: String
 
+  ownerId: ID!
   owner: Character!
   parents: [Animal!]!
   siblings: [Animal!]!
@@ -340,6 +342,7 @@ input NewAnimalSimple {
   age: Int!
   traits: [String!]!
   ownerId: ID!
+  bio: String
 }
 
 input NewCharacter {

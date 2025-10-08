@@ -38,7 +38,8 @@ export const HouseholdResolvers = {
 
       const animals = await q(`
         MATCH (h:Household {id:$id})<-[:ANIMAL_IN_HOUSEHOLD]-(an:Animal)
-        RETURN an.id AS id, an.name AS name, an.age AS age, an.traits AS traits
+        OPTIONAL MATCH (owner:Character)-[:OWNS_ANIMAL]->(an)
+        RETURN an.id AS id, an.name AS name, an.age AS age, an.traits AS traits, an.bio AS bio, owner.id AS ownerId
       `, { id });
 
       return { ...h, characters, animals };
@@ -49,7 +50,7 @@ export const HouseholdResolvers = {
     createHousehold: async (_: any, { input, characters, animals }: {
       input: { id: string; name: string; regionId: string; lotId: string };
       characters: Array<{ id: string; name: string; age: number; bio?: string }>;
-      animals?: Array<{ id: string; name: string; age: number; traits: string[]; ownerId: string }>
+      animals?: Array<{ id: string; name: string; age: number; traits: string[]; ownerId: string; bio?: string }>
     }) => {
       const { id, name, lotId } = input;
 
@@ -88,11 +89,12 @@ export const HouseholdResolvers = {
         // Create and link animals
         if (animals && animals.length > 0) {
           for (const animal of animals) {
-            await q(`CREATE (:Animal {id:$aid, name:$aname, age:$age, traits:$traits})`, {
+            await q(`CREATE (:Animal {id:$aid, name:$aname, age:$age, traits:$traits, bio:$bio})`, {
               aid: animal.id,
               aname: animal.name,
               age: animal.age,
-              traits: animal.traits
+              traits: animal.traits,
+              bio: animal.bio || null
             });
 
             await q(`
@@ -128,7 +130,7 @@ export const HouseholdResolvers = {
       name: string;
       lotId: string;
       characters?: Array<{ id: string; name: string; age: number; bio?: string }>;
-      animals?: Array<{ id: string; name: string; age: number; traits: string[]; ownerId: string }>
+      animals?: Array<{ id: string; name: string; age: number; traits: string[]; ownerId: string; bio?: string }>
     }) => {
       // Update household and lot in one batch
       await batch(async () => {
@@ -237,12 +239,13 @@ export const HouseholdResolvers = {
             if (existingAnimalIds.has(animal.id)) {
               await q(`
                 MATCH (an:Animal {id:$aid})
-                SET an.name = $aname, an.age = $age, an.traits = $traits
+                SET an.name = $aname, an.age = $age, an.traits = $traits, an.bio = $bio
               `, {
                 aid: animal.id,
                 aname: animal.name,
                 age: animal.age,
-                traits: animal.traits
+                traits: animal.traits,
+                bio: animal.bio || null
               });
 
               await q(`MATCH (an:Animal {id:$aid})<-[r:OWNS_ANIMAL]-() DELETE r`, { aid: animal.id });
@@ -251,11 +254,12 @@ export const HouseholdResolvers = {
                 CREATE (ch)-[:OWNS_ANIMAL]->(an)
               `, { aid: animal.id, cid: animal.ownerId });
             } else {
-              await q(`CREATE (:Animal {id:$aid, name:$aname, age:$age, traits:$traits})`, {
+              await q(`CREATE (:Animal {id:$aid, name:$aname, age:$age, traits:$traits, bio:$bio})`, {
                 aid: animal.id,
                 aname: animal.name,
                 age: animal.age,
-                traits: animal.traits
+                traits: animal.traits,
+                bio: animal.bio || null
               });
 
               await q(`
