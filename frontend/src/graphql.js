@@ -50,6 +50,11 @@ export const queries = {
           name
           age
           bio
+          location {
+            id
+            name
+            lotType
+          }
         }
         animals {
           id

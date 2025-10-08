@@ -490,10 +490,49 @@ const resetSimulation = () => {
 }
 
 // Initialize characters when they load
-watch(characters, (newCharacters) => {
-  newCharacters.forEach(character => {
+watch(characters, async (newCharacters) => {
+  for (const character of newCharacters) {
+    // Initialize character in simulation store
     simulationStore.initializeCharacter(character)
-  })
+
+    // Update character location if available
+    if (character.location) {
+      // Fetch the first indoor room for this lot to set as initial space
+      try {
+        const spacesData = await client.request(queries.getSpaces, { lotId: character.location.id })
+        const firstIndoorRoom = spacesData.lot?.indoorRooms?.[0]
+
+        if (firstIndoorRoom) {
+          simulationStore.updateCharacterLocation(
+            character.id,
+            character.location.id,
+            character.location.name,
+            firstIndoorRoom.id,
+            firstIndoorRoom.name
+          )
+        } else {
+          // No indoor rooms, just set lot-level location
+          simulationStore.updateCharacterLocation(
+            character.id,
+            character.location.id,
+            character.location.name,
+            null,
+            null
+          )
+        }
+      } catch (e) {
+        console.error(`Error loading spaces for character ${character.id}:`, e)
+        // Fallback to lot-level location only
+        simulationStore.updateCharacterLocation(
+          character.id,
+          character.location.id,
+          character.location.name,
+          null,
+          null
+        )
+      }
+    }
+  }
 }, { immediate: true })
 
 // Cleanup on unmount

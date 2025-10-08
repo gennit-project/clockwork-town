@@ -1,6 +1,16 @@
 import { batch, q } from "../kuzuHelpers";
 
 export const CharacterResolvers = {
+  Character: {
+    location: async (parent: { id: string }) => {
+      const [loc] = await q(`
+        MATCH (c:Character {id:$cid})-[:AT]->(l:Lot)
+        RETURN l.id AS id, l.name AS name, l.lotType AS lotType
+      `, { cid: parent.id });
+      return loc ?? null;
+    },
+  },
+
   Query: {
     character: async (_: any, { id }: { id: string }) => {
       const [c] = await q(`

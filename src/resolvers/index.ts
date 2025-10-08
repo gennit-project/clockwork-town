@@ -17,6 +17,10 @@ export const resolvers = {
     ...ActivityResolvers.Mutation,
     ...HouseholdResolvers.Mutation,
   },
+  Character: {
+    ...CharacterResolvers.Character,
+    ...RelationshipResolvers.Character,
+  },
   Space: WorldResolvers.Space,
   Region: WorldResolvers.Region,
   Lot: WorldResolvers.Lot,
