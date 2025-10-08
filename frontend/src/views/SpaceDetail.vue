@@ -15,9 +15,6 @@
       <div class="mb-6">
         <div class="flex items-center gap-3 mb-2">
           <h1 class="text-3xl font-bold text-gray-900">{{ space?.name || 'Loading...' }}</h1>
-          <span class="text-2xl">
-            {{ space?.isIndoor ? '🏠' : '🌳' }}
-          </span>
         </div>
         <p class="text-gray-600">{{ space?.description }}</p>
       </div>

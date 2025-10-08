@@ -13,13 +13,15 @@
     </div>
 
     <div v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      <router-link
+      <div
         v-for="template in templates"
         :key="template.id"
-        :to="`/library/lots/${template.id}`"
-        class="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow block"
+        class="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow relative group"
       >
-        <div class="p-5">
+        <router-link
+          :to="`/library/lots/${template.id}`"
+          class="block p-5"
+        >
           <div class="flex items-center justify-between">
             <h3 class="text-lg font-medium text-gray-900">{{ template.name }}</h3>
             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -55,8 +57,47 @@
           <div class="mt-4 text-sm text-indigo-600 font-medium">
             View Details →
           </div>
+        </router-link>
+
+        <!-- Delete Button -->
+        <button
+          @click="confirmDelete(template)"
+          class="absolute top-2 right-2 p-2 text-gray-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity bg-white rounded-full shadow-sm"
+          title="Delete template"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div v-if="deletingTemplate" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div class="bg-white rounded-lg p-6 max-w-md w-full">
+        <h2 class="text-2xl font-bold mb-4 text-gray-900">Delete Template</h2>
+        <p class="mb-2 text-gray-700">Are you sure you want to delete "{{ deletingTemplate.name }}"?</p>
+        <p class="mb-4 text-sm text-gray-500">
+          This will permanently delete the template along with all {{ (deletingTemplate.indoorRooms?.length || 0) + (deletingTemplate.outdoorAreas?.length || 0) }} spaces and their items.
+        </p>
+        <div class="flex justify-end space-x-3">
+          <button
+            type="button"
+            @click="deletingTemplate = null"
+            :disabled="deleting"
+            class="px-4 py-2 text-gray-700 hover:text-gray-900 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            @click="deleteTemplate"
+            :disabled="deleting"
+            class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md disabled:opacity-50"
+          >
+            {{ deleting ? 'Deleting...' : 'Delete' }}
+          </button>
         </div>
-      </router-link>
+      </div>
     </div>
   </div>
 </template>
@@ -69,6 +110,8 @@ import { client } from '../graphql'
 const templates = ref([])
 const loading = ref(true)
 const error = ref(null)
+const deletingTemplate = ref(null)
+const deleting = ref(false)
 
 const QUERY_LOT_TEMPLATES = gql`
   query GetLotTemplates {
@@ -98,8 +141,15 @@ const QUERY_LOT_TEMPLATES = gql`
   }
 `
 
-onMounted(async () => {
+const MUTATION_DELETE_LOT_TEMPLATE = gql`
+  mutation DeleteLotTemplate($id: ID!) {
+    deleteLotTemplate(id: $id)
+  }
+`
+
+const loadTemplates = async () => {
   try {
+    loading.value = true
     const data = await client.request(QUERY_LOT_TEMPLATES)
     templates.value = data.lotTemplates
   } catch (e) {
@@ -107,5 +157,31 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
-})
+}
+
+const confirmDelete = (template) => {
+  deletingTemplate.value = template
+}
+
+const deleteTemplate = async () => {
+  try {
+    deleting.value = true
+    await client.request(MUTATION_DELETE_LOT_TEMPLATE, {
+      id: deletingTemplate.value.id
+    })
+
+    // Remove from local array
+    templates.value = templates.value.filter(t => t.id !== deletingTemplate.value.id)
+
+    // Close modal
+    deletingTemplate.value = null
+  } catch (e) {
+    error.value = e
+    alert('Error deleting template: ' + e.message)
+  } finally {
+    deleting.value = false
+  }
+}
+
+onMounted(loadTemplates)
 </script>

@@ -33,14 +33,15 @@
           <div
             v-for="reg in regions"
             :key="reg.id"
-            class="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-shadow"
+            class="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer"
+            @click="viewRegion(reg.id)"
           >
             <div class="flex justify-between items-start mb-2">
               <div>
                 <h2 class="text-xl font-semibold text-gray-900">{{ reg.name }}</h2>
                 <p class="text-sm text-gray-500">{{ reg.kind }}</p>
               </div>
-              <div class="flex space-x-2">
+              <div class="flex space-x-2" @click.stop>
                 <button
                   @click="editRegion(reg)"
                   class="text-blue-600 hover:text-blue-800"
@@ -61,12 +62,9 @@
                 </button>
               </div>
             </div>
-            <router-link
-              :to="`/world/${worldId}/region/${reg.id}`"
-              class="text-blue-600 hover:text-blue-800 font-medium"
-            >
+            <div class="text-blue-600 hover:text-blue-800 font-medium">
               View Details →
-            </router-link>
+            </div>
           </div>
         </div>
       </div>
@@ -101,16 +99,14 @@
             <div
               v-for="lot in lots"
               :key="lot.id"
-              class="bg-white p-4 rounded-lg shadow hover:shadow-lg transition-shadow"
+              class="bg-white p-4 rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer"
+              @click="viewLot(lot.id)"
             >
               <h3 class="text-lg font-semibold text-gray-900">{{ lot.name }}</h3>
               <p class="text-sm text-gray-500 mb-2">{{ lot.lotType }}</p>
-              <router-link
-                :to="`/world/${worldId}/region/${regionId}/lot/${lot.id}`"
-                class="text-blue-600 hover:text-blue-800 text-sm font-medium"
-              >
+              <div class="text-blue-600 hover:text-blue-800 text-sm font-medium">
                 View Spaces →
-              </router-link>
+              </div>
             </div>
           </div>
         </div>
@@ -135,20 +131,16 @@
             <div
               v-for="household in households"
               :key="household.id"
-              class="bg-white p-4 rounded-lg shadow hover:shadow-lg transition-shadow"
+              class="bg-white p-4 rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer"
+              @click="viewHousehold(household.id)"
             >
               <div class="flex justify-between items-start mb-2">
                 <div>
-                  <router-link
-                    :to="`/world/${worldId}/region/${regionId}/household/${household.id}`"
-                    class="text-lg font-semibold text-gray-900 hover:text-blue-600"
-                  >
-                    {{ household.name }}
-                  </router-link>
+                  <h3 class="text-lg font-semibold text-gray-900">{{ household.name }}</h3>
                   <p class="text-sm text-gray-500">{{ household.lotName }}</p>
                   <p class="text-xs text-gray-400 mt-1">{{ household.characters.length }} member(s)</p>
                 </div>
-                <div class="flex space-x-2">
+                <div class="flex space-x-2" @click.stop>
                   <router-link
                     :to="`/world/${worldId}/region/${regionId}/household/${household.id}/edit`"
                     class="text-blue-600 hover:text-blue-800"
@@ -290,11 +282,12 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
 import { client, queries, mutations } from '../graphql'
 
 const route = useRoute()
+const router = useRouter()
 const worldId = computed(() => route.params.worldId)
 const regionId = computed(() => route.params.regionId)
 const isRegionDetailView = computed(() => !!regionId.value)
@@ -446,6 +439,18 @@ const deleteHousehold = async () => {
   } finally {
     saving.value = false
   }
+}
+
+const viewRegion = (regId) => {
+  router.push(`/world/${worldId.value}/region/${regId}`)
+}
+
+const viewLot = (lotId) => {
+  router.push(`/world/${worldId.value}/region/${regionId.value}/lot/${lotId}`)
+}
+
+const viewHousehold = (householdId) => {
+  router.push(`/world/${worldId.value}/region/${regionId.value}/household/${householdId}`)
 }
 
 onMounted(loadData)

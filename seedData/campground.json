@@ -1,0 +1,90 @@
+{
+  "tags": [
+    "campgrounds"
+  ],
+  "input": {
+    "lotName": "Coyote Ridge Campgrounds",
+    "lotType": "COMMUNITY",
+    "lotDescription": "A quiet stretch of high desert land with sparse mesquite trees, gravel fire pits, and a single brick restroom near the trailhead. Popular with travelers and locals who like the silence.",
+    "indoorRooms": [
+      {
+        "spaceName": "Restroom",
+        "spaceDescription": "A small cinderblock building with two stalls, a cracked mirror, and a buzzing fluorescent light.",
+        "items": [
+          {
+            "itemName": "Toilet Stall",
+            "itemDescription": "One of two stalls; the door latch doesn’t quite catch."
+          },
+          {
+            "itemName": "Sink",
+            "itemDescription": "Porcelain sink with a slow drip and a bar of cracked soap."
+          },
+          {
+            "itemName": "Mirror",
+            "itemDescription": "Cracked in the corner, slightly warped reflection."
+          },
+          {
+            "itemName": "Paper Towel Dispenser",
+            "itemDescription": "Half-full and jammed."
+          }
+        ]
+      }
+    ],
+    "outdoorSpaces": [
+      {
+        "spaceName": "Main Campsite Clearing",
+        "spaceDescription": "Wide open gravel area ringed by desert brush and fire pits.",
+        "items": [
+          {
+            "itemName": "Picnic Table",
+            "itemDescription": "Sun-bleached wood, initials carved into the surface."
+          },
+          {
+            "itemName": "Fire Pit",
+            "itemDescription": "Circle of stones with charred logs inside."
+          },
+          {
+            "itemName": "Water Spigot",
+            "itemDescription": "Rust-stained, slow but functional."
+          }
+        ]
+      },
+      {
+        "spaceName": "Trailhead and Parking Area",
+        "spaceDescription": "Flat stretch of dirt with tire marks and a weathered bulletin board showing hiking routes.",
+        "items": [
+          {
+            "itemName": "Trail Map Board",
+            "itemDescription": "Wooden board with peeling paint and laminated notices."
+          },
+          {
+            "itemName": "Trash Bin",
+            "itemDescription": "Metal barrel marked 'PACK IN / PACK OUT'."
+          },
+          {
+            "itemName": "Park Sign",
+            "itemDescription": "Reads 'Coyote Ridge Campgrounds — Established 1978'."
+          }
+        ]
+      },
+      {
+        "spaceName": "Creekside Grove",
+        "spaceDescription": "A shady area where the dry creek sometimes flows after storms. Quiet and cool, with a few scattered stones used as seats.",
+        "items": [
+          {
+            "itemName": "Stone Circle",
+            "itemDescription": "Smooth river stones arranged for campers to sit around."
+          },
+          {
+            "itemName": "Mesquite Trees",
+            "itemDescription": "Provide shade and a home for desert birds."
+          },
+          {
+            "itemName": "Old Cooler",
+            "itemDescription": "Left behind by someone seasons ago, faded red plastic."
+          }
+        ]
+      }
+    ]
+  }
+}

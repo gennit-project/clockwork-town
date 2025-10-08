@@ -26,11 +26,12 @@
       <div
         v-for="world in worlds"
         :key="world.id"
-        class="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-shadow"
+        class="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer"
+        @click="viewWorld(world.id)"
       >
         <div class="flex justify-between items-start mb-2">
           <h2 class="text-xl font-semibold text-gray-900">{{ world.name }}</h2>
-          <div class="flex space-x-2">
+          <div class="flex space-x-2" @click.stop>
             <button
               @click="editWorld(world)"
               class="text-blue-600 hover:text-blue-800"
@@ -54,12 +55,9 @@
         <p class="text-sm text-gray-500 mb-4">
           Created {{ new Date(world.createdAt).toLocaleDateString() }}
         </p>
-        <router-link
-          :to="`/world/${world.id}`"
-          class="text-blue-600 hover:text-blue-800 font-medium"
-        >
+        <div class="text-blue-600 hover:text-blue-800 font-medium">
           View Regions →
-        </router-link>
+        </div>
       </div>
     </div>
 
@@ -130,8 +128,10 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { client, queries, mutations } from '../graphql'
 
+const router = useRouter()
 const worlds = ref([])
 const loading = ref(true)
 const error = ref(null)
@@ -205,6 +205,10 @@ const deleteWorld = async () => {
   } finally {
     saving.value = false
   }
+}
+
+const viewWorld = (worldId) => {
+  router.push(`/world/${worldId}`)
 }
 
 onMounted(loadWorlds)
