@@ -4,12 +4,20 @@
 
     <div class="flex justify-between items-center mb-6">
       <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Spaces</h1>
-      <button
-        @click="showCreateModal = true"
-        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
-      >
-        Create Space
-      </button>
+      <div class="flex gap-3">
+        <button
+          @click="showSaveTemplateModal = true"
+          class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
+        >
+          Save as Template
+        </button>
+        <button
+          @click="showCreateModal = true"
+          class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+        >
+          Create Space
+        </button>
+      </div>
     </div>
 
     <div v-if="loading" class="text-center py-12">
@@ -202,6 +210,53 @@
         </div>
       </div>
     </div>
+
+    <!-- Save as Template Modal -->
+    <div v-if="showSaveTemplateModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
+        <h2 class="text-2xl font-bold mb-4">Save Lot as Template</h2>
+        <form @submit.prevent="saveAsTemplate">
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+              Template Description (optional)
+            </label>
+            <textarea
+              v-model="templateData.description"
+              rows="3"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Describe this template"
+            ></textarea>
+          </div>
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+              Tags (comma-separated)
+            </label>
+            <input
+              v-model="templateData.tagsInput"
+              type="text"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="e.g., residential, starter, cozy"
+            />
+          </div>
+          <div class="flex justify-end space-x-3">
+            <button
+              type="button"
+              @click="closeSaveTemplateModal"
+              class="px-4 py-2 text-gray-700 hover:text-gray-900 dark:text-gray-100"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              :disabled="saving"
+              class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md disabled:opacity-50"
+            >
+              {{ saving ? 'Saving...' : 'Save Template' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -230,6 +285,8 @@ const editingSpace = ref(null)
 const deletingSpace = ref(null)
 const saving = ref(false)
 const formData = ref({ name: '', description: '', isIndoor: '' })
+const showSaveTemplateModal = ref(false)
+const templateData = ref({ description: '', tagsInput: '' })
 
 const allSpaces = computed(() => [...indoorSpaces.value, ...outdoorSpaces.value])
 
@@ -328,6 +385,60 @@ const deleteSpace = async () => {
 
 const viewSpace = (space) => {
   router.push(`/world/${worldId.value}/region/${regionId.value}/lot/${lotId.value}/space/${space.id}`)
+}
+
+const closeSaveTemplateModal = () => {
+  showSaveTemplateModal.value = false
+  templateData.value = { description: '', tagsInput: '' }
+}
+
+const saveAsTemplate = async () => {
+  try {
+    saving.value = true
+    error.value = null
+
+    // Fetch the lot with all spaces and items
+    const lotData = await client.request(queries.getSpacesWithItems, { lotId: lotId.value })
+
+    const tags = templateData.value.tagsInput
+      .split(',')
+      .map(tag => tag.trim())
+      .filter(tag => tag.length > 0)
+
+    const input = {
+      lotName: lotData.lot.name,
+      lotType: lotData.lot.lotType,
+      lotDescription: templateData.value.description || '',
+      indoorRooms: lotData.lot.indoorRooms.map(room => ({
+        spaceName: room.name,
+        spaceDescription: room.description,
+        items: room.items.map(item => ({
+          itemName: item.name,
+          itemDescription: item.description,
+          itemCount: 1
+        }))
+      })),
+      outdoorSpaces: lotData.lot.outdoorAreas.map(area => ({
+        spaceName: area.name,
+        spaceDescription: area.description,
+        items: area.items.map(item => ({
+          itemName: item.name,
+          itemDescription: item.description,
+          itemCount: 1
+        }))
+      }))
+    }
+
+    await client.request(mutations.createLotTemplate, { input, tags })
+
+    alert('Template saved successfully!')
+    closeSaveTemplateModal()
+  } catch (e) {
+    error.value = e.message
+    alert('Error saving template: ' + e.message)
+  } finally {
+    saving.value = false
+  }
 }
 
 onMounted(loadData)

@@ -1,0 +1,78 @@
+{
+  "tags": ["medical"],
+  "input": {
+  "lotName": "Desert Willow Clinic",
+  "lotType": "COMMUNITY",
+  "lotDescription": "A single-story rural clinic on the edge of town. It serves as both a family practice and urgent care, run by a small, tight-knit staff. The building smells faintly of antiseptic and coffee, and the front door bell jingles when patients enter.",
+  "indoorRooms": [
+    {
+      "spaceName": "Reception Area",
+      "spaceDescription": "A modest waiting room with vinyl chairs, a reception counter, and faded posters about flu prevention.",
+      "items": [
+        { "itemName": "Reception Desk", "itemDescription": "Counter with an old desktop computer and a small bell for service.", "itemCount": 1 },
+        { "itemName": "Filing Cabinet", "itemDescription": "Contains years of patient charts in manila folders.", "itemCount": 2 },
+        { "itemName": "Waiting Chairs", "itemDescription": "Row of vinyl chairs with metal arms, slightly squeaky.", "itemCount": 6 },
+        { "itemName": "Coffee Machine", "itemDescription": "A small drip coffee maker used by both patients and staff.", "itemCount": 1 },
+        { "itemName": "Magazine Rack", "itemDescription": "Filled with outdated travel magazines and health brochures.", "itemCount": 1 },
+        { "itemName": "Reception Bell", "itemDescription": "Tarnished brass bell that rings softly when pressed.", "itemCount": 1 }
+      ]
+    },
+    {
+      "spaceName": "Examination Room",
+      "spaceDescription": "Clean and sparse. The walls are pale blue, and the equipment is slightly out of date but functional. The single doctor sees every patient here.",
+      "items": [
+        { "itemName": "Examination Table", "itemDescription": "Covered in crisp white paper, slightly squeaky when sat on.", "itemCount": 1 },
+        { "itemName": "Medical Cabinet", "itemDescription": "Holds bandages, gauze, and bottles of rubbing alcohol.", "itemCount": 1 },
+        { "itemName": "Blood Pressure Monitor", "itemDescription": "Manual cuff and stethoscope resting on a tray.", "itemCount": 1 },
+        { "itemName": "Sink", "itemDescription": "Small stainless steel sink for hand washing.", "itemCount": 1 },
+        { "itemName": "Rolling Stool", "itemDescription": "Used by the doctor during patient consultations.", "itemCount": 1 },
+        { "itemName": "Poster", "itemDescription": "Diagram of the human body, corners curling with age.", "itemCount": 2 }
+      ]
+    },
+    {
+      "spaceName": "Nurse’s Station",
+      "spaceDescription": "A small workspace for the clinic’s only nurse — stocked with basic supplies and a radio that plays quietly in the background.",
+      "items": [
+        { "itemName": "Supply Cart", "itemDescription": "Contains syringes, band-aids, and vials neatly labeled.", "itemCount": 1 },
+        { "itemName": "Mini Fridge", "itemDescription": "Stores vaccines and water bottles.", "itemCount": 1 },
+        { "itemName": "Clipboard Rack", "itemDescription": "Each clipboard labeled with a patient’s name for the day.", "itemCount": 1 },
+        { "itemName": "Radio", "itemDescription": "Tuned to the local station, low volume between patients.", "itemCount": 1 },
+        { "itemName": "Rolling Chair", "itemDescription": "Scuffed but sturdy, used at the nurse’s desk.", "itemCount": 1 }
+      ]
+    },
+    {
+      "spaceName": "Break Room",
+      "spaceDescription": "Tiny staff area with a table, microwave, and bulletin board full of community flyers.",
+      "items": [
+        { "itemName": "Table and Chairs", "itemDescription": "Two mismatched chairs and a round table with coffee stains.", "itemCount": 1 },
+        { "itemName": "Microwave", "itemDescription": "Beige and slightly burnt inside.", "itemCount": 1 },
+        { "itemName": "Fridge", "itemDescription": "Contains labeled lunches and a bottle of orange juice.", "itemCount": 1 },
+        { "itemName": "Bulletin Board", "itemDescription": "Covered in local ads, shift notes, and thank-you cards from patients.", "itemCount": 1 },
+        { "itemName": "First Aid Kit", "itemDescription": "Mounted on the wall, fully stocked.", "itemCount": 1 }
+      ]
+    }
+  ],
+  "outdoorSpaces": [
+    {
+      "spaceName": "Parking Lot",
+      "spaceDescription": "Small gravel lot with space for six cars and a single covered spot marked for staff.",
+      "items": [
+        { "itemName": "Clinic Sign", "itemDescription": "Reads 'Desert Willow Clinic – Family Medicine' in faded teal letters.", "itemCount": 1 },
+        { "itemName": "Bench", "itemDescription": "Metal bench near the entrance where patients sometimes wait in the shade.", "itemCount": 1 },
+        { "itemName": "Bicycle Rack", "itemDescription": "Used mostly by local kids visiting for checkups.", "itemCount": 1 },
+        { "itemName": "Outdoor Light", "itemDescription": "Flickers on automatically at dusk.", "itemCount": 2 }
+      ]
+    },
+    {
+      "spaceName": "Back Entrance",
+      "spaceDescription": "A narrow walkway leading to a locked back door. The staff sometimes step outside here for fresh air.",
+      "items": [
+        { "itemName": "Trash Bins", "itemDescription": "Marked 'Medical Waste' and 'General Trash'.", "itemCount": 2 },
+        { "itemName": "Air Conditioning Unit", "itemDescription": "Old unit that hums loudly on hot days.", "itemCount": 1 },
+        { "itemName": "Potted Aloe Plant", "itemDescription": "Cared for by the nurse — thriving despite the heat.", "itemCount": 1 }
+      ]
+    }
+  ]
+}
+
+}

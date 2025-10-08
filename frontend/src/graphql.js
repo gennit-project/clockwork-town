@@ -99,6 +99,36 @@ export const queries = {
     }
   `,
 
+  getSpacesWithItems: `
+    query GetSpacesWithItems($lotId: ID!) {
+      lot(id: $lotId) {
+        id
+        name
+        lotType
+        indoorRooms {
+          id
+          name
+          description
+          items {
+            id
+            name
+            description
+          }
+        }
+        outdoorAreas {
+          id
+          name
+          description
+          items {
+            id
+            name
+            description
+          }
+        }
+      }
+    }
+  `,
+
   getSpace: `
     query GetSpace($id: ID!) {
       space(id: $id) {
@@ -309,6 +339,18 @@ export const mutations = {
   deleteHousehold: `
     mutation DeleteHousehold($id: ID!) {
       deleteHousehold(id: $id)
+    }
+  `,
+
+  createLotTemplate: `
+    mutation CreateLotTemplate($input: CreateLotWithSpacesInput!, $tags: [String!]!) {
+      createLotTemplate(input: $input, tags: $tags) {
+        id
+        name
+        lotType
+        description
+        tags
+      }
     }
   `
 }
