@@ -48,75 +48,77 @@
       </div>
 
       <div v-if="indoorSpaces.length > 0" class="mb-8">
-        <h2 class="text-2xl font-semibold mb-4 text-gray-800 dark:text-gray-200">Indoor Rooms</h2>
-        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Indoor Rooms ({{ indoorSpaces.length }})</h2>
+        <div class="space-y-4">
           <div
             v-for="space in indoorSpaces"
             :key="space.id"
-            class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer"
-            @click="viewSpace(space)"
+            class="relative group"
           >
-            <div class="flex justify-between items-start mb-2">
-              <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100">{{ space.name }}</h3>
-              <div class="flex space-x-2" @click.stop>
-                <button
-                  @click="editSpace(space)"
-                  class="text-blue-600 hover:text-blue-800"
-                  title="Edit"
-                >
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
-                </button>
-                <button
-                  @click="confirmDelete(space)"
-                  class="text-red-600 hover:text-red-800"
-                  title="Delete"
-                >
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
-              </div>
+            <div
+              class="cursor-pointer"
+              @click="viewSpace(space)"
+            >
+              <SpaceCard :space="space" />
             </div>
-            <p class="text-sm text-gray-600 dark:text-gray-300">{{ space.description }}</p>
+            <div class="absolute top-5 right-5 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity" @click.stop>
+              <button
+                @click="editSpace(space)"
+                class="text-blue-600 hover:text-blue-800 bg-white dark:bg-gray-700 rounded-full p-2 shadow-md"
+                title="Edit"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </button>
+              <button
+                @click="confirmDelete(space)"
+                class="text-red-600 hover:text-red-800 bg-white dark:bg-gray-700 rounded-full p-2 shadow-md"
+                title="Delete"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       <div v-if="outdoorSpaces.length > 0">
-        <h2 class="text-2xl font-semibold mb-4 text-gray-800 dark:text-gray-200">Outdoor Areas</h2>
-        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Outdoor Areas ({{ outdoorSpaces.length }})</h2>
+        <div class="space-y-4">
           <div
             v-for="space in outdoorSpaces"
             :key="space.id"
-            class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer"
-            @click="viewSpace(space)"
+            class="relative group"
           >
-            <div class="flex justify-between items-start mb-2">
-              <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100">{{ space.name }}</h3>
-              <div class="flex space-x-2" @click.stop>
-                <button
-                  @click="editSpace(space)"
-                  class="text-blue-600 hover:text-blue-800"
-                  title="Edit"
-                >
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
-                </button>
-                <button
-                  @click="confirmDelete(space)"
-                  class="text-red-600 hover:text-red-800"
-                  title="Delete"
-                >
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
-              </div>
+            <div
+              class="cursor-pointer"
+              @click="viewSpace(space)"
+            >
+              <SpaceCard :space="space" />
             </div>
-            <p class="text-sm text-gray-600 dark:text-gray-300">{{ space.description }}</p>
+            <div class="absolute top-5 right-5 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity" @click.stop>
+              <button
+                @click="editSpace(space)"
+                class="text-blue-600 hover:text-blue-800 bg-white dark:bg-gray-700 rounded-full p-2 shadow-md"
+                title="Edit"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </button>
+              <button
+                @click="confirmDelete(space)"
+                class="text-red-600 hover:text-red-800 bg-white dark:bg-gray-700 rounded-full p-2 shadow-md"
+                title="Delete"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -264,6 +266,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
+import SpaceCard from '../components/SpaceCard.vue'
 import { client, queries, mutations } from '../graphql'
 
 const route = useRoute()
@@ -305,7 +308,7 @@ const loadData = async () => {
       client.request(queries.getWorld, { id: worldId.value }),
       client.request(queries.getRegions, { worldId: worldId.value }),
       client.request(queries.getLots, { regionId: regionId.value }),
-      client.request(queries.getSpaces, { lotId: lotId.value }),
+      client.request(queries.getSpacesWithItems, { lotId: lotId.value }),
       client.request(queries.getHouseholds, { regionId: regionId.value })
     ])
     world.value = worldData.world

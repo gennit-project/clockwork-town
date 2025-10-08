@@ -70,6 +70,27 @@ type ItemTemplate {
   count: Int!
 }
 
+type HouseholdTemplate {
+  id: ID!
+  name: String!
+  description: String
+  tags: [String!]!
+  characters: [CharacterTemplate!]!
+  animals: [AnimalTemplate!]!
+}
+
+type CharacterTemplate {
+  name: String!
+  age: Int!
+  bio: String
+}
+
+type AnimalTemplate {
+  name: String!
+  age: Int!
+  traits: [String!]!
+}
+
 type Space {
   id: ID!
   name: String!
@@ -321,6 +342,8 @@ type Query {
   # Template library
   lotTemplates(tags: [String!]): [LotTemplate!]!
   lotTemplate(id: ID!): LotTemplate
+  householdTemplates(tags: [String!]): [HouseholdTemplate!]!
+  householdTemplate(id: ID!): HouseholdTemplate
 }
 
 # -----------------------------
@@ -425,6 +448,25 @@ input CreateLotWithSpacesInput {
   outdoorSpaces: [SpaceWithItemsInput!]
 }
 
+input CharacterTemplateInput {
+  characterName: String!
+  characterAge: Int!
+  characterBio: String
+}
+
+input AnimalTemplateInput {
+  animalName: String!
+  animalAge: Int!
+  animalTraits: [String!]!
+}
+
+input CreateHouseholdTemplateInput {
+  householdName: String!
+  householdDescription: String
+  characters: [CharacterTemplateInput!]!
+  animals: [AnimalTemplateInput!]
+}
+
 # -----------------------------
 # Mutations
 # -----------------------------
@@ -462,6 +504,9 @@ type Mutation {
   # Template library
   createLotTemplate(input: CreateLotWithSpacesInput!, tags: [String!]!): LotTemplate!
   deleteLotTemplate(id: ID!): Boolean!
+  createHouseholdTemplate(input: CreateHouseholdTemplateInput!, tags: [String!]!): HouseholdTemplate!
+  updateHouseholdTemplate(id: ID!, input: CreateHouseholdTemplateInput!, tags: [String!]!): HouseholdTemplate!
+  deleteHouseholdTemplate(id: ID!): Boolean!
 
   # Optional if you wire Google Drive:
   backupNow: Boolean!

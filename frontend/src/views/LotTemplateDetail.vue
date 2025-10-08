@@ -82,7 +82,7 @@
     </div>
 
     <!-- Clone to World Modal -->
-    <div v-if="showCloneModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div v-if="showCloneModal" class="fixed inset-0 bg-black dark:text-white bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
         <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">Clone Template to World</h2>
 
@@ -248,7 +248,8 @@ const cloneTemplate = async () => {
         spaceDescription: room.description,
         items: (room.items || []).map(item => ({
           itemName: item.name,
-          itemDescription: item.description
+          itemDescription: item.description,
+          itemCount: 1
         }))
       })),
       outdoorSpaces: (template.value.outdoorAreas || []).map(area => ({
@@ -256,7 +257,8 @@ const cloneTemplate = async () => {
         spaceDescription: area.description,
         items: (area.items || []).map(item => ({
           itemName: item.name,
-          itemDescription: item.description
+          itemDescription: item.description,
+          itemCount: 1
         }))
       }))
     }

@@ -17,6 +17,12 @@ CREATE NODE TABLE IF NOT EXISTS LotTemplate(
   PRIMARY KEY(id)
 );
 
+CREATE NODE TABLE IF NOT EXISTS HouseholdTemplate(
+  id STRING, name STRING, description STRING, tags STRING[],
+  characters STRING, animals STRING,
+  PRIMARY KEY(id)
+);
+
 CREATE NODE TABLE IF NOT EXISTS Space(
   id STRING, name STRING, description STRING, isIndoor BOOL, PRIMARY KEY(id)
 );

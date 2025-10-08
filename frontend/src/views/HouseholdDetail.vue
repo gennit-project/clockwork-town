@@ -16,12 +16,20 @@
           <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">{{ household.name }}</h1>
           <p class="text-gray-600 mt-1">{{ household.lotName }}</p>
         </div>
-        <router-link
-          :to="`/world/${worldId}/region/${regionId}/household/${householdId}/edit`"
-          class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
-        >
-          Edit Household
-        </router-link>
+        <div class="flex gap-3">
+          <button
+            @click="showSaveTemplateModal = true"
+            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
+          >
+            Save as Template
+          </button>
+          <router-link
+            :to="`/world/${worldId}/region/${regionId}/household/${householdId}/edit`"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+          >
+            Edit Household
+          </router-link>
+        </div>
       </div>
 
       <!-- Characters Section -->
@@ -89,6 +97,53 @@
         </div>
       </div>
     </div>
+
+    <!-- Save as Template Modal -->
+    <div v-if="showSaveTemplateModal" class="fixed inset-0 bg-black dark:text-white bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
+        <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">Save Household as Template</h2>
+        <form @submit.prevent="saveAsTemplate">
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+              Template Description (optional)
+            </label>
+            <textarea
+              v-model="templateData.description"
+              rows="3"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Describe this household template"
+            ></textarea>
+          </div>
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+              Tags (comma-separated)
+            </label>
+            <input
+              v-model="templateData.tagsInput"
+              type="text"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="e.g., family, nuclear, starter"
+            />
+          </div>
+          <div class="flex justify-end space-x-3">
+            <button
+              type="button"
+              @click="closeSaveTemplateModal"
+              class="px-4 py-2 text-gray-700 hover:text-gray-900 dark:text-gray-100"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              :disabled="saving"
+              class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md disabled:opacity-50"
+            >
+              {{ saving ? 'Saving...' : 'Save Template' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -97,7 +152,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
 import MarkdownRenderer from '../components/MarkdownRenderer.vue'
-import { client, queries } from '../graphql'
+import { client, queries, mutations } from '../graphql'
 
 const route = useRoute()
 const worldId = computed(() => route.params.worldId)
@@ -109,6 +164,9 @@ const world = ref(null)
 const region = ref(null)
 const loading = ref(true)
 const error = ref(null)
+const showSaveTemplateModal = ref(false)
+const saving = ref(false)
+const templateData = ref({ description: '', tagsInput: '' })
 
 const breadcrumbs = computed(() => [
   { label: 'Worlds', to: '/' },
@@ -133,6 +191,48 @@ const loadData = async () => {
     error.value = e.message
   } finally {
     loading.value = false
+  }
+}
+
+const closeSaveTemplateModal = () => {
+  showSaveTemplateModal.value = false
+  templateData.value = { description: '', tagsInput: '' }
+}
+
+const saveAsTemplate = async () => {
+  try {
+    saving.value = true
+    error.value = null
+
+    const tags = templateData.value.tagsInput
+      .split(',')
+      .map(tag => tag.trim())
+      .filter(tag => tag.length > 0)
+
+    const input = {
+      householdName: household.value.name,
+      householdDescription: templateData.value.description || '',
+      characters: household.value.characters.map(c => ({
+        characterName: c.name,
+        characterAge: c.age,
+        characterBio: c.bio || ''
+      })),
+      animals: (household.value.animals || []).map(a => ({
+        animalName: a.name,
+        animalAge: a.age,
+        animalTraits: a.traits || []
+      }))
+    }
+
+    await client.request(mutations.createHouseholdTemplate, { input, tags })
+
+    alert('Template saved successfully!')
+    closeSaveTemplateModal()
+  } catch (e) {
+    error.value = e.message
+    alert('Error saving template: ' + e.message)
+  } finally {
+    saving.value = false
   }
 }
 

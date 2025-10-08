@@ -184,6 +184,48 @@ export const queries = {
         }
       }
     }
+  `,
+
+  getHouseholdTemplates: `
+    query GetHouseholdTemplates($tags: [String!]) {
+      householdTemplates(tags: $tags) {
+        id
+        name
+        description
+        tags
+        characters {
+          name
+          age
+          bio
+        }
+        animals {
+          name
+          age
+          traits
+        }
+      }
+    }
+  `,
+
+  getHouseholdTemplate: `
+    query GetHouseholdTemplate($id: ID!) {
+      householdTemplate(id: $id) {
+        id
+        name
+        description
+        tags
+        characters {
+          name
+          age
+          bio
+        }
+        animals {
+          name
+          age
+          traits
+        }
+      }
+    }
   `
 }
 
@@ -351,6 +393,44 @@ export const mutations = {
         description
         tags
       }
+    }
+  `,
+
+  createHouseholdTemplate: `
+    mutation CreateHouseholdTemplate($input: CreateHouseholdTemplateInput!, $tags: [String!]!) {
+      createHouseholdTemplate(input: $input, tags: $tags) {
+        id
+        name
+        description
+        tags
+      }
+    }
+  `,
+
+  updateHouseholdTemplate: `
+    mutation UpdateHouseholdTemplate($id: ID!, $input: CreateHouseholdTemplateInput!, $tags: [String!]!) {
+      updateHouseholdTemplate(id: $id, input: $input, tags: $tags) {
+        id
+        name
+        description
+        tags
+        characters {
+          name
+          age
+          bio
+        }
+        animals {
+          name
+          age
+          traits
+        }
+      }
+    }
+  `,
+
+  deleteHouseholdTemplate: `
+    mutation DeleteHouseholdTemplate($id: ID!) {
+      deleteHouseholdTemplate(id: $id)
     }
   `
 }

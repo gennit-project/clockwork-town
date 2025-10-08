@@ -4,7 +4,7 @@
       <div class="sm:flex-auto">
         <h1 class="text-2xl font-semibold text-gray-900 dark:text-gray-100">Template Library</h1>
         <p class="mt-2 text-sm text-gray-700 dark:text-gray-300">
-          Reusable templates for lots, regions, characters, and items
+          Reusable templates for lots, households, regions, characters, and items
         </p>
       </div>
     </div>
@@ -18,6 +18,13 @@
           active-class="border-indigo-500 text-indigo-600"
         >
           Lots
+        </router-link>
+        <router-link
+          to="/library/households"
+          class="border-transparent text-gray-500 dark:text-gray-300 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
+          active-class="border-indigo-500 text-indigo-600"
+        >
+          Households
         </router-link>
         <router-link
           to="/library/regions"

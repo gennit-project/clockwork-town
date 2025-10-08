@@ -1,5 +1,22 @@
 import { batch, q } from "../kuzuHelpers";
 
+// Helper functions to safely encode/decode template data with special characters
+const encodeTemplateData = (data: any): string => {
+  const jsonString = JSON.stringify(data);
+  return Buffer.from(jsonString).toString('base64');
+};
+
+const decodeTemplateData = (encoded: string): any => {
+  try {
+    const jsonString = Buffer.from(encoded, 'base64').toString('utf-8');
+    return JSON.parse(jsonString);
+  } catch (e) {
+    // Fallback for old data that might not be base64 encoded
+    console.warn('Failed to decode base64 template data, attempting direct parse:', e);
+    return JSON.parse(encoded);
+  }
+};
+
 export const WorldResolvers = {
   Space: {
     items: async (parent: any) => {
@@ -163,6 +180,50 @@ export const WorldResolvers = {
         ...template,
         indoorRooms: transformSpaces(JSON.parse(template.indoorRooms || '[]')),
         outdoorAreas: transformSpaces(JSON.parse(template.outdoorAreas || '[]'))
+      };
+    },
+    householdTemplates: async (_: any, { tags }: { tags?: string[] }) => {
+      if (tags && tags.length > 0) {
+        const templates = await q(`
+          MATCH (t:HouseholdTemplate)
+          RETURN t.id AS id, t.name AS name, t.description AS description,
+                 t.tags AS tags, t.characters AS characters, t.animals AS animals
+        `);
+
+        return templates.filter((t: any) =>
+          tags.every(tag => t.tags?.includes(tag))
+        ).map((t: any) => ({
+          ...t,
+          characters: decodeTemplateData(t.characters || '[]'),
+          animals: decodeTemplateData(t.animals || '[]')
+        }));
+      }
+
+      const templates = await q(`
+        MATCH (t:HouseholdTemplate)
+        RETURN t.id AS id, t.name AS name, t.description AS description,
+               t.tags AS tags, t.characters AS characters, t.animals AS animals
+      `);
+
+      return templates.map((t: any) => ({
+        ...t,
+        characters: decodeTemplateData(t.characters || '[]'),
+        animals: decodeTemplateData(t.animals || '[]')
+      }));
+    },
+    householdTemplate: async (_: any, { id }: { id: string }) => {
+      const [template] = await q(`
+        MATCH (t:HouseholdTemplate {id:$id})
+        RETURN t.id AS id, t.name AS name, t.description AS description,
+               t.tags AS tags, t.characters AS characters, t.animals AS animals
+      `, { id });
+
+      if (!template) return null;
+
+      return {
+        ...template,
+        characters: decodeTemplateData(template.characters || '[]'),
+        animals: decodeTemplateData(template.animals || '[]')
       };
     },
   },
@@ -590,6 +651,141 @@ export const WorldResolvers = {
 
     deleteLotTemplate: async (_: any, { id }: { id: string }) => {
       await q(`MATCH (t:LotTemplate {id:$id}) DELETE t`, { id });
+      return true;
+    },
+
+    createHouseholdTemplate: async (_: any, { input, tags }: {
+      tags: string[];
+      input: {
+        householdName: string;
+        householdDescription?: string;
+        characters: Array<{
+          characterName: string;
+          characterAge: number;
+          characterBio?: string;
+        }>;
+        animals?: Array<{
+          animalName: string;
+          animalAge: number;
+          animalTraits: string[];
+        }>;
+      }
+    }) => {
+      const templateId = crypto.randomUUID();
+      const { householdName, householdDescription, characters, animals = [] } = input;
+
+      // Transform characters and animals to match template schema
+      const charactersData = characters.map(c => ({
+        name: c.characterName,
+        age: c.characterAge,
+        bio: c.characterBio || ''
+      }));
+
+      const animalsData = animals.map(a => ({
+        name: a.animalName,
+        age: a.animalAge,
+        traits: a.animalTraits
+      }));
+
+      const charactersEncoded = encodeTemplateData(charactersData);
+      const animalsEncoded = encodeTemplateData(animalsData);
+
+      await q(`CREATE (:HouseholdTemplate {
+        id: $id,
+        name: $name,
+        description: $description,
+        tags: $tags,
+        characters: $characters,
+        animals: $animals
+      })`, {
+        id: templateId,
+        name: householdName,
+        description: householdDescription || '',
+        tags,
+        characters: charactersEncoded,
+        animals: animalsEncoded
+      });
+
+      const [created] = await q(`
+        MATCH (t:HouseholdTemplate {id:$id})
+        RETURN t.id AS id, t.name AS name, t.description AS description,
+               t.tags AS tags, t.characters AS characters, t.animals AS animals
+      `, { id: templateId });
+
+      return {
+        ...created,
+        characters: decodeTemplateData(created.characters || '[]'),
+        animals: decodeTemplateData(created.animals || '[]')
+      };
+    },
+
+    updateHouseholdTemplate: async (_: any, { id, input, tags }: {
+      id: string;
+      tags: string[];
+      input: {
+        householdName: string;
+        householdDescription?: string;
+        characters: Array<{
+          characterName: string;
+          characterAge: number;
+          characterBio?: string;
+        }>;
+        animals?: Array<{
+          animalName: string;
+          animalAge: number;
+          animalTraits: string[];
+        }>;
+      }
+    }) => {
+      const { householdName, householdDescription, characters, animals = [] } = input;
+
+      // Transform characters and animals to match template schema
+      const charactersData = characters.map(c => ({
+        name: c.characterName,
+        age: c.characterAge,
+        bio: c.characterBio || ''
+      }));
+
+      const animalsData = animals.map(a => ({
+        name: a.animalName,
+        age: a.animalAge,
+        traits: a.animalTraits
+      }));
+
+      const charactersEncoded = encodeTemplateData(charactersData);
+      const animalsEncoded = encodeTemplateData(animalsData);
+
+      await q(`
+        MATCH (t:HouseholdTemplate {id:$id})
+        SET t.name = $name,
+            t.description = $description,
+            t.tags = $tags,
+            t.characters = $characters,
+            t.animals = $animals
+      `, {
+        id,
+        name: householdName,
+        description: householdDescription || '',
+        tags,
+        characters: charactersEncoded,
+        animals: animalsEncoded
+      });
+
+      const [updated] = await q(`
+        MATCH (t:HouseholdTemplate {id:$id})
+        RETURN t.id AS id, t.name AS name, t.description AS description,
+               t.tags AS tags, t.characters AS characters, t.animals AS animals
+      `, { id });
+
+      return {
+        ...updated,
+        characters: decodeTemplateData(updated.characters || '[]'),
+        animals: decodeTemplateData(updated.animals || '[]')
+      };
+    },
+
+    deleteHouseholdTemplate: async (_: any, { id }: { id: string }) => {
+      await q(`MATCH (t:HouseholdTemplate {id:$id}) DELETE t`, { id });
       return true;
     },
   },
