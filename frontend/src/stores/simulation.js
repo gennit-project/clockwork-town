@@ -231,6 +231,62 @@ export const useSimulationStore = defineStore('simulation', () => {
   }
 
   /**
+   * Apply the effects of an action to a character's needs
+   * Updates needs, sets cooldown, and updates current action
+   *
+   * @param {string} characterId - The character performing the action
+   * @param {string} action - The action name (e.g., 'eat', 'sleep', 'read')
+   * @param {string} [itemName] - Optional item name for logging
+   */
+  function applyActionEffects(characterId, action, itemName = null) {
+    // Validate action exists
+    if (!ACTION_EFFECTS[action]) {
+      console.error(`❌ Unknown action: ${action}`)
+      return
+    }
+
+    // Get character state
+    const state = characterStates.value[characterId]
+    if (!state) {
+      console.error(`❌ Character not found: ${characterId}`)
+      return
+    }
+
+    const actionData = ACTION_EFFECTS[action]
+
+    console.log(`⚡ Applying action "${action}" to character ${characterId}`)
+
+    // Apply primary effect
+    if (actionData.primaryNeed && actionData.primaryEffect !== 0) {
+      const oldValue = state.needs[actionData.primaryNeed]
+      state.needs[actionData.primaryNeed] = Math.min(1.0, Math.max(0, oldValue + actionData.primaryEffect))
+      const newValue = state.needs[actionData.primaryNeed]
+      console.log(`  ✓ ${actionData.primaryNeed}: ${oldValue.toFixed(2)} → ${newValue.toFixed(2)} (+${actionData.primaryEffect})`)
+    }
+
+    // Apply secondary effects
+    for (const [need, effect] of Object.entries(actionData.secondaryEffects)) {
+      const oldValue = state.needs[need]
+      state.needs[need] = Math.min(1.0, Math.max(0, oldValue + effect))
+      const newValue = state.needs[need]
+      console.log(`  ✓ ${need}: ${oldValue.toFixed(2)} → ${newValue.toFixed(2)} (${effect >= 0 ? '+' : ''}${effect})`)
+    }
+
+    // Set cooldown
+    state.cooldowns[action] = actionData.cooldownTicks
+    console.log(`  ✓ Cooldown set: ${actionData.cooldownTicks} ticks`)
+
+    // Update current action
+    state.currentAction = action
+
+    // Log activity
+    const details = itemName ? `using ${itemName}` : 'action performed'
+    logActivity(characterId, action, details)
+
+    console.log(`✅ Action "${action}" applied successfully`)
+  }
+
+  /**
    * Start auto-ticking (5 seconds per tick for debugging)
    */
   function startAutoTick() {
@@ -297,6 +353,7 @@ export const useSimulationStore = defineStore('simulation', () => {
     initializeCharacter,
     executeTick,
     logActivity,
+    applyActionEffects,
     startAutoTick,
     pauseAutoTick,
     resetSimulation,

@@ -52,6 +52,15 @@
           </button>
         </div>
 
+        <!-- Debug Toggle Button -->
+        <button
+          @click="showDebugPanel = !showDebugPanel"
+          class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-md font-medium"
+          title="Toggle debug action panel"
+        >
+          🔧 Debug
+        </button>
+
         <button
           @click="showEditModal = true"
           class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md"
@@ -74,6 +83,13 @@
     <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-md p-4">
       <p class="text-red-800">Error: {{ error }}</p>
     </div>
+
+    <!-- Debug Panel -->
+    <DebugActionPanel
+      v-if="showDebugPanel && !loading && !error"
+      :characters="characters"
+      @close="showDebugPanel = false"
+    />
 
     <div v-else-if="lotsWithSpaces.length === 0" class="text-center py-12 bg-white rounded-lg shadow">
       <p class="text-gray-500 dark:text-gray-300 mb-4">No lots in this region yet.</p>
@@ -285,6 +301,7 @@ import { gql } from 'graphql-request'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
 import LotColumn from '../components/LotColumn.vue'
 import CharacterListItem from '../components/CharacterListItem.vue'
+import DebugActionPanel from '../components/DebugActionPanel.vue'
 import { client, queries } from '../graphql'
 import { useSimulationStore } from '../stores/simulation'
 
@@ -305,6 +322,7 @@ const expandedLots = ref({})
 const loading = ref(true)
 const error = ref(null)
 const showEditModal = ref(false)
+const showDebugPanel = ref(false)
 const formData = ref({ name: '', kind: '' })
 const saving = ref(false)
 
