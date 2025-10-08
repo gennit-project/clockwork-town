@@ -11,6 +11,17 @@
             {{ lot.name }}
           </router-link>
           <p class="text-sm" :class="subtitleClass">{{ lot.lotType }}</p>
+
+          <!-- Characters at this lot -->
+          <div v-if="charactersAtLot.length > 0" class="mt-2 flex flex-wrap gap-1">
+            <span
+              v-for="char in charactersAtLot"
+              :key="char.id"
+              class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-black bg-opacity-25 text-white"
+            >
+              👤 {{ char.name }}
+            </span>
+          </div>
         </div>
         <router-link
           :to="`/world/${worldId}/region/${regionId}/lot/${lot.id}`"
@@ -118,6 +129,10 @@ const props = defineProps({
   isExpanded: {
     type: Boolean,
     default: false
+  },
+  charactersAtLot: {
+    type: Array,
+    default: () => []
   },
   variant: {
     type: String,

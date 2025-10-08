@@ -111,6 +111,7 @@
           :world-id="worldId"
           :region-id="regionId"
           :expanded-lots="expandedLots"
+          :characters-by-lot="charactersByLot"
           variant="blue"
           empty-message="No residential lots yet"
           @toggle-expanded="toggleLotRooms"
@@ -123,6 +124,7 @@
           :world-id="worldId"
           :region-id="regionId"
           :expanded-lots="expandedLots"
+          :characters-by-lot="charactersByLot"
           variant="green"
           empty-message="No community lots yet"
           @toggle-expanded="toggleLotRooms"
@@ -340,6 +342,19 @@ const residentialLots = computed(() =>
 const communityLots = computed(() =>
   lotsWithSpaces.value.filter(lot => lot.lotType === 'COMMUNITY')
 )
+
+const charactersByLot = computed(() => {
+  const byLot = {}
+  characters.value.forEach(char => {
+    if (char.location?.id) {
+      if (!byLot[char.location.id]) {
+        byLot[char.location.id] = []
+      }
+      byLot[char.location.id].push(char)
+    }
+  })
+  return byLot
+})
 
 const toggleLotRooms = (lotId) => {
   expandedLots.value[lotId] = !expandedLots.value[lotId]

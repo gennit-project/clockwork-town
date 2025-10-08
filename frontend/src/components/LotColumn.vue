@@ -11,6 +11,7 @@
         :world-id="worldId"
         :region-id="regionId"
         :is-expanded="expandedLots[lot.id]"
+        :characters-at-lot="charactersByLot[lot.id] || []"
         :variant="variant"
         @toggle-expanded="$emit('toggle-expanded', $event)"
       />
@@ -44,6 +45,10 @@ defineProps({
   expandedLots: {
     type: Object,
     required: true
+  },
+  charactersByLot: {
+    type: Object,
+    default: () => ({})
   },
   variant: {
     type: String,
