@@ -426,7 +426,7 @@ export const useSimulationStore = defineStore('simulation', () => {
 
   /**
    * Find items with a specific affordance (action) accessible to a character
-   * Step 6: Same space only (travel cost 0)
+   * Step 7: Same space (cost 0) + Same lot (cost 1)
    *
    * @param {string} characterId - Character ID
    * @param {string} action - Action name (e.g., 'eat', 'sleep')
@@ -440,8 +440,9 @@ export const useSimulationStore = defineStore('simulation', () => {
     }
 
     const currentSpaceId = charState.location?.spaceId
-    if (!currentSpaceId) {
-      console.warn(`Character ${characterId} has no spaceId in location`)
+    const currentLotId = charState.location?.lotId
+    if (!currentSpaceId || !currentLotId) {
+      console.warn(`Character ${characterId} has incomplete location data`)
       return []
     }
 
@@ -450,14 +451,25 @@ export const useSimulationStore = defineStore('simulation', () => {
     // Get all items with this affordance
     const itemIdsWithAction = worldData.value.itemsByAffordance[action] || []
 
-    // Filter to same space only
+    // Check each item for accessibility
     for (const itemId of itemIdsWithAction) {
       const item = worldData.value.items[itemId]
+      const space = worldData.value.spaces[item.spaceId]
+      const lot = worldData.value.lots[item.lotId]
 
+      let travelCost = null
+
+      // Same space (cost 0)
       if (item.spaceId === currentSpaceId) {
-        const space = worldData.value.spaces[item.spaceId]
-        const lot = worldData.value.lots[item.lotId]
+        travelCost = 0
+      }
+      // Same lot, different space (cost 1)
+      else if (item.lotId === currentLotId) {
+        travelCost = 1
+      }
 
+      // If accessible, add to results
+      if (travelCost !== null) {
         results.push({
           itemId: item.id,
           itemName: item.name,
@@ -465,12 +477,17 @@ export const useSimulationStore = defineStore('simulation', () => {
           spaceName: space.name,
           lotId: item.lotId,
           lotName: lot.name,
-          travelCost: 0  // Same space
+          travelCost
         })
       }
     }
 
-    console.log(`🔍 findItemsWithAffordance('${characterId}', '${action}'):`, results)
+    // Sort by travel cost (lower is better)
+    results.sort((a, b) => a.travelCost - b.travelCost)
+
+    console.log(`🔍 findItemsWithAffordance('${characterId}', '${action}'):`)
+    console.log(`  Found ${results.length} items (cost 0: ${results.filter(r => r.travelCost === 0).length}, cost 1: ${results.filter(r => r.travelCost === 1).length})`)
+    console.log('  Results:', results)
     return results
   }
 

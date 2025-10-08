@@ -117,7 +117,7 @@
 
       <div class="mt-3 pt-3 border-t border-yellow-300">
         <p class="text-xs font-medium text-yellow-900 dark:text-yellow-100 mb-2">
-          🔍 Test Item Finding (Same Space):
+          🔍 Test Item Finding (Same Space + Same Lot):
         </p>
         <div class="grid grid-cols-2 gap-2">
           <button
@@ -193,17 +193,32 @@ const testFindItems = (action) => {
   }
 
   const items = simulationStore.findItemsWithAffordance(selectedCharacterId.value, action)
+  const cost0 = items.filter(i => i.travelCost === 0)
+  const cost1 = items.filter(i => i.travelCost === 1)
+
   console.log(`\n🔍 Test findItemsWithAffordance('${selectedCharacterId.value}', '${action}'):`)
-  console.log(`Found ${items.length} items in same space:`)
-  items.forEach(item => {
-    console.log(`  - ${item.itemName} in ${item.spaceName} (${item.lotName})`)
-  })
+  console.log(`Found ${items.length} total items:`)
+
+  if (cost0.length > 0) {
+    console.log(`  Same space (cost 0):`)
+    cost0.forEach(item => {
+      console.log(`    - ${item.itemName} in ${item.spaceName}`)
+    })
+  }
+
+  if (cost1.length > 0) {
+    console.log(`  Same lot (cost 1):`)
+    cost1.forEach(item => {
+      console.log(`    - ${item.itemName} in ${item.spaceName}`)
+    })
+  }
+
   console.log('Full results:', items)
 
   if (items.length === 0) {
-    alert(`No items with '${action}' affordance found in current space.\n\nCheck console for details.`)
+    alert(`No items with '${action}' affordance found.\n\nCheck console for details.`)
   } else {
-    alert(`Found ${items.length} item(s) with '${action}' affordance in current space.\n\nCheck console for details.`)
+    alert(`Found ${items.length} item(s) with '${action}' affordance:\n• Same space (cost 0): ${cost0.length}\n• Same lot (cost 1): ${cost1.length}\n\nCheck console for details.`)
   }
 }
 </script>
