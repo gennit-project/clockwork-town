@@ -4,7 +4,54 @@
 
     <div class="flex justify-between items-center mb-6">
       <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Region Overview: {{ region?.name || 'Loading...' }}</h1>
-      <div class="flex space-x-3">
+      <div class="flex space-x-3 items-center">
+        <!-- Tick Controls -->
+        <div class="flex items-center space-x-3 bg-gray-100 dark:bg-gray-700 px-4 py-2 rounded-lg">
+          <!-- Clock Display -->
+          <div class="flex items-center space-x-2">
+            <svg class="w-5 h-5 text-gray-700 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span class="font-mono text-sm font-semibold text-gray-900 dark:text-gray-100">
+              Tick: {{ simulationStore.currentTick }}
+            </span>
+          </div>
+
+          <!-- Play/Pause Button -->
+          <button
+            @click="togglePlayPause"
+            class="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-md transition-colors"
+            :title="simulationStore.isPaused ? 'Start auto-tick' : 'Pause auto-tick'"
+          >
+            <svg v-if="simulationStore.isPaused" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+            <svg v-else class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+            </svg>
+          </button>
+
+          <!-- Manual Tick Button (Debug) -->
+          <button
+            @click="manualTick"
+            class="bg-purple-500 hover:bg-purple-600 text-white px-3 py-2 rounded-md text-sm font-medium"
+            title="Execute one tick manually (debug)"
+          >
+            ⚡ Tick
+          </button>
+
+          <!-- Reset Button -->
+          <button
+            @click="resetSimulation"
+            class="bg-red-500 hover:bg-red-600 text-white p-2 rounded-md"
+            title="Reset simulation"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+        </div>
+
         <button
           @click="showEditModal = true"
           class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md"
@@ -74,15 +121,51 @@
         </div>
       </div>
 
-      <!-- Right Sidebar - Characters & Animals List -->
-      <div class="w-80 space-y-4 p-4 overflow-auto">
+      <!-- Right Sidebar - Activity Log & Characters -->
+      <div class="w-80 flex flex-col space-y-4 p-4 overflow-hidden">
+        <!-- Activity Log Panel -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 flex-1 flex flex-col overflow-hidden">
+          <h2 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
+            <svg class="w-5 h-5 mr-2 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Activity Log
+          </h2>
+          <div class="flex-1 overflow-y-auto space-y-2 text-xs">
+            <div v-if="simulationStore.activityLog.length === 0" class="text-gray-500 dark:text-gray-400 text-center py-8">
+              No activities yet. Click "Tick" to start.
+            </div>
+            <div
+              v-for="(log, idx) in simulationStore.recentActivityLog"
+              :key="`log-${log.tick}-${idx}`"
+              class="bg-gray-50 dark:bg-gray-700 p-2 rounded border-l-2 border-purple-400"
+            >
+              <div class="flex justify-between items-start mb-1">
+                <span class="font-mono font-semibold text-purple-600 dark:text-purple-400">
+                  Tick {{ log.tick }}
+                </span>
+                <span class="text-gray-500 dark:text-gray-400 text-[10px]">
+                  {{ new Date(log.timestamp).toLocaleTimeString() }}
+                </span>
+              </div>
+              <div class="text-gray-700 dark:text-gray-300">
+                <span class="font-medium">{{ getCharacterName(log.characterId) }}:</span>
+                <span class="text-blue-600 dark:text-blue-400 font-semibold ml-1">{{ log.action }}</span>
+              </div>
+              <div v-if="log.details" class="text-gray-500 dark:text-gray-400 mt-1">
+                {{ log.details }}
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Characters & Animals Panel -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 flex-1 flex flex-col overflow-hidden">
           <h2 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">Characters & Animals</h2>
           <div v-if="characters.length === 0 && animals.length === 0" class="text-sm text-gray-500">
             No characters or animals in this region yet.
           </div>
-          <div v-else class="space-y-2">
+          <div v-else class="space-y-2 overflow-y-auto">
             <!-- Characters Section -->
             <div v-if="characters.length > 0">
               <h3 class="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase mb-2">Characters</h3>
@@ -196,13 +279,16 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { gql } from 'graphql-request'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
 import LotColumn from '../components/LotColumn.vue'
 import CharacterListItem from '../components/CharacterListItem.vue'
 import { client, queries } from '../graphql'
+import { useSimulationStore } from '../stores/simulation'
+
+const simulationStore = useSimulationStore()
 
 const route = useRoute()
 const worldId = computed(() => route.params.worldId)
@@ -249,6 +335,12 @@ const setActiveCharacter = (entity, type) => {
 const clearActiveCharacter = () => {
   activeCharacter.value = null
   activeCharacterType.value = null
+}
+
+const getCharacterName = (characterId) => {
+  const character = characters.value.find(c => c.id === characterId)
+  const animal = animals.value.find(a => a.id === characterId)
+  return character?.name || animal?.name || `Unknown (${characterId})`
 }
 
 const MUTATION_UPDATE_REGION = gql`
@@ -347,5 +439,52 @@ const loadData = async () => {
   }
 }
 
-onMounted(loadData)
+// ============================================
+// SIMULATION CONTROLS
+// ============================================
+
+const togglePlayPause = () => {
+  if (simulationStore.isPaused) {
+    simulationStore.startAutoTick()
+  } else {
+    simulationStore.pauseAutoTick()
+  }
+}
+
+const manualTick = () => {
+  simulationStore.executeTick()
+
+  // Log full Pinia state to console for debugging
+  console.log('\n========== FULL PINIA STATE ==========')
+  console.log(JSON.parse(JSON.stringify({
+    currentTick: simulationStore.currentTick,
+    isPaused: simulationStore.isPaused,
+    characterStates: simulationStore.characterStates,
+    activityLog: simulationStore.activityLog
+  })))
+  console.log('======================================\n')
+}
+
+const resetSimulation = () => {
+  if (confirm('Reset simulation? This will clear all character states and activity logs.')) {
+    simulationStore.resetSimulation()
+  }
+}
+
+// Initialize characters when they load
+watch(characters, (newCharacters) => {
+  newCharacters.forEach(character => {
+    simulationStore.initializeCharacter(character)
+  })
+}, { immediate: true })
+
+// Cleanup on unmount
+onMounted(() => {
+  loadData()
+
+  // Cleanup interval on component unmount
+  return () => {
+    simulationStore.pauseAutoTick()
+  }
+})
 </script>
