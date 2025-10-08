@@ -22,7 +22,12 @@ export const WorldResolvers = {
     items: async (parent: any) => {
       const items = await q(`
         MATCH (s:Space {id:$id})<-[:ON_SPACE]-(i:Item)
-        RETURN i.id AS id, i.name AS name, i.description AS description
+        RETURN i.id AS id, i.name AS name, i.description AS description,
+               i.allowedActivities AS allowedActivities,
+               i.satisfiesNeeds AS satisfiesNeeds,
+               i.canBeUsedByHumans AS canBeUsedByHumans,
+               i.canBeUsedByAnimals AS canBeUsedByAnimals,
+               i.count AS count
       `, { id: parent.id });
       return items;
     },
@@ -32,6 +37,57 @@ export const WorldResolvers = {
         RETURN c.id AS id, c.name AS name
       `, { id: parent.id });
       return characters;
+    }
+  },
+  Region: {
+    lots: async (parent: any) => {
+      const lots = await q(`
+        MATCH (r:Region {id:$id})-[:HAS_LOT]->(l:Lot)
+        RETURN l.id AS id, l.name AS name, l.lotType AS lotType
+      `, { id: parent.id });
+      return lots;
+    },
+    naturalAreas: async (parent: any) => {
+      // TODO: Implement when natural areas are added
+      return [];
+    }
+  },
+  Item: {
+    allowedActivities: (parent: any) => {
+      return parent.allowedActivities || [];
+    },
+    satisfiesNeeds: (parent: any) => {
+      return parent.satisfiesNeeds || [];
+    }
+  },
+  Lot: {
+    indoorRooms: async (parent: any) => {
+      const rooms = await q(`
+        MATCH (l:Lot {id:$id})-[:HAS_SPACE]->(s:Space)
+        WHERE s.isIndoor = true
+        RETURN s.id AS id, s.name AS name, s.description AS description, s.isIndoor AS isIndoor
+      `, { id: parent.id });
+      return rooms;
+    },
+    outdoorAreas: async (parent: any) => {
+      const areas = await q(`
+        MATCH (l:Lot {id:$id})-[:HAS_SPACE]->(s:Space)
+        WHERE s.isIndoor = false
+        RETURN s.id AS id, s.name AS name, s.description AS description, s.isIndoor AS isIndoor
+      `, { id: parent.id });
+      return areas;
+    },
+    items: async (parent: any) => {
+      const items = await q(`
+        MATCH (l:Lot {id:$id})<-[:ON_LOT]-(i:Item)
+        RETURN i.id AS id, i.name AS name, i.description AS description,
+               i.allowedActivities AS allowedActivities,
+               i.satisfiesNeeds AS satisfiesNeeds,
+               i.canBeUsedByHumans AS canBeUsedByHumans,
+               i.canBeUsedByAnimals AS canBeUsedByAnimals,
+               i.count AS count
+      `, { id: parent.id });
+      return items;
     }
   },
   Query: {
@@ -109,7 +165,12 @@ export const WorldResolvers = {
 
       const items = await q(`
         MATCH (s:Space {id:$id})<-[:ON_SPACE]-(i:Item)
-        RETURN i.id AS id, i.name AS name, i.description AS description
+        RETURN i.id AS id, i.name AS name, i.description AS description,
+               i.allowedActivities AS allowedActivities,
+               i.satisfiesNeeds AS satisfiesNeeds,
+               i.canBeUsedByHumans AS canBeUsedByHumans,
+               i.canBeUsedByAnimals AS canBeUsedByAnimals,
+               i.count AS count
       `, { id });
 
       return { ...space, items };
@@ -536,7 +597,12 @@ export const WorldResolvers = {
 
       const [created] = await q(`
         MATCH (i:Item {id:$id})
-        RETURN i.id AS id, i.name AS name, i.description AS description
+        RETURN i.id AS id, i.name AS name, i.description AS description,
+               i.allowedActivities AS allowedActivities,
+               i.satisfiesNeeds AS satisfiesNeeds,
+               i.canBeUsedByHumans AS canBeUsedByHumans,
+               i.canBeUsedByAnimals AS canBeUsedByAnimals,
+               i.count AS count
       `, { id });
       return created;
     },
@@ -576,6 +642,75 @@ export const WorldResolvers = {
       });
 
       return createdItems;
+    },
+
+    updateItem: async (_: any, { input }: {
+      input: {
+        id: string;
+        name?: string;
+        description?: string;
+        allowedActivities?: string[];
+        canBeUsedByHumans?: boolean;
+        canBeUsedByAnimals?: boolean;
+        minimumAgeToUse?: number;
+        maxSimultaneousUsers?: number;
+      }
+    }) => {
+      const { id, ...updates } = input;
+
+      // Build SET clause dynamically for only provided fields
+      const setFields: string[] = [];
+      const params: any = { id };
+
+      if (updates.name !== undefined) {
+        setFields.push('i.name = $name');
+        params.name = updates.name;
+      }
+      if (updates.description !== undefined) {
+        setFields.push('i.description = $description');
+        params.description = updates.description;
+      }
+      if (updates.allowedActivities !== undefined) {
+        setFields.push('i.allowedActivities = $allowedActivities');
+        params.allowedActivities = updates.allowedActivities;
+      }
+      if (updates.canBeUsedByHumans !== undefined) {
+        setFields.push('i.canBeUsedByHumans = $canBeUsedByHumans');
+        params.canBeUsedByHumans = updates.canBeUsedByHumans;
+      }
+      if (updates.canBeUsedByAnimals !== undefined) {
+        setFields.push('i.canBeUsedByAnimals = $canBeUsedByAnimals');
+        params.canBeUsedByAnimals = updates.canBeUsedByAnimals;
+      }
+      if (updates.minimumAgeToUse !== undefined) {
+        setFields.push('i.minimumAgeToUse = $minimumAgeToUse');
+        params.minimumAgeToUse = updates.minimumAgeToUse;
+      }
+      if (updates.maxSimultaneousUsers !== undefined) {
+        setFields.push('i.maxSimultaneousUsers = $maxSimultaneousUsers');
+        params.maxSimultaneousUsers = updates.maxSimultaneousUsers;
+      }
+
+      if (setFields.length === 0) {
+        throw new Error('No fields to update');
+      }
+
+      const [item] = await q(`
+        MATCH (i:Item {id:$id})
+        SET ${setFields.join(', ')}
+        RETURN i.id AS id, i.name AS name, i.description AS description,
+               i.allowedActivities AS allowedActivities,
+               i.canBeUsedByHumans AS canBeUsedByHumans,
+               i.canBeUsedByAnimals AS canBeUsedByAnimals,
+               i.minimumAgeToUse AS minimumAgeToUse,
+               i.maxSimultaneousUsers AS maxSimultaneousUsers,
+               i.satisfiesNeeds AS satisfiesNeeds,
+               i.canStoreItems AS canStoreItems,
+               i.cost AS cost,
+               i.count AS count
+      `, params);
+
+      return item;
     },
 
     deleteItem: async (_: any, { id }: { id: string }) => {

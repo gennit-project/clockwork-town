@@ -16,6 +16,22 @@
             <span v-if="item.count && item.count > 1" class="text-xs text-gray-500 dark:text-gray-400">×{{ item.count }}</span>
           </div>
           <p class="mt-1 text-xs text-gray-500 dark:text-gray-300">{{ item.description }}</p>
+
+          <!-- Affordances -->
+          <div v-if="item.allowedActivities && item.allowedActivities.length > 0" class="mt-2 flex flex-wrap gap-1">
+            <span
+              v-for="activity in item.allowedActivities"
+              :key="activity"
+              class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+            >
+              {{ activity }}
+            </span>
+          </div>
+          <div v-else class="mt-2">
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
+              no actions
+            </span>
+          </div>
         </div>
       </div>
     </div>

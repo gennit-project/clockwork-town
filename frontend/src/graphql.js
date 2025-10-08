@@ -113,6 +113,7 @@ export const queries = {
             id
             name
             description
+            allowedActivities
           }
         }
         outdoorAreas {
@@ -123,6 +124,7 @@ export const queries = {
             id
             name
             description
+            allowedActivities
           }
         }
       }
@@ -140,6 +142,7 @@ export const queries = {
           id
           name
           description
+          allowedActivities
         }
       }
     }

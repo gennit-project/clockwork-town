@@ -18,4 +18,7 @@ export const resolvers = {
     ...HouseholdResolvers.Mutation,
   },
   Space: WorldResolvers.Space,
+  Region: WorldResolvers.Region,
+  Lot: WorldResolvers.Lot,
+  Item: WorldResolvers.Item,
 };

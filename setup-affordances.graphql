@@ -1,0 +1,208 @@
+# Setup Affordances for Tick Engine Testing
+# Run these mutations after creating your world, lots, and items
+# Replace the item IDs with the actual IDs from your database
+
+# First, get all items to find their IDs:
+# query GetAllItems {
+#   region(id: "region-desert-willow") {
+#     lots {
+#       name
+#       indoorRooms {
+#         name
+#         items {
+#           id
+#           name
+#           description
+#         }
+#       }
+#       outdoorAreas {
+#         name
+#         items {
+#           id
+#           name
+#           description
+#         }
+#       }
+#     }
+#   }
+# }
+
+# ==========================================
+# HOME LOT - Kitchen
+# ==========================================
+
+mutation UpdateFridge {
+  updateItem(input: {
+    id: "REPLACE_WITH_FRIDGE_ID"
+    allowedActivities: ["eat"]
+    canBeUsedByHumans: true
+    maxSimultaneousUsers: 1
+  }) {
+    id
+    name
+    allowedActivities
+  }
+}
+
+mutation UpdateStove {
+  updateItem(input: {
+    id: "REPLACE_WITH_STOVE_ID"
+    allowedActivities: ["eat"]
+    canBeUsedByHumans: true
+    maxSimultaneousUsers: 1
+  }) {
+    id
+    name
+    allowedActivities
+  }
+}
+
+mutation UpdateTable {
+  updateItem(input: {
+    id: "REPLACE_WITH_TABLE_ID"
+    allowedActivities: ["eat", "chat_friend"]
+    canBeUsedByHumans: true
+    maxSimultaneousUsers: 4
+  }) {
+    id
+    name
+    allowedActivities
+  }
+}
+
+# ==========================================
+# HOME LOT - Bedroom
+# ==========================================
+
+mutation UpdateBed {
+  updateItem(input: {
+    id: "REPLACE_WITH_BED_ID"
+    allowedActivities: ["sleep"]
+    canBeUsedByHumans: true
+    maxSimultaneousUsers: 2
+  }) {
+    id
+    name
+    allowedActivities
+  }
+}
+
+# ==========================================
+# LIBRARY LOT - Main
+# ==========================================
+
+mutation UpdateBookshelfMain {
+  updateItem(input: {
+    id: "REPLACE_WITH_BOOKSHELF_MAIN_ID"
+    allowedActivities: ["read"]
+    canBeUsedByHumans: true
+    maxSimultaneousUsers: 3
+  }) {
+    id
+    name
+    allowedActivities
+  }
+}
+
+mutation UpdateDesk {
+  updateItem(input: {
+    id: "REPLACE_WITH_DESK_ID"
+    allowedActivities: ["write"]
+    canBeUsedByHumans: true
+    maxSimultaneousUsers: 1
+  }) {
+    id
+    name
+    allowedActivities
+  }
+}
+
+mutation UpdateBrokenBookshelf {
+  updateItem(input: {
+    id: "REPLACE_WITH_BROKEN_BOOKSHELF_ID"
+    allowedActivities: []
+    canBeUsedByHumans: false
+  }) {
+    id
+    name
+    allowedActivities
+  }
+}
+
+# ==========================================
+# LIBRARY LOT - Stacks
+# ==========================================
+
+mutation UpdateBookshelfStacks {
+  updateItem(input: {
+    id: "REPLACE_WITH_BOOKSHELF_STACKS_ID"
+    allowedActivities: ["read"]
+    canBeUsedByHumans: true
+    maxSimultaneousUsers: 2
+  }) {
+    id
+    name
+    allowedActivities
+  }
+}
+
+# ==========================================
+# PARK LOT - Lawn
+# ==========================================
+
+mutation UpdateBench {
+  updateItem(input: {
+    id: "REPLACE_WITH_BENCH_ID"
+    allowedActivities: ["chat_friend", "date"]
+    canBeUsedByHumans: true
+    maxSimultaneousUsers: 2
+  }) {
+    id
+    name
+    allowedActivities
+  }
+}
+
+mutation UpdateArtInstallation {
+  updateItem(input: {
+    id: "REPLACE_WITH_ART_INSTALLATION_ID"
+    allowedActivities: ["view_art"]
+    canBeUsedByHumans: true
+    maxSimultaneousUsers: 10
+  }) {
+    id
+    name
+    allowedActivities
+  }
+}
+
+# ==========================================
+# VERIFICATION QUERY
+# ==========================================
+
+# Run this after all mutations to verify:
+# query VerifyAffordances {
+#   region(id: "region-desert-willow") {
+#     lots {
+#       name
+#       indoorRooms {
+#         name
+#         items {
+#           id
+#           name
+#           allowedActivities
+#           maxSimultaneousUsers
+#         }
+#       }
+#       outdoorAreas {
+#         name
+#         items {
+#           id
+#           name
+#           allowedActivities
+#           maxSimultaneousUsers
+#         }
+#       }
+#     }
+#   }
+# }

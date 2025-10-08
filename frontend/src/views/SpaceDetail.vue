@@ -127,12 +127,13 @@
             </div>
 
             <!-- View Mode -->
-            <div v-else class="flex justify-between items-start">
-              <div class="flex-1">
-                <h3 class="font-medium text-sm text-gray-900 dark:text-gray-100">{{ item.name }}</h3>
-                <p class="text-xs text-gray-600 dark:text-gray-300 mt-1">{{ item.description }}</p>
-              </div>
-              <div class="flex gap-1 ml-2">
+            <div v-else>
+              <div class="flex justify-between items-start mb-2">
+                <div class="flex-1">
+                  <h3 class="font-medium text-sm text-gray-900 dark:text-gray-100">{{ item.name }}</h3>
+                  <p class="text-xs text-gray-600 dark:text-gray-300 mt-1">{{ item.description }}</p>
+                </div>
+                <div class="flex gap-1 ml-2">
                 <button
                   @click="startEditItem(item)"
                   class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
@@ -151,6 +152,23 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                   </svg>
                 </button>
+                </div>
+              </div>
+
+              <!-- Affordances -->
+              <div v-if="item.allowedActivities && item.allowedActivities.length > 0" class="flex flex-wrap gap-1 mt-2">
+                <span
+                  v-for="activity in item.allowedActivities"
+                  :key="activity"
+                  class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+                >
+                  {{ activity }}
+                </span>
+              </div>
+              <div v-else class="mt-2">
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
+                  no actions
+                </span>
               </div>
             </div>
           </div>

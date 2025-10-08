@@ -117,16 +117,16 @@ type Item {
   id: ID!
   name: String!
   description: String!
-  canBeUsedByHumans: Boolean!
-  canBeUsedByAnimals: Boolean!
+  canBeUsedByHumans: Boolean
+  canBeUsedByAnimals: Boolean
   minimumAgeToUse: Int
   maxSimultaneousUsers: Int
-  satisfiesNeeds: [String!]!
-  canStoreItems: Boolean!
-  allowedActivities: [String!]!
+  satisfiesNeeds: [String!]
+  canStoreItems: Boolean
+  allowedActivities: [String!]
   storedItems: [Item!]!      # items contained within this item (bags/chests/fridges/etc.)
-  cost: Int!
-  count: Int!
+  cost: Int
+  count: Int
 
   # Derived via USING edges (query-only, not stored as arrays):
   activeUsers: [Character!]!
@@ -428,6 +428,17 @@ input NewItem {
   description: String!
 }
 
+input UpdateItemInput {
+  id: ID!
+  name: String
+  description: String
+  allowedActivities: [String!]
+  canBeUsedByHumans: Boolean
+  canBeUsedByAnimals: Boolean
+  minimumAgeToUse: Int
+  maxSimultaneousUsers: Int
+}
+
 input ItemInput {
   itemName: String!
   itemDescription: String!
@@ -490,6 +501,7 @@ type Mutation {
 
   createItem(input: NewItem!): Item!
   createManyItems(spaceId: ID!, items: [ItemInput!]!): [Item!]!
+  updateItem(input: UpdateItemInput!): Item!
   deleteItem(id: ID!): Boolean!
 
   createHousehold(input: NewHousehold!, characters: [NewCharacterSimple!]!, animals: [NewAnimalSimple!]): Household!
