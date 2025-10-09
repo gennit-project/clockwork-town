@@ -109,6 +109,18 @@
                 class="dark:text-white w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Description"
               ></textarea>
+              <div>
+                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Max Simultaneous Users
+                </label>
+                <input
+                  v-model.number="editingItem.maxSimultaneousUsers"
+                  type="number"
+                  min="1"
+                  class="dark:text-white w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Leave empty for unlimited"
+                />
+              </div>
               <div class="flex gap-2">
                 <button
                   @click="saveEdit"
@@ -152,6 +164,30 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                   </svg>
                 </button>
+                </div>
+              </div>
+
+              <!-- Slot Visualization -->
+              <div v-if="item.maxSimultaneousUsers && item.maxSimultaneousUsers >= 1" class="mt-2 mb-2">
+                <div class="grid gap-1" :class="item.maxSimultaneousUsers === 1 ? 'grid-cols-1' : item.maxSimultaneousUsers === 2 ? 'grid-cols-2' : item.maxSimultaneousUsers === 3 ? 'grid-cols-3' : 'grid-cols-2'">
+                  <div
+                    v-for="slotIndex in item.maxSimultaneousUsers"
+                    :key="slotIndex"
+                    class="border-2 rounded p-1.5 min-h-[32px] flex items-center justify-center"
+                    :class="item.activeUsers && item.activeUsers[slotIndex - 1]
+                      ? 'border-blue-400 bg-blue-50 dark:bg-blue-950 dark:border-blue-600'
+                      : 'border-gray-300 bg-gray-100 dark:bg-gray-700 dark:border-gray-600'"
+                  >
+                    <span
+                      v-if="item.activeUsers && item.activeUsers[slotIndex - 1]"
+                      class="text-[10px] font-medium text-blue-800 dark:text-blue-200 truncate"
+                    >
+                      👤 {{ item.activeUsers[slotIndex - 1].name }}
+                    </span>
+                    <span v-else class="text-[10px] text-gray-400 dark:text-gray-500">
+                      —
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -286,16 +322,12 @@ const saveEdit = async () => {
     saving.value = true
     error.value = null
 
-    // Note: You'll need to add an updateItem mutation to your GraphQL schema
-    // For now, we'll delete and recreate the item
-    await client.request(mutations.deleteItem, { id: editingItem.value.id })
-
-    await client.request(mutations.createItem, {
+    await client.request(mutations.updateItem, {
       input: {
         id: editingItem.value.id,
-        spaceId: spaceId.value,
         name: editingItem.value.name,
-        description: editingItem.value.description
+        description: editingItem.value.description,
+        maxSimultaneousUsers: editingItem.value.maxSimultaneousUsers || null
       }
     })
 

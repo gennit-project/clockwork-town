@@ -5,53 +5,6 @@
     <div class="flex justify-between items-center mb-6">
       <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Region Overview: {{ region?.name || 'Loading...' }}</h1>
       <div class="flex space-x-3 items-center">
-        <!-- Tick Controls -->
-        <div class="flex items-center space-x-3 bg-gray-100 dark:bg-gray-700 px-4 py-2 rounded-lg">
-          <!-- Clock Display -->
-          <div class="flex items-center space-x-2">
-            <svg class="w-5 h-5 text-gray-700 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span class="font-mono text-sm font-semibold text-gray-900 dark:text-gray-100">
-              Tick: {{ simulationStore.currentTick }}
-            </span>
-          </div>
-
-          <!-- Play/Pause Button -->
-          <button
-            @click="togglePlayPause"
-            class="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-md transition-colors"
-            :title="simulationStore.isPaused ? 'Start auto-tick' : 'Pause auto-tick'"
-          >
-            <svg v-if="simulationStore.isPaused" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M8 5v14l11-7z"/>
-            </svg>
-            <svg v-else class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
-            </svg>
-          </button>
-
-          <!-- Manual Tick Button (Debug) -->
-          <button
-            @click="manualTick"
-            class="bg-purple-500 hover:bg-purple-600 text-white px-3 py-2 rounded-md text-sm font-medium"
-            title="Execute one tick manually (debug)"
-          >
-            ⚡ Tick
-          </button>
-
-          <!-- Reset Button -->
-          <button
-            @click="resetSimulation"
-            class="bg-red-500 hover:bg-red-600 text-white p-2 rounded-md"
-            title="Reset simulation"
-          >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-          </button>
-        </div>
-
         <!-- Debug Toggle Button -->
         <button
           @click="showDebugPanel = !showDebugPanel"
@@ -101,197 +54,36 @@
       </router-link>
     </div>
 
-    <div v-else class="flex flex-1 overflow-hidden">
+    <div v-else class="flex-1 flex gap-4 p-4 overflow-auto">
       <!-- Three Column Layout -->
-      <div class="flex-1 flex gap-4 p-4 overflow-auto">
-        <!-- Residential Column -->
-        <LotColumn
-          title="Residential"
-          :lots="residentialLots"
-          :world-id="worldId"
-          :region-id="regionId"
-          :expanded-lots="expandedLots"
-          :characters-by-lot="charactersByLot"
-          :characters-by-space="charactersBySpace"
-          variant="blue"
-          empty-message="No residential lots yet"
-          @toggle-expanded="toggleLotRooms"
-        />
+      <!-- Residential Column -->
+      <LotColumn
+        title="Residential"
+        :lots="residentialLots"
+        :world-id="worldId"
+        :region-id="regionId"
+        :expanded-lots="expandedLots"
+        :characters-by-lot="charactersByLot"
+        :characters-by-space="charactersBySpace"
+        variant="blue"
+        empty-message="No residential lots yet"
+        @toggle-expanded="toggleLotRooms"
+      />
 
-        <!-- Community Column -->
-        <LotColumn
-          title="Community"
-          :lots="communityLots"
-          :world-id="worldId"
-          :region-id="regionId"
-          :expanded-lots="expandedLots"
-          :characters-by-lot="charactersByLot"
-          :characters-by-space="charactersBySpace"
-          variant="green"
-          empty-message="No community lots yet"
-          @toggle-expanded="toggleLotRooms"
-        />
+      <!-- Community Column -->
+      <LotColumn
+        title="Community"
+        :lots="communityLots"
+        :world-id="worldId"
+        :region-id="regionId"
+        :expanded-lots="expandedLots"
+        :characters-by-lot="charactersByLot"
+        :characters-by-space="charactersBySpace"
+        variant="green"
+        empty-message="No community lots yet"
+        @toggle-expanded="toggleLotRooms"
+      />
 
-        <!-- Transportation Column -->
-        <div class=" flex flex-col">
-          <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 sticky top-0 z-10 pb-2">Transportation</h2>
-          <div class="text-center py-8 text-gray-500 dark:text-gray-300">
-            Coming soon
-          </div>
-        </div>
-      </div>
-
-      <!-- Right Sidebar - Characters & Activity Log Link -->
-      <div class="w-80 flex flex-col space-y-4 p-4 overflow-hidden">
-        <!-- Activity Log Link -->
-        <router-link
-          :to="`/world/${worldId}/region/${regionId}/activity-log`"
-          class="bg-purple-500 hover:bg-purple-600 text-white rounded-lg shadow-lg p-4 transition-colors"
-        >
-          <div class="flex items-center justify-between">
-            <div class="flex items-center">
-              <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <div>
-                <h3 class="font-bold text-lg">Activity Log</h3>
-                <p class="text-sm text-purple-100">{{ simulationStore.activityLog.length }} entries</p>
-              </div>
-            </div>
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-            </svg>
-          </div>
-        </router-link>
-
-        <!-- Characters & Animals Panel -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 flex-1 flex flex-col overflow-hidden">
-          <h2 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">Characters & Animals</h2>
-          <div v-if="characters.length === 0 && animals.length === 0" class="text-sm text-gray-500">
-            No characters or animals in this region yet.
-          </div>
-          <div v-else class="space-y-2 overflow-y-auto">
-            <!-- Characters Section -->
-            <div v-if="characters.length > 0">
-              <h3 class="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase mb-2">Characters</h3>
-              <CharacterListItem
-                v-for="character in characters"
-                :key="'char-' + character.id"
-                :entity="character"
-                type="character"
-                :is-active="activeCharacter?.id === character.id && activeCharacterType === 'character'"
-                :show-needs="false"
-                @select="setActiveCharacter(character, 'character')"
-              />
-            </div>
-
-            <!-- Animals Section -->
-            <div v-if="animals.length > 0" :class="{ 'mt-4': characters.length > 0 }">
-              <h3 class="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase mb-2">Animals</h3>
-              <CharacterListItem
-                v-for="animal in animals"
-                :key="'animal-' + animal.id"
-                :entity="animal"
-                type="animal"
-                :is-active="activeCharacter?.id === animal.id && activeCharacterType === 'animal'"
-                :show-traits="true"
-                :show-needs="false"
-                @select="setActiveCharacter(animal, 'animal')"
-              />
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- Active Character Panel - Fixed Bottom Right -->
-    <div v-if="activeCharacter" class="fixed bottom-0 right-0 w-80 bg-white dark:bg-gray-800 shadow-2xl p-4 border-l-2 border-t-2 z-50 max-h-[60vh] overflow-y-auto" :class="activeCharacterType === 'animal' ? 'border-amber-300' : 'border-blue-300'">
-      <div class="flex justify-between items-start mb-3">
-        <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100">
-          {{ activeCharacterType === 'animal' ? '🐾' : '👤' }} {{ activeCharacter.name }}, {{ activeCharacter.age }}
-        </h3>
-        <button @click="clearActiveCharacter" class="text-gray-500 dark:text-gray-300 hover:text-gray-700">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-      <div class="space-y-3">
-
-        <!-- Needs/Mood Bars (for characters only) -->
-        <div v-if="activeCharacterType === 'character' && getActiveCharacterState" class="mt-3 space-y-3 text-xs">
-          <!-- Self-Actualization -->
-          <div>
-            <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-1.5 text-[10px] uppercase tracking-wider text-gray-500">Self-Actualization</h4>
-            <div class="space-y-1.5">
-              <div v-for="need in selfActualizationNeeds" :key="need.key" class="flex items-center">
-                <span class="mr-2 text-sm">{{ need.icon }}</span>
-                <div class="flex-1 bg-gray-200 dark:bg-gray-600 h-2 rounded-full overflow-hidden">
-                  <div
-                    class="h-full rounded-full transition-all"
-                    :class="getNeedColorClass(getActiveCharacterState.needs[need.key])"
-                    :style="{ width: `${getActiveCharacterState.needs[need.key] * 100}%` }"
-                  />
-                </div>
-                <span class="ml-2 text-gray-600 dark:text-gray-400 w-10 text-right">
-                  {{ Math.round(getActiveCharacterState.needs[need.key] * 100) }}%
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Emotional -->
-          <div>
-            <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-1.5 text-[10px] uppercase tracking-wider text-gray-500">Emotional</h4>
-            <div class="space-y-1.5">
-              <div v-for="need in emotionalNeeds" :key="need.key" class="flex items-center">
-                <span class="mr-2 text-sm">{{ need.icon }}</span>
-                <div class="flex-1 bg-gray-200 dark:bg-gray-600 h-2 rounded-full overflow-hidden">
-                  <div
-                    class="h-full rounded-full transition-all"
-                    :class="getNeedColorClass(getActiveCharacterState.needs[need.key])"
-                    :style="{ width: `${getActiveCharacterState.needs[need.key] * 100}%` }"
-                  />
-                </div>
-                <span class="ml-2 text-gray-600 dark:text-gray-400 w-10 text-right">
-                  {{ Math.round(getActiveCharacterState.needs[need.key] * 100) }}%
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Basic -->
-          <div>
-            <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-1.5 text-[10px] uppercase tracking-wider text-gray-500">Basic</h4>
-            <div class="space-y-1.5">
-              <div v-for="need in basicNeeds" :key="need.key" class="flex items-center">
-                <span class="mr-2 text-sm">{{ need.icon }}</span>
-                <div class="flex-1 bg-gray-200 dark:bg-gray-600 h-2 rounded-full overflow-hidden">
-                  <div
-                    class="h-full rounded-full transition-all"
-                    :class="getNeedColorClass(getActiveCharacterState.needs[need.key])"
-                    :style="{ width: `${getActiveCharacterState.needs[need.key] * 100}%` }"
-                  />
-                </div>
-                <span class="ml-2 text-gray-600 dark:text-gray-400 w-10 text-right">
-                  {{ Math.round(getActiveCharacterState.needs[need.key] * 100) }}%
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div v-if="activeCharacterType === 'animal' && activeCharacter.traits && activeCharacter.traits.length > 0" class="text-sm text-gray-700 dark:text-gray-300">
-          <span class="font-medium">Traits:</span> {{ activeCharacter.traits.join(', ') }}
-        </div>
-        <div v-if="activeCharacter.bio" class="mt-3 text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 p-3 rounded">
-          {{ activeCharacter.bio.substring(0, 150) }}{{ activeCharacter.bio.length > 150 ? '...' : '' }}
-        </div>
-        <div v-else class="mt-3 text-sm text-gray-500 dark:text-gray-300 italic">
-          No biography available.
-        </div>
-      </div>
     </div>
 
     <!-- Edit Region Modal -->
@@ -352,7 +144,6 @@ import { useRoute } from 'vue-router'
 import { gql } from 'graphql-request'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
 import LotColumn from '../components/LotColumn.vue'
-import CharacterListItem from '../components/CharacterListItem.vue'
 import DebugActionPanel from '../components/DebugActionPanel.vue'
 import { client, queries } from '../graphql'
 import { useSimulationStore } from '../stores/simulation'
@@ -368,8 +159,6 @@ const world = ref(null)
 const region = ref(null)
 const characters = ref([])
 const animals = ref([])
-const activeCharacter = ref(null)
-const activeCharacterType = ref(null)
 const expandedLots = ref({})
 const loading = ref(true)
 const error = ref(null)
@@ -426,51 +215,6 @@ const charactersBySpace = computed(() => {
 
 const toggleLotRooms = (lotId) => {
   expandedLots.value[lotId] = !expandedLots.value[lotId]
-}
-
-const setActiveCharacter = (entity, type) => {
-  activeCharacter.value = entity
-  activeCharacterType.value = type
-}
-
-const clearActiveCharacter = () => {
-  activeCharacter.value = null
-  activeCharacterType.value = null
-}
-
-const getCharacterName = (characterId) => {
-  const character = characters.value.find(c => c.id === characterId)
-  const animal = animals.value.find(a => a.id === characterId)
-  return character?.name || animal?.name || `Unknown (${characterId})`
-}
-
-// Needs configuration for mood bars (grouped by category)
-const selfActualizationNeeds = [
-  { key: 'fulfillment', icon: '✨' }
-]
-
-const emotionalNeeds = [
-  { key: 'friends', icon: '💬' },
-  { key: 'family', icon: '👨‍👩‍👧' },
-  { key: 'romance', icon: '💕' }
-]
-
-const basicNeeds = [
-  { key: 'food', icon: '🍎' },
-  { key: 'sleep', icon: '😴' },
-  { key: 'health', icon: '💊' }
-]
-
-const getActiveCharacterState = computed(() => {
-  if (!activeCharacter.value || activeCharacterType.value !== 'character') return null
-  return simulationStore.getCharacterState(activeCharacter.value.id)
-})
-
-const getNeedColorClass = (value) => {
-  if (value >= 0.7) return 'bg-green-500'
-  if (value >= 0.4) return 'bg-yellow-500'
-  if (value >= 0.2) return 'bg-orange-500'
-  return 'bg-red-500'
 }
 
 const MUTATION_UPDATE_REGION = gql`
@@ -572,38 +316,6 @@ const loadData = async () => {
   }
 }
 
-// ============================================
-// SIMULATION CONTROLS
-// ============================================
-
-const togglePlayPause = () => {
-  if (simulationStore.isPaused) {
-    simulationStore.startAutoTick()
-  } else {
-    simulationStore.pauseAutoTick()
-  }
-}
-
-const manualTick = () => {
-  simulationStore.executeTick()
-
-  // Log full Pinia state to console for debugging
-  console.log('\n========== FULL PINIA STATE ==========')
-  console.log(JSON.parse(JSON.stringify({
-    currentTick: simulationStore.currentTick,
-    isPaused: simulationStore.isPaused,
-    characterStates: simulationStore.characterStates,
-    activityLog: simulationStore.activityLog
-  })))
-  console.log('======================================\n')
-}
-
-const resetSimulation = () => {
-  if (confirm('Reset simulation? This will clear all character states and activity logs.')) {
-    simulationStore.resetSimulation()
-  }
-}
-
 // Initialize characters when they load
 watch(characters, (newCharacters) => {
   for (const character of newCharacters) {
@@ -655,13 +367,7 @@ watch(characters, (newCharacters) => {
   }
 }, { immediate: true })
 
-// Cleanup on unmount
 onMounted(() => {
   loadData()
-
-  // Cleanup interval on component unmount
-  return () => {
-    simulationStore.pauseAutoTick()
-  }
 })
 </script>

@@ -27,6 +27,7 @@ export const WorldResolvers = {
                i.satisfiesNeeds AS satisfiesNeeds,
                i.canBeUsedByHumans AS canBeUsedByHumans,
                i.canBeUsedByAnimals AS canBeUsedByAnimals,
+               i.maxSimultaneousUsers AS maxSimultaneousUsers,
                i.count AS count
       `, { id: parent.id });
       return items;
@@ -58,6 +59,19 @@ export const WorldResolvers = {
     },
     satisfiesNeeds: (parent: any) => {
       return parent.satisfiesNeeds || [];
+    },
+    activeUsers: async (parent: any) => {
+      // Query characters currently USING this item
+      const users = await q(`
+        MATCH (c:Character)-[u:USING]->(i:Item {id:$id})
+        RETURN c.id AS id, c.name AS name, u.since AS since
+        ORDER BY u.since ASC
+      `, { id: parent.id });
+      return users;
+    },
+    activeAnimalUsers: async (parent: any) => {
+      // TODO: Add when animal USING edges are implemented
+      return [];
     }
   },
   Lot: {
@@ -85,6 +99,7 @@ export const WorldResolvers = {
                i.satisfiesNeeds AS satisfiesNeeds,
                i.canBeUsedByHumans AS canBeUsedByHumans,
                i.canBeUsedByAnimals AS canBeUsedByAnimals,
+               i.maxSimultaneousUsers AS maxSimultaneousUsers,
                i.count AS count
       `, { id: parent.id });
       return items;
@@ -170,6 +185,7 @@ export const WorldResolvers = {
                i.satisfiesNeeds AS satisfiesNeeds,
                i.canBeUsedByHumans AS canBeUsedByHumans,
                i.canBeUsedByAnimals AS canBeUsedByAnimals,
+               i.maxSimultaneousUsers AS maxSimultaneousUsers,
                i.count AS count
       `, { id });
 

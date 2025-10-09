@@ -36,20 +36,40 @@
       <!-- Household Info Banner -->
       <div v-if="household" class="mb-6 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
         <h2 class="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-2">{{ household.name }}</h2>
-        <div v-if="household.characters.length > 0" class="flex flex-wrap gap-2">
-          <span
-            v-for="char in household.characters"
-            :key="char.id"
-            class="text-sm bg-blue-100 dark:bg-blue-900 text-blue-800  dark:text-blue-100 px-3 py-1 rounded-full"
-          >
-            {{ char.name }} ({{ char.age }})
-          </span>
+
+        <!-- Currently at lot -->
+        <div class="mb-3">
+          <p class="text-xs font-medium text-blue-800 dark:text-blue-200 mb-1">Currently here:</p>
+          <div v-if="charactersAtLot.length > 0" class="flex flex-wrap gap-2">
+            <span
+              v-for="char in charactersAtLot"
+              :key="char.id"
+              class="text-sm bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100 px-3 py-1 rounded-full"
+            >
+              👤 {{ char.name }}
+            </span>
+          </div>
+          <p v-else class="text-sm text-blue-600 dark:text-blue-300 italic">No one is here</p>
+        </div>
+
+        <!-- All household members -->
+        <div v-if="household.characters.length > 0">
+          <p class="text-xs font-medium text-blue-800 dark:text-blue-200 mb-1">Household members:</p>
+          <div class="flex flex-wrap gap-2">
+            <span
+              v-for="char in household.characters"
+              :key="char.id"
+              class="text-sm bg-white dark:bg-gray-800 text-blue-800 dark:text-blue-100 px-3 py-1 rounded-full border border-blue-200 dark:border-blue-700"
+            >
+              {{ char.name }} ({{ char.age }})
+            </span>
+          </div>
         </div>
       </div>
 
       <div v-if="indoorSpaces.length > 0" class="mb-8">
         <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Indoor Rooms ({{ indoorSpaces.length }})</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           <div
             v-for="space in indoorSpaces"
             :key="space.id"
@@ -87,7 +107,7 @@
 
       <div v-if="outdoorSpaces.length > 0">
         <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Outdoor Areas ({{ outdoorSpaces.length }})</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           <div
             v-for="space in outdoorSpaces"
             :key="space.id"
@@ -311,6 +331,12 @@ const charactersBySpace = computed(() => {
   return bySpace
 })
 
+const charactersAtLot = computed(() => {
+  return characters.value.filter(char => {
+    return char.location?.id === lotId.value
+  })
+})
+
 const breadcrumbs = computed(() => [
   { label: 'Worlds', to: '/' },
   { label: world.value?.name || 'Loading...', to: `/world/${worldId.value}` },
@@ -322,21 +348,69 @@ const loadData = async () => {
   try {
     loading.value = true
     error.value = null
-    const [worldData, regionsData, lotsData, spacesData, householdsData, regionData] = await Promise.all([
+    const [worldData, regionsData, lotsData, householdsData, regionData] = await Promise.all([
       client.request(queries.getWorld, { id: worldId.value }),
       client.request(queries.getRegions, { worldId: worldId.value }),
       client.request(queries.getLots, { regionId: regionId.value }),
-      client.request(queries.getSpacesWithItems, { lotId: lotId.value }),
       client.request(queries.getHouseholds, { regionId: regionId.value }),
       client.request(queries.getRegion, { id: regionId.value })
     ])
     world.value = worldData.world
     region.value = regionsData.regions.find(r => r.id === regionId.value)
     lot.value = lotsData.lots.find(l => l.id === lotId.value)
-    indoorSpaces.value = spacesData.lot?.indoorRooms || []
-    outdoorSpaces.value = spacesData.lot?.outdoorAreas || []
     household.value = householdsData.households.find(h => h.lotId === lotId.value) || null
     characters.value = regionData.region?.characters || []
+
+    // Load ALL lots with their spaces and items (for simulation)
+    const lotsWithSpacesData = []
+    for (const lot of lotsData.lots) {
+      try {
+        const spacesData = await client.request(queries.getSpacesWithItems, { lotId: lot.id })
+        lotsWithSpacesData.push({
+          ...spacesData.lot
+        })
+      } catch (e) {
+        console.error(`Failed to load spaces for lot ${lot.id}:`, e)
+      }
+    }
+
+    // Load world data into simulation store for pathfinding
+    simulationStore.loadWorldData(lotsWithSpacesData, regionId.value)
+
+    // Set current lot's spaces for display
+    const currentLotData = lotsWithSpacesData.find(l => l.id === lotId.value)
+    if (currentLotData) {
+      indoorSpaces.value = currentLotData.indoorRooms || []
+      outdoorSpaces.value = currentLotData.outdoorAreas || []
+    }
+
+    // Initialize characters in simulation store (after world data is loaded)
+    for (const character of characters.value) {
+      simulationStore.initializeCharacter(character)
+
+      // Update character location if available
+      if (character.location) {
+        // Find the first space in this lot from the loaded world data
+        const lotData = simulationStore.worldData.lots[character.location.id]
+
+        if (lotData && lotData.spaceIds.length > 0) {
+          // Get the first space
+          const firstSpaceId = lotData.spaceIds[0]
+          const firstSpace = simulationStore.worldData.spaces[firstSpaceId]
+
+          if (firstSpace) {
+            simulationStore.updateCharacterLocation(
+              character.id,
+              regionId.value,
+              character.location.id,
+              character.location.name,
+              firstSpace.id,
+              firstSpace.name
+            )
+          }
+        }
+      }
+    }
   } catch (e) {
     error.value = e.message
   } finally {
@@ -464,35 +538,23 @@ const saveAsTemplate = async () => {
   }
 }
 
-// Initialize characters in simulation store when they load
-watch(characters, (newCharacters) => {
-  for (const character of newCharacters) {
-    simulationStore.initializeCharacter(character)
-
-    // Update character location if available
-    if (character.location) {
-      // Find the first space in this lot from the loaded world data
-      const lotData = simulationStore.worldData.lots[character.location.id]
-
-      if (lotData && lotData.spaceIds.length > 0) {
-        // Get the first space
-        const firstSpaceId = lotData.spaceIds[0]
-        const firstSpace = simulationStore.worldData.spaces[firstSpaceId]
-
-        if (firstSpace) {
-          simulationStore.updateCharacterLocation(
-            character.id,
-            regionId.value,
-            character.location.id,
-            character.location.name,
-            firstSpace.id,
-            firstSpace.name
-          )
-        }
-      }
+// Refresh items with activeUsers after each tick
+const refreshItems = async () => {
+  try {
+    const currentLotData = await client.request(queries.getSpacesWithItems, { lotId: lotId.value })
+    if (currentLotData?.lot) {
+      indoorSpaces.value = currentLotData.lot.indoorRooms || []
+      outdoorSpaces.value = currentLotData.lot.outdoorAreas || []
     }
+  } catch (e) {
+    console.error('Failed to refresh items:', e)
   }
-}, { immediate: true })
+}
+
+// Watch for tick changes and refresh item data
+watch(() => simulationStore.currentTick, () => {
+  refreshItems()
+})
 
 onMounted(loadData)
 </script>

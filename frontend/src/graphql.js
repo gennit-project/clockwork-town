@@ -119,6 +119,11 @@ export const queries = {
             name
             description
             allowedActivities
+            maxSimultaneousUsers
+            activeUsers {
+              id
+              name
+            }
           }
         }
         outdoorAreas {
@@ -130,6 +135,11 @@ export const queries = {
             name
             description
             allowedActivities
+            maxSimultaneousUsers
+            activeUsers {
+              id
+              name
+            }
           }
         }
       }
@@ -148,6 +158,11 @@ export const queries = {
           name
           description
           allowedActivities
+          maxSimultaneousUsers
+          activeUsers {
+            id
+            name
+          }
         }
       }
     }
@@ -353,6 +368,17 @@ export const mutations = {
     }
   `,
 
+  updateItem: `
+    mutation UpdateItem($input: UpdateItemInput!) {
+      updateItem(input: $input) {
+        id
+        name
+        description
+        maxSimultaneousUsers
+      }
+    }
+  `,
+
   deleteItem: `
     mutation DeleteItem($id: ID!) {
       deleteItem(id: $id)
@@ -473,6 +499,12 @@ export const mutations = {
   moveCharacter: `
     mutation MoveCharacter($input: MoveInput!) {
       moveCharacter(input: $input)
+    }
+  `,
+
+  startActivity: `
+    mutation StartActivity($input: PerformInput!) {
+      startActivity(input: $input)
     }
   `
 }

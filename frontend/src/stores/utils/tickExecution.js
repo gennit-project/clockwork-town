@@ -1,0 +1,70 @@
+/**
+ * Tick execution logic for the simulation
+ */
+
+import { NEED_DECAY_RATES } from '../config/needs.js'
+import { selectBestIntent } from './decisionMaking.js'
+
+/**
+ * Execute a single tick of the simulation
+ * Processes all three phases: Decay, Decision Making, and Execution
+ *
+ * @param {object} refs - Object containing Vue refs and functions
+ * @param {Ref<number>} refs.currentTick - Current tick counter
+ * @param {Ref<object>} refs.characterStates - Character states
+ * @param {Ref<object>} refs.worldData - World data
+ * @param {Ref<Array>} refs.activityLog - Activity log
+ * @param {Function} refs.executeAction - Function to execute a character action
+ */
+export async function executeTick({ currentTick, characterStates, worldData, activityLog, executeAction }) {
+  currentTick.value++
+
+  console.log(`\n========== TICK ${currentTick.value} ==========`)
+
+  // Phase 1: Decay all needs and cooldowns
+  for (const characterId in characterStates.value) {
+    const state = characterStates.value[characterId]
+
+    // Decay needs using constants from config
+    state.needs.food = Math.max(0, state.needs.food - NEED_DECAY_RATES.food)
+    state.needs.sleep = Math.max(0, state.needs.sleep - NEED_DECAY_RATES.sleep)
+    state.needs.health = Math.max(0, state.needs.health - NEED_DECAY_RATES.health)
+    state.needs.friends = Math.max(0, state.needs.friends - NEED_DECAY_RATES.friends)
+    state.needs.family = Math.max(0, state.needs.family - NEED_DECAY_RATES.family)
+    state.needs.romance = Math.max(0, state.needs.romance - NEED_DECAY_RATES.romance)
+    state.needs.fulfillment = Math.max(0, state.needs.fulfillment - NEED_DECAY_RATES.fulfillment)
+
+    // Decrement cooldowns
+    for (const action in state.cooldowns) {
+      if (state.cooldowns[action] > 0) {
+        state.cooldowns[action]--
+      }
+    }
+  }
+
+  // Phase 2: Decision Making
+  console.log('\n--- Phase 2: Decision Making ---')
+  const intents = {}
+  for (const characterId in characterStates.value) {
+    // Select the best intent for this character
+    const intent = selectBestIntent(characterId, characterStates.value[characterId], worldData.value)
+    intents[characterId] = intent
+
+    // Log the intent
+    if (intent.action === 'idle') {
+      console.log(`  ${characterId}: intends to idle (no satisfying actions)`)
+    } else {
+      console.log(`  ${characterId}: intends to ${intent.action} at ${intent.itemName} (${intent.targetSpaceName}, ${intent.targetLotName}) - utility: ${intent.utility.toFixed(2)}`)
+    }
+  }
+
+  // Phase 3: Execution (sequential to avoid race conditions with item slots)
+  console.log('\n--- Phase 3: Execution ---')
+  for (const characterId in intents) {
+    await executeAction(characterId, intents[characterId])
+  }
+
+  // Log full state to console for debugging
+  console.log('Character States:', JSON.parse(JSON.stringify(characterStates.value)))
+  console.log('Activity Log:', activityLog.value.slice(-10))
+}

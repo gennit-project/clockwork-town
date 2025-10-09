@@ -417,7 +417,8 @@ input MoveInput {
 
 input PerformInput {
   characterId: ID!
-  activityTypeId: ID!
+  activityTypeId: ID
+  actionName: String  # Alternative to activityTypeId - if provided, will look up or create ActivityType
   note: String
 }
 
