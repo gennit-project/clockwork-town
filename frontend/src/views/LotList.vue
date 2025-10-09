@@ -41,7 +41,7 @@
         <div class="flex justify-between items-start mb-2">
           <div>
             <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">{{ lot.name }}</h2>
-            <p class="text-sm text-gray-500">{{ lot.lotType }}</p>
+            
             <div v-if="getHouseholdForLot(lot.id)" class="mt-2">
               <p class="text-xs font-medium text-gray-700 dark:text-gray-300">Household:</p>
               <p class="text-xs text-gray-600 dark:text-gray-300">{{ getHouseholdForLot(lot.id).name }}</p>

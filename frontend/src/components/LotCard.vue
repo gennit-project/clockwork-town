@@ -10,7 +10,6 @@
           >
             {{ lot.name }}
           </router-link>
-          <p class="text-sm" :class="subtitleClass">{{ lot.lotType }}</p>
         </div>
         <router-link
           :to="`/world/${worldId}/region/${regionId}/lot/${lot.id}`"

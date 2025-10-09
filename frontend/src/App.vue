@@ -134,7 +134,10 @@
                 <div
                   v-for="character in regionCharacters"
                   :key="character.id"
-                  class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer transition-colors"
+                  class="p-3 rounded-lg cursor-pointer transition-all"
+                  :class="simulationStore.activeCharacterId === character.id
+                    ? 'bg-blue-100 dark:bg-blue-900/40 border-2 border-blue-400 dark:border-blue-500 shadow-md'
+                    : 'bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600'"
                   @click="selectCharacter(character)"
                 >
                   <div class="flex items-start justify-between mb-2">
@@ -228,23 +231,33 @@
         </div>
       </div>
     </div>
+
+    <!-- Character Detail Panel (Lower Left Corner) -->
+    <CharacterDetailPanel
+      v-if="selectedCharacterForPanel"
+      :character="selectedCharacterForPanel"
+      @close="selectedCharacterForPanel = null"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useDarkMode } from './composables/useDarkMode'
 import { useSimulationStore } from './stores/simulation'
 import { client, queries } from './graphql'
+import CharacterDetailPanel from './components/CharacterDetailPanel.vue'
 
 const route = useRoute()
+const router = useRouter()
 const { isDark, toggle: toggleDarkMode } = useDarkMode()
 const simulationStore = useSimulationStore()
 
 const showActivityLog = ref(false)
 const regionCharacters = ref([])
 const regionAnimals = ref([])
+const selectedCharacterForPanel = ref(null)
 
 const currentRegionId = computed(() => route.params.regionId)
 
@@ -290,15 +303,32 @@ watch(currentRegionId, () => {
   loadRegionData()
 }, { immediate: true })
 
-// Character/Animal selection (placeholder for future functionality)
+// Character/Animal selection - navigate to their location and show panel
 const selectCharacter = (character) => {
-  console.log('Selected character:', character)
-  // TODO: Show character detail panel
+  // Set as active character
+  simulationStore.setActiveCharacter(character.id)
+
+  // Show character detail panel
+  selectedCharacterForPanel.value = character
+
+  // Get character's location from simulation store
+  const charState = simulationStore.characterStates[character.id]
+  if (charState?.location?.spaceId) {
+    // Navigate to the space detail page
+    const worldId = route.params.worldId
+    const regionId = route.params.regionId
+    const lotId = charState.location.lotId
+    const spaceId = charState.location.spaceId
+
+    router.push(`/world/${worldId}/region/${regionId}/lot/${lotId}/space/${spaceId}`)
+  } else {
+    console.warn('Character location not found in simulation state')
+  }
 }
 
 const selectAnimal = (animal) => {
   console.log('Selected animal:', animal)
-  // TODO: Show animal detail panel
+  // TODO: Navigate to animal location when implemented
 }
 
 // Get character location from simulation store

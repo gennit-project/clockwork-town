@@ -24,6 +24,9 @@ export const useSimulationStore = defineStore('simulation', () => {
   // Structure: { [characterId]: { needs: {...}, cooldowns: {...}, currentAction: string, location: {...} } }
   const characterStates = ref({})
 
+  // Active character (for UI focus)
+  const activeCharacterId = ref(null)
+
   // Item occupancy tracking (which characters are using which items right now)
   // Structure: { [itemId]: [characterId1, characterId2, ...] }
   const itemOccupancy = ref({})
@@ -386,6 +389,13 @@ export const useSimulationStore = defineStore('simulation', () => {
   }
 
 
+  /**
+   * Set the active character (for UI focus)
+   */
+  function setActiveCharacter(characterId) {
+    activeCharacterId.value = characterId
+  }
+
   return {
     // State
     currentTick,
@@ -393,6 +403,7 @@ export const useSimulationStore = defineStore('simulation', () => {
     activityLog,
     characterStates,
     worldData,
+    activeCharacterId,
 
     // Getters
     isRunning,
@@ -410,6 +421,7 @@ export const useSimulationStore = defineStore('simulation', () => {
     pauseAutoTick,
     resetSimulation,
     updateCharacterLocation,
-    loadWorldData
+    loadWorldData,
+    setActiveCharacter
   }
 })

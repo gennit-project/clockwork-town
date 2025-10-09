@@ -1,0 +1,178 @@
+<template>
+  <div class="fixed bottom-4 left-4 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-2xl border-2 border-gray-300 dark:border-gray-600 z-40">
+    <!-- Header -->
+    <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+      <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ character.name }}</h3>
+      <button
+        @click="$emit('close')"
+        class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+        title="Close"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex border-b border-gray-200 dark:border-gray-700">
+      <button
+        @click="activeTab = 'needs'"
+        class="flex-1 px-4 py-2 text-sm font-medium transition-colors"
+        :class="activeTab === 'needs'
+          ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20'
+          : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'"
+      >
+        Needs
+      </button>
+      <button
+        @click="activeTab = 'bio'"
+        class="flex-1 px-4 py-2 text-sm font-medium transition-colors"
+        :class="activeTab === 'bio'
+          ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20'
+          : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'"
+      >
+        Bio
+      </button>
+    </div>
+
+    <!-- Content -->
+    <div class="p-4 max-h-96 overflow-y-auto">
+      <!-- Needs Tab -->
+      <div v-if="activeTab === 'needs'" class="space-y-4">
+        <!-- Location & Status -->
+        <div class="flex items-center justify-between text-xs mb-4 pb-3 border-b border-gray-200 dark:border-gray-700">
+          <div class="flex items-center text-gray-700 dark:text-gray-300">
+            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <span>{{ characterState?.location?.lotName || 'Unknown' }}</span>
+          </div>
+          <div class="flex items-center text-purple-600 dark:text-purple-400">
+            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            <span>{{ formatAction(characterState?.currentAction || 'idle') }}</span>
+          </div>
+        </div>
+
+        <!-- Needs Categories -->
+        <div v-for="category in needsCategories" :key="category.title">
+          <h4 class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-2">{{ category.title }}</h4>
+          <div class="space-y-2">
+            <div v-for="need in category.needs" :key="need.key" class="flex items-center">
+              <span class="text-lg mr-2">{{ need.icon }}</span>
+              <div class="flex-1">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-xs font-medium text-gray-700 dark:text-gray-300">{{ need.label }}</span>
+                  <span class="text-xs text-gray-600 dark:text-gray-400">{{ Math.round((characterState?.needs?.[need.key] || 0) * 100) }}%</span>
+                </div>
+                <div class="w-full bg-gray-200 dark:bg-gray-600 h-2 rounded-full overflow-hidden">
+                  <div
+                    class="h-full rounded-full transition-all"
+                    :class="getNeedColorClass(characterState?.needs?.[need.key] || 0)"
+                    :style="{ width: (characterState?.needs?.[need.key] || 0) * 100 + '%' }"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bio Tab -->
+      <div v-else-if="activeTab === 'bio'" class="space-y-3">
+        <div>
+          <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Age</p>
+          <p class="text-base text-gray-900 dark:text-gray-100">{{ character.age }}</p>
+        </div>
+
+        <div v-if="character.traits && character.traits.length > 0">
+          <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Traits</p>
+          <div class="flex flex-wrap gap-2">
+            <span
+              v-for="trait in character.traits"
+              :key="trait"
+              class="px-2 py-1 text-xs font-medium bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300 rounded-full"
+            >
+              {{ trait }}
+            </span>
+          </div>
+        </div>
+
+        <div v-if="characterState?.location">
+          <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Location</p>
+          <p class="text-base text-gray-900 dark:text-gray-100">
+            {{ characterState.location.spaceName }} ({{ characterState.location.lotName }})
+          </p>
+        </div>
+
+        <div v-if="characterState?.currentAction">
+          <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Current Activity</p>
+          <p class="text-base text-gray-900 dark:text-gray-100">{{ formatAction(characterState.currentAction) }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed } from 'vue'
+import { useSimulationStore } from '../stores/simulation'
+
+const props = defineProps({
+  character: {
+    type: Object,
+    required: true
+  }
+})
+
+defineEmits(['close'])
+
+const simulationStore = useSimulationStore()
+const activeTab = ref('needs')
+
+const characterState = computed(() => {
+  return simulationStore.characterStates[props.character.id]
+})
+
+const formatAction = (action) => {
+  return action
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+}
+
+const getNeedColorClass = (value) => {
+  if (value >= 0.7) return 'bg-green-500'
+  if (value >= 0.4) return 'bg-yellow-500'
+  if (value >= 0.2) return 'bg-orange-500'
+  return 'bg-red-500'
+}
+
+const needsCategories = [
+  {
+    title: 'Basic Needs',
+    needs: [
+      { key: 'food', icon: '🍎', label: 'Food' },
+      { key: 'sleep', icon: '😴', label: 'Sleep' },
+      { key: 'health', icon: '💊', label: 'Health' }
+    ]
+  },
+  {
+    title: 'Emotional Needs',
+    needs: [
+      { key: 'friends', icon: '💬', label: 'Friends' },
+      { key: 'family', icon: '👨‍👩‍👧', label: 'Family' },
+      { key: 'romance', icon: '💕', label: 'Romance' }
+    ]
+  },
+  {
+    title: 'Self-Actualization',
+    needs: [
+      { key: 'fulfillment', icon: '✨', label: 'Fulfillment' }
+    ]
+  }
+]
+</script>
