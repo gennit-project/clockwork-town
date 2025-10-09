@@ -88,7 +88,7 @@
 
         <div v-else-if="items.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           <div
-            v-for="item in items"
+            v-for="item in itemsWithActiveUsers"
             :key="item.id"
             class=" rounded-lg p-3 transition-colors"
             :class="editingItem?.id === item.id ? 'border-blue-400 bg-blue-50 dark:bg-blue-950' : 'border-gray-200 hover:border-blue-300 bg-gray-50 dark:bg-gray-900'"
@@ -219,7 +219,9 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
 import { client, queries, mutations } from '../graphql'
+import { useSimulationStore } from '../stores/simulation'
 
+const simulationStore = useSimulationStore()
 const route = useRoute()
 const worldId = computed(() => route.params.worldId)
 const regionId = computed(() => route.params.regionId)
@@ -250,6 +252,17 @@ const breadcrumbs = computed(() => [
   { label: lot.value?.name || 'Loading...', to: `/world/${worldId.value}/region/${regionId.value}/lot/${lotId.value}` },
   { label: space.value?.name || 'Loading...', to: '#' }
 ])
+
+// Enrich items with active users from simulation store
+const itemsWithActiveUsers = computed(() => {
+  return items.value.map(item => {
+    const activeUsers = simulationStore.getItemActiveUsers(item.id)
+    return {
+      ...item,
+      activeUsers
+    }
+  })
+})
 
 const loadData = async () => {
   try {

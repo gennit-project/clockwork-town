@@ -100,6 +100,7 @@ export const useSimulationStore = defineStore('simulation', () => {
       currentTick,
       characterStates,
       worldData,
+      itemOccupancy,
       activityLog,
       executeAction
     })
@@ -207,6 +208,22 @@ export const useSimulationStore = defineStore('simulation', () => {
       logActivity(characterId, 'idle', 'No satisfying actions available')
       console.log(`  ${characterId}: idle (no actions available)`)
       return
+    }
+
+    // Re-validate item availability (important for sequential execution within same tick)
+    if (intent.itemId) {
+      const item = worldData.value.items[intent.itemId]
+      if (item && item.maxSimultaneousUsers !== null && item.maxSimultaneousUsers !== undefined) {
+        const currentOccupants = itemOccupancy.value[intent.itemId] || []
+        if (currentOccupants.length >= item.maxSimultaneousUsers) {
+          console.log(`  ⚠️  Item ${intent.itemName} became full during this tick (${currentOccupants.length}/${item.maxSimultaneousUsers})`)
+          console.log(`  ${characterId}: falling back to idle`)
+          state.currentAction = 'idle'
+          clearItemOccupancy(characterId)
+          logActivity(characterId, 'idle', `${intent.itemName} became unavailable`)
+          return
+        }
+      }
     }
 
     // Step 13: Handle movement if needed (travelCost > 0)

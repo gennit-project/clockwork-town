@@ -331,12 +331,20 @@ const selectAnimal = (animal) => {
   // TODO: Navigate to animal location when implemented
 }
 
-// Get character location from simulation store
+// Get character location from simulation store (or fallback to API data)
 const getCharacterLocation = (characterId) => {
+  // First check simulation store (for reactive updates during simulation)
   const charState = simulationStore.characterStates[characterId]
   if (charState?.location?.lotName) {
     return charState.location.lotName
   }
+
+  // Fallback to character's raw location from API (for initial display before simulation initializes)
+  const character = regionCharacters.value.find(c => c.id === characterId)
+  if (character?.location?.name) {
+    return character.location.name
+  }
+
   return 'Unknown location'
 }
 

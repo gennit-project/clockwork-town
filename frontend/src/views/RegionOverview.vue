@@ -316,7 +316,7 @@ const loadData = async () => {
   }
 }
 
-// Initialize characters when they load
+// Initialize characters when they load (after world data is loaded)
 watch(characters, (newCharacters) => {
   for (const character of newCharacters) {
     // Initialize character in simulation store
@@ -341,31 +341,16 @@ watch(characters, (newCharacters) => {
             firstSpace.id,
             firstSpace.name
           )
+          console.log(`✅ Initialized ${character.name} at ${firstSpace.name} (${character.location.name})`)
         } else {
-          // No spaces found, just set lot-level location
-          simulationStore.updateCharacterLocation(
-            character.id,
-            regionId.value,
-            character.location.id,
-            character.location.name,
-            null,
-            null
-          )
+          console.error(`❌ Could not find space ${firstSpaceId} for ${character.name}`)
         }
       } else {
-        // No spaces in lot, just set lot-level location
-        simulationStore.updateCharacterLocation(
-          character.id,
-          regionId.value,
-          character.location.id,
-          character.location.name,
-          null,
-          null
-        )
+        console.error(`❌ Could not find lot ${character.location.id} for ${character.name} - world data may not be loaded yet`)
       }
     }
   }
-}, { immediate: true })
+})
 
 onMounted(() => {
   loadData()

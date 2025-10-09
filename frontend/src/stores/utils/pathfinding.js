@@ -10,9 +10,10 @@
  * @param {string} action - Action name (e.g., 'eat', 'sleep')
  * @param {object} characterLocation - Character's location { spaceId, lotId, regionId }
  * @param {object} worldData - World data with lots, spaces, items, itemsByAffordance
+ * @param {object} itemOccupancy - Current item occupancy { [itemId]: [characterId1, characterId2, ...] }
  * @returns {Array} Array of item options: [{ itemId, itemName, spaceId, spaceName, lotId, lotName, travelCost }]
  */
-export function findItemsWithAffordance(characterId, action, characterLocation, worldData) {
+export function findItemsWithAffordance(characterId, action, characterLocation, worldData, itemOccupancy = {}) {
   const { spaceId: currentSpaceId, lotId: currentLotId, regionId: currentRegionId } = characterLocation
 
   if (!currentSpaceId || !currentLotId || !currentRegionId) {
@@ -46,8 +47,20 @@ export function findItemsWithAffordance(characterId, action, characterLocation, 
       travelCost = 2
     }
 
-    // If accessible, add to results
+    // If accessible, check capacity before adding
     if (travelCost !== null) {
+      // Check if item is at capacity
+      const currentOccupants = itemOccupancy[item.id] || []
+      const maxUsers = item.maxSimultaneousUsers
+
+      // If item has a capacity limit, check if it's full
+      if (maxUsers !== null && maxUsers !== undefined) {
+        if (currentOccupants.length >= maxUsers) {
+          console.log(`  ⚠️  Item ${item.name} is at capacity (${currentOccupants.length}/${maxUsers})`)
+          continue // Skip this item, it's full
+        }
+      }
+
       results.push({
         itemId: item.id,
         itemName: item.name,
@@ -112,7 +125,8 @@ export function buildWorldData(lots, regionId) {
           spaceId: space.id,
           lotId: lot.id,
           regionId: regionId,
-          allowedActivities: item.allowedActivities || []
+          allowedActivities: item.allowedActivities || [],
+          maxSimultaneousUsers: item.maxSimultaneousUsers || null
         }
 
         // Index by affordance

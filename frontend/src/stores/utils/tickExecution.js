@@ -13,10 +13,11 @@ import { selectBestIntent } from './decisionMaking.js'
  * @param {Ref<number>} refs.currentTick - Current tick counter
  * @param {Ref<object>} refs.characterStates - Character states
  * @param {Ref<object>} refs.worldData - World data
+ * @param {Ref<object>} refs.itemOccupancy - Item occupancy tracking
  * @param {Ref<Array>} refs.activityLog - Activity log
  * @param {Function} refs.executeAction - Function to execute a character action
  */
-export async function executeTick({ currentTick, characterStates, worldData, activityLog, executeAction }) {
+export async function executeTick({ currentTick, characterStates, worldData, itemOccupancy, activityLog, executeAction }) {
   currentTick.value++
 
   console.log(`\n========== TICK ${currentTick.value} ==========`)
@@ -46,8 +47,8 @@ export async function executeTick({ currentTick, characterStates, worldData, act
   console.log('\n--- Phase 2: Decision Making ---')
   const intents = {}
   for (const characterId in characterStates.value) {
-    // Select the best intent for this character
-    const intent = selectBestIntent(characterId, characterStates.value[characterId], worldData.value)
+    // Select the best intent for this character (pass itemOccupancy to check slot availability)
+    const intent = selectBestIntent(characterId, characterStates.value[characterId], worldData.value, itemOccupancy.value)
     intents[characterId] = intent
 
     // Log the intent

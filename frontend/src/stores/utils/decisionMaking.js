@@ -58,9 +58,10 @@ export function calculateUtility(characterId, action, characterNeeds, itemOption
  * @param {string} characterId - Character ID
  * @param {object} characterState - Character state with needs, cooldowns, location
  * @param {object} worldData - World data structure
+ * @param {object} itemOccupancy - Current item occupancy { [itemId]: [characterId1, ...] }
  * @returns {object} Intent: { action, itemId, itemName, targetSpaceId, targetLotId, utility } or { action: 'idle', utility: 0 }
  */
-export function selectBestIntent(characterId, characterState, worldData) {
+export function selectBestIntent(characterId, characterState, worldData, itemOccupancy = {}) {
   console.log(`\n🎯 selectBestIntent for character ${characterId}`)
 
   // All possible actions (excluding idle and work for now)
@@ -76,8 +77,8 @@ export function selectBestIntent(characterId, characterState, worldData) {
       continue
     }
 
-    // Find items that support this action
-    const items = findItemsWithAffordance(characterId, action, characterState.location, worldData)
+    // Find items that support this action (excluding full items)
+    const items = findItemsWithAffordance(characterId, action, characterState.location, worldData, itemOccupancy)
 
     if (items.length === 0) {
       console.log(`  ❌ ${action}: no accessible items`)
