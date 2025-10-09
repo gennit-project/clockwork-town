@@ -2,12 +2,20 @@
   <div>
     <div class="flex justify-between items-center mb-6">
       <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Worlds</h1>
-      <button
-        @click="showCreateModal = true"
-        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
-      >
-        Create World
-      </button>
+      <div class="flex gap-3">
+        <button
+          @click="openRestoreModal"
+          class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
+        >
+          Restore from Google Drive
+        </button>
+        <button
+          @click="showCreateModal = true"
+          class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+        >
+          Create World
+        </button>
+      </div>
     </div>
 
     <div v-if="loading" class="text-center py-12">
@@ -32,6 +40,15 @@
         <div class="flex justify-between items-start mb-2">
           <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">{{ world.name }}</h2>
           <div class="flex space-x-2" @click.stop>
+            <button
+              @click="openBackupModal(world)"
+              class="text-green-600 hover:text-green-800"
+              title="Backup to Google Drive"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+            </button>
             <button
               @click="editWorld(world)"
               class="text-blue-600 hover:text-blue-800"
@@ -123,6 +140,16 @@
         </div>
       </div>
     </div>
+
+    <!-- Backup/Restore Modal -->
+    <WorldBackupModal
+      :is-open="showBackupModal"
+      :mode="backupMode"
+      :world-id="selectedWorld?.id"
+      :world-name="selectedWorld?.name"
+      @close="closeBackupModal"
+      @success="handleBackupSuccess"
+    />
   </div>
 </template>
 
@@ -130,6 +157,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { client, queries, mutations } from '../graphql'
+import WorldBackupModal from '../components/WorldBackupModal.vue'
 
 const router = useRouter()
 const worlds = ref([])
@@ -140,6 +168,11 @@ const editingWorld = ref(null)
 const deletingWorld = ref(null)
 const saving = ref(false)
 const formData = ref({ name: '' })
+
+// Backup/Restore state
+const showBackupModal = ref(false)
+const backupMode = ref('backup')
+const selectedWorld = ref(null)
 
 const loadWorlds = async () => {
   try {
@@ -209,6 +242,32 @@ const deleteWorld = async () => {
 
 const viewWorld = (worldId) => {
   router.push(`/world/${worldId}`)
+}
+
+// Backup/Restore functions
+const openBackupModal = (world) => {
+  selectedWorld.value = world
+  backupMode.value = 'backup'
+  showBackupModal.value = true
+}
+
+const openRestoreModal = () => {
+  selectedWorld.value = null
+  backupMode.value = 'restore'
+  showBackupModal.value = true
+}
+
+const closeBackupModal = () => {
+  showBackupModal.value = false
+  selectedWorld.value = null
+}
+
+const handleBackupSuccess = async ({ mode }) => {
+  console.log(`${mode} completed successfully`)
+  // Reload worlds after restore to show the new world
+  if (mode === 'restore') {
+    await loadWorlds()
+  }
 }
 
 onMounted(loadWorlds)

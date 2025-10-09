@@ -38,15 +38,15 @@
                 v-for="slotIndex in item.maxSimultaneousUsers"
                 :key="slotIndex"
                 class="border-2 rounded p-1 min-h-[28px] flex items-center justify-center"
-                :class="item.activeUsers && item.activeUsers[slotIndex - 1]
+                :class="getActiveUsersForItem(item.id)[slotIndex - 1]
                   ? 'border-blue-400 bg-blue-50 dark:bg-blue-950 dark:border-blue-600'
                   : 'border-gray-300 bg-gray-100 dark:bg-gray-700 dark:border-gray-600'"
               >
                 <span
-                  v-if="item.activeUsers && item.activeUsers[slotIndex - 1]"
+                  v-if="getActiveUsersForItem(item.id)[slotIndex - 1]"
                   class="text-[10px] font-medium text-blue-800 dark:text-blue-200 truncate"
                 >
-                  👤 {{ item.activeUsers[slotIndex - 1].name }}
+                  👤 {{ getActiveUsersForItem(item.id)[slotIndex - 1].name }}
                 </span>
                 <span v-else class="text-[10px] text-gray-400 dark:text-gray-500">
                   —
@@ -81,6 +81,10 @@
 </template>
 
 <script setup>
+import { useSimulationStore } from '../stores/simulation'
+
+const simulationStore = useSimulationStore()
+
 defineProps({
   space: {
     type: Object,
@@ -95,4 +99,9 @@ defineProps({
     default: false
   }
 })
+
+// Helper to get active users from Pinia store
+function getActiveUsersForItem(itemId) {
+  return simulationStore.getItemActiveUsers(itemId)
+}
 </script>

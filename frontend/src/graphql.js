@@ -506,5 +506,21 @@ export const mutations = {
     mutation StartActivity($input: PerformInput!) {
       startActivity(input: $input)
     }
+  `,
+
+  exportWorld: `
+    mutation ExportWorld($worldId: ID!) {
+      exportWorld(worldId: $worldId)
+    }
+  `,
+
+  importWorld: `
+    mutation ImportWorld($data: JSON!) {
+      importWorld(data: $data) {
+        worldId
+        success
+        message
+      }
+    }
   `
 }

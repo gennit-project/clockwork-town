@@ -283,7 +283,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
 import SpaceCard from '../components/SpaceCard.vue'
@@ -537,24 +537,6 @@ const saveAsTemplate = async () => {
     saving.value = false
   }
 }
-
-// Refresh items with activeUsers after each tick
-const refreshItems = async () => {
-  try {
-    const currentLotData = await client.request(queries.getSpacesWithItems, { lotId: lotId.value })
-    if (currentLotData?.lot) {
-      indoorSpaces.value = currentLotData.lot.indoorRooms || []
-      outdoorSpaces.value = currentLotData.lot.outdoorAreas || []
-    }
-  } catch (e) {
-    console.error('Failed to refresh items:', e)
-  }
-}
-
-// Watch for tick changes and refresh item data
-watch(() => simulationStore.currentTick, () => {
-  refreshItems()
-})
 
 onMounted(loadData)
 </script>

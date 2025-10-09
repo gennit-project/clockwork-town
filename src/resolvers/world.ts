@@ -1005,5 +1005,326 @@ export const WorldResolvers = {
       await q(`MATCH (t:HouseholdTemplate {id:$id}) DELETE t`, { id });
       return true;
     },
+
+    /**
+     * Export a world with all its data for backup
+     * Returns a JSON object with complete world structure
+     */
+    exportWorld: async (_: any, { worldId }: { worldId: string }) => {
+      console.log(`📦 Exporting world ${worldId}...`);
+
+      // 1. Get world data
+      const [world] = await q(`
+        MATCH (w:World {id:$worldId})
+        RETURN w.id AS id, w.name AS name, w.createdAt AS createdAt
+      `, { worldId });
+
+      if (!world) {
+        throw new Error(`World ${worldId} not found`);
+      }
+
+      // 2. Get all regions
+      const regions = await q(`
+        MATCH (w:World {id:$worldId})-[:HAS_REGION]->(r:Region)
+        RETURN r.id AS id, r.name AS name, r.kind AS kind
+      `, { worldId });
+
+      // 3. Get all lots with their regions
+      const lots = await q(`
+        MATCH (w:World {id:$worldId})-[:HAS_REGION]->(r:Region)-[:HAS_LOT]->(l:Lot)
+        RETURN l.id AS id, l.name AS name, l.lotType AS lotType, r.id AS regionId
+      `, { worldId });
+
+      // 4. Get all spaces with their lots
+      const spaces = await q(`
+        MATCH (w:World {id:$worldId})-[:HAS_REGION]->(:Region)-[:HAS_LOT]->(l:Lot)-[:HAS_SPACE]->(s:Space)
+        RETURN s.id AS id, s.name AS name, s.description AS description,
+               s.isIndoor AS isIndoor, l.id AS lotId
+      `, { worldId });
+
+      // 5. Get all items with their spaces
+      const items = await q(`
+        MATCH (w:World {id:$worldId})-[:HAS_REGION]->(:Region)-[:HAS_LOT]->(:Lot)-[:HAS_SPACE]->(s:Space)<-[:ON_SPACE]-(i:Item)
+        RETURN i.id AS id, i.name AS name, i.description AS description,
+               i.canBeUsedByHumans AS canBeUsedByHumans,
+               i.canBeUsedByAnimals AS canBeUsedByAnimals,
+               i.minimumAgeToUse AS minimumAgeToUse,
+               i.maxSimultaneousUsers AS maxSimultaneousUsers,
+               i.allowedActivities AS allowedActivities,
+               i.satisfiesNeeds AS satisfiesNeeds,
+               i.canStoreItems AS canStoreItems,
+               i.cost AS cost,
+               i.count AS count,
+               s.id AS spaceId
+      `, { worldId });
+
+      // 6. Get all households
+      const households = await q(`
+        MATCH (w:World {id:$worldId})-[:HAS_REGION]->(r:Region)-[:HAS_LOT]->(l:Lot)<-[:HOME]-(h:Household)
+        RETURN h.id AS id, h.name AS name, l.id AS lotId, r.id AS regionId
+      `, { worldId });
+
+      // 7. Get all characters with their household relationships
+      const characters = await q(`
+        MATCH (w:World {id:$worldId})-[:HAS_REGION]->(:Region)-[:HAS_LOT]->(:Lot)<-[:HOME]-(:Household)<-[:IN_HOUSEHOLD]-(c:Character)
+        OPTIONAL MATCH (c)-[:IN_HOUSEHOLD]->(h:Household)
+        OPTIONAL MATCH (c)-[:HOME]->(home:Lot)
+        OPTIONAL MATCH (c)-[:AT]->(location:Lot)
+        RETURN c.id AS id, c.name AS name, c.age AS age, c.bio AS bio,
+               h.id AS householdId, home.id AS homeLotId, location.id AS locationId
+      `, { worldId });
+
+      // 8. Get all animals
+      const animals = await q(`
+        MATCH (w:World {id:$worldId})-[:HAS_REGION]->(:Region)-[:HAS_LOT]->(:Lot)<-[:HOME]-(:Household)<-[:IN_HOUSEHOLD]-(a:Animal)
+        OPTIONAL MATCH (a)-[:IN_HOUSEHOLD]->(h:Household)
+        OPTIONAL MATCH (a)<-[:OWNS_PET]-(owner:Character)
+        RETURN a.id AS id, a.name AS name, a.age AS age, a.traits AS traits, a.bio AS bio,
+               h.id AS householdId, owner.id AS ownerId
+      `, { worldId });
+
+      // 9. Assemble the export data
+      const exportData = {
+        world,
+        regions,
+        lots,
+        spaces,
+        items,
+        households,
+        characters,
+        animals,
+        exportedAt: new Date().toISOString()
+      };
+
+      console.log(`✅ Exported world ${worldId}: ${regions.length} regions, ${lots.length} lots, ${characters.length} characters`);
+      return exportData;
+    },
+
+    /**
+     * Import a world from backup data
+     * Creates a new world with all its data
+     */
+    importWorld: async (_: any, { data }: { data: any }) => {
+      console.log('📥 Importing world from backup...');
+
+      const importData = data;
+      const oldWorldId = importData.world.id;
+      const newWorldId = crypto.randomUUID();
+
+      // ID mappings (old ID -> new ID)
+      const idMap = new Map<string, string>();
+      idMap.set(oldWorldId, newWorldId);
+
+      await batch(async () => {
+        // 1. Create world
+        const worldName = `${importData.world.name} (Restored)`;
+        const createdAt = new Date().toISOString();
+        await q(`CREATE (:World {id:$id, name:$name, createdAt:$createdAt})`, {
+          id: newWorldId,
+          name: worldName,
+          createdAt
+        });
+        console.log(`  ✓ Created world: ${worldName}`);
+
+        // 2. Create regions
+        for (const region of importData.regions) {
+          const newRegionId = crypto.randomUUID();
+          idMap.set(region.id, newRegionId);
+
+          await q(`CREATE (:Region {id:$id, name:$name, worldId:$worldId, kind:$kind})`, {
+            id: newRegionId,
+            name: region.name,
+            worldId: newWorldId,
+            kind: region.kind
+          });
+
+          await q(`
+            MATCH (w:World {id:$worldId}), (r:Region {id:$regionId})
+            CREATE (w)-[:HAS_REGION]->(r)
+          `, { worldId: newWorldId, regionId: newRegionId });
+        }
+        console.log(`  ✓ Created ${importData.regions.length} regions`);
+
+        // 3. Create lots
+        for (const lot of importData.lots) {
+          const newLotId = crypto.randomUUID();
+          idMap.set(lot.id, newLotId);
+          const newRegionId = idMap.get(lot.regionId);
+
+          await q(`CREATE (:Lot {id:$id, name:$name, lotType:$lotType})`, {
+            id: newLotId,
+            name: lot.name,
+            lotType: lot.lotType
+          });
+
+          await q(`
+            MATCH (r:Region {id:$regionId}), (l:Lot {id:$lotId})
+            CREATE (r)-[:HAS_LOT]->(l)
+          `, { regionId: newRegionId, lotId: newLotId });
+        }
+        console.log(`  ✓ Created ${importData.lots.length} lots`);
+
+        // 4. Create spaces
+        for (const space of importData.spaces) {
+          const newSpaceId = crypto.randomUUID();
+          idMap.set(space.id, newSpaceId);
+          const newLotId = idMap.get(space.lotId);
+
+          await q(`CREATE (:Space {id:$id, name:$name, description:$description, isIndoor:$isIndoor})`, {
+            id: newSpaceId,
+            name: space.name,
+            description: space.description,
+            isIndoor: space.isIndoor
+          });
+
+          await q(`
+            MATCH (l:Lot {id:$lotId}), (s:Space {id:$spaceId})
+            CREATE (l)-[:HAS_SPACE]->(s)
+          `, { lotId: newLotId, spaceId: newSpaceId });
+        }
+        console.log(`  ✓ Created ${importData.spaces.length} spaces`);
+
+        // 5. Create items
+        for (const item of importData.items) {
+          const newItemId = crypto.randomUUID();
+          idMap.set(item.id, newItemId);
+          const newSpaceId = idMap.get(item.spaceId);
+
+          await q(`CREATE (:Item {
+            id: $id,
+            name: $name,
+            description: $description,
+            canBeUsedByHumans: $canBeUsedByHumans,
+            canBeUsedByAnimals: $canBeUsedByAnimals,
+            minimumAgeToUse: $minimumAgeToUse,
+            maxSimultaneousUsers: $maxSimultaneousUsers,
+            allowedActivities: $allowedActivities,
+            satisfiesNeeds: $satisfiesNeeds,
+            canStoreItems: $canStoreItems,
+            cost: $cost,
+            count: $count
+          })`, {
+            id: newItemId,
+            name: item.name,
+            description: item.description,
+            canBeUsedByHumans: item.canBeUsedByHumans || true,
+            canBeUsedByAnimals: item.canBeUsedByAnimals || false,
+            minimumAgeToUse: item.minimumAgeToUse || 0,
+            maxSimultaneousUsers: item.maxSimultaneousUsers || 1,
+            allowedActivities: item.allowedActivities || [],
+            satisfiesNeeds: item.satisfiesNeeds || [],
+            canStoreItems: item.canStoreItems || false,
+            cost: item.cost || 0,
+            count: item.count || 1
+          });
+
+          await q(`
+            MATCH (i:Item {id:$itemId}), (s:Space {id:$spaceId})
+            CREATE (i)-[:ON_SPACE]->(s)
+          `, { itemId: newItemId, spaceId: newSpaceId });
+        }
+        console.log(`  ✓ Created ${importData.items.length} items`);
+
+        // 6. Create households
+        for (const household of importData.households) {
+          const newHouseholdId = crypto.randomUUID();
+          idMap.set(household.id, newHouseholdId);
+          const newLotId = idMap.get(household.lotId);
+
+          await q(`CREATE (:Household {id:$id, name:$name})`, {
+            id: newHouseholdId,
+            name: household.name
+          });
+
+          await q(`
+            MATCH (h:Household {id:$householdId}), (l:Lot {id:$lotId})
+            CREATE (h)-[:HOME]->(l)
+          `, { householdId: newHouseholdId, lotId: newLotId });
+        }
+        console.log(`  ✓ Created ${importData.households.length} households`);
+
+        // 7. Create characters
+        for (const char of importData.characters) {
+          const newCharId = crypto.randomUUID();
+          idMap.set(char.id, newCharId);
+          const newHouseholdId = idMap.get(char.householdId);
+          const newHomeLotId = idMap.get(char.homeLotId);
+          const newLocationId = idMap.get(char.locationId);
+
+          await q(`CREATE (:Character {id:$id, name:$name, age:$age, bio:$bio})`, {
+            id: newCharId,
+            name: char.name,
+            age: char.age,
+            bio: char.bio || ''
+          });
+
+          // Link to household
+          if (newHouseholdId) {
+            await q(`
+              MATCH (c:Character {id:$charId}), (h:Household {id:$householdId})
+              CREATE (c)-[:IN_HOUSEHOLD]->(h)
+            `, { charId: newCharId, householdId: newHouseholdId });
+          }
+
+          // Link to home lot
+          if (newHomeLotId) {
+            await q(`
+              MATCH (c:Character {id:$charId}), (l:Lot {id:$lotId})
+              CREATE (c)-[:HOME]->(l)
+            `, { charId: newCharId, lotId: newHomeLotId });
+          }
+
+          // Link to current location
+          if (newLocationId) {
+            await q(`
+              MATCH (c:Character {id:$charId}), (l:Lot {id:$lotId})
+              CREATE (c)-[:AT {at: $at}]->(l)
+            `, { charId: newCharId, lotId: newLocationId, at: new Date().toISOString() });
+          }
+        }
+        console.log(`  ✓ Created ${importData.characters.length} characters`);
+
+        // 8. Create animals
+        for (const animal of importData.animals) {
+          const newAnimalId = crypto.randomUUID();
+          idMap.set(animal.id, newAnimalId);
+          const newHouseholdId = idMap.get(animal.householdId);
+          const newOwnerId = idMap.get(animal.ownerId);
+
+          await q(`CREATE (:Animal {id:$id, name:$name, age:$age, traits:$traits, bio:$bio})`, {
+            id: newAnimalId,
+            name: animal.name,
+            age: animal.age,
+            traits: animal.traits || [],
+            bio: animal.bio || ''
+          });
+
+          // Link to household
+          if (newHouseholdId) {
+            await q(`
+              MATCH (a:Animal {id:$animalId}), (h:Household {id:$householdId})
+              CREATE (a)-[:IN_HOUSEHOLD]->(h)
+            `, { animalId: newAnimalId, householdId: newHouseholdId });
+          }
+
+          // Link to owner
+          if (newOwnerId) {
+            await q(`
+              MATCH (a:Animal {id:$animalId}), (c:Character {id:$ownerId})
+              CREATE (c)-[:OWNS_PET]->(a)
+            `, { animalId: newAnimalId, ownerId: newOwnerId });
+          }
+        }
+        console.log(`  ✓ Created ${importData.animals.length} animals`);
+      });
+
+      console.log(`✅ World imported successfully! New world ID: ${newWorldId}`);
+
+      return {
+        worldId: newWorldId,
+        success: true,
+        message: `World "${importData.world.name}" restored successfully`
+      };
+    },
   },
 };

@@ -3,6 +3,7 @@
 # -----------------------------
 scalar Date
 scalar DateTime
+scalar JSON
 
 # -----------------------------
 # Enums
@@ -308,6 +309,15 @@ type Presence {
 }
 
 # -----------------------------
+# Cloud Backup Result
+# -----------------------------
+type ImportWorldResult {
+  worldId: ID!
+  success: Boolean!
+  message: String
+}
+
+# -----------------------------
 # Pagination (connection pattern)
 # -----------------------------
 input Page {
@@ -522,7 +532,7 @@ type Mutation {
   updateHouseholdTemplate(id: ID!, input: CreateHouseholdTemplateInput!, tags: [String!]!): HouseholdTemplate!
   deleteHouseholdTemplate(id: ID!): Boolean!
 
-  # Optional if you wire Google Drive:
-  backupNow: Boolean!
-  restoreLatest: Boolean!
+  # Cloud backup: Export and import worlds (including simulation state)
+  exportWorld(worldId: ID!): JSON!
+  importWorld(data: JSON!): ImportWorldResult!
 }

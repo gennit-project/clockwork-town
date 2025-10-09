@@ -24,6 +24,10 @@ export const useSimulationStore = defineStore('simulation', () => {
   // Structure: { [characterId]: { needs: {...}, cooldowns: {...}, currentAction: string, location: {...} } }
   const characterStates = ref({})
 
+  // Item occupancy tracking (which characters are using which items right now)
+  // Structure: { [itemId]: [characterId1, characterId2, ...] }
+  const itemOccupancy = ref({})
+
   // World data for pathfinding (lots, spaces, items)
   const worldData = ref({
     lots: {},      // { [lotId]: { id, name, regionId, spaceIds: [] } }
@@ -48,6 +52,18 @@ export const useSimulationStore = defineStore('simulation', () => {
     return [...activityLog.value].reverse().slice(0, 50)
   })
 
+  // Get active users for a specific item (returns array of character objects)
+  const getItemActiveUsers = computed(() => (itemId) => {
+    const occupantIds = itemOccupancy.value[itemId] || []
+    return occupantIds.map(charId => {
+      const charState = characterStates.value[charId]
+      return charState ? {
+        id: charId,
+        name: charState.name || 'Unknown'
+      } : null
+    }).filter(char => char !== null)
+  })
+
   // ============================================
   // ACTIONS
   // ============================================
@@ -58,6 +74,7 @@ export const useSimulationStore = defineStore('simulation', () => {
   function initializeCharacter(character) {
     if (!characterStates.value[character.id]) {
       characterStates.value[character.id] = {
+        name: character.name || 'Unknown',
         needs: { ...INITIAL_NEEDS },
         cooldowns: { ...INITIAL_COOLDOWNS },
         currentAction: 'idle',
@@ -182,6 +199,8 @@ export const useSimulationStore = defineStore('simulation', () => {
     // Handle idle case
     if (intent.action === 'idle') {
       state.currentAction = 'idle'
+      // Clear any item occupancy for this character
+      clearItemOccupancy(characterId)
       logActivity(characterId, 'idle', 'No satisfying actions available')
       console.log(`  ${characterId}: idle (no actions available)`)
       return
@@ -236,6 +255,11 @@ export const useSimulationStore = defineStore('simulation', () => {
       // Apply action effects (updates needs, sets cooldown, updates currentAction, logs activity)
       applyActionEffects(characterId, intent.action, intent.itemName)
 
+      // Track item occupancy in Pinia
+      if (intent.itemId) {
+        setItemOccupancy(characterId, intent.itemId)
+      }
+
       // Create memory
       const memory = {
         tick: currentTick.value,
@@ -260,7 +284,43 @@ export const useSimulationStore = defineStore('simulation', () => {
     } catch (error) {
       console.error(`  ❌ Failed to start activity in database: ${error.message}`)
       // Don't apply effects if backend failed - character remains in previous state
+      // Clear any item occupancy since action failed
+      clearItemOccupancy(characterId)
       logActivity(characterId, 'failed', `Could not perform ${intent.action}: ${error.message}`)
+    }
+  }
+
+  /**
+   * Set item occupancy - add character to item's occupant list
+   */
+  function setItemOccupancy(characterId, itemId) {
+    // First, clear any existing occupancy for this character
+    clearItemOccupancy(characterId)
+
+    // Add character to item's occupant list
+    if (!itemOccupancy.value[itemId]) {
+      itemOccupancy.value[itemId] = []
+    }
+    if (!itemOccupancy.value[itemId].includes(characterId)) {
+      itemOccupancy.value[itemId].push(characterId)
+      console.log(`  🪑 ${characterId} now occupying ${itemId}`)
+    }
+  }
+
+  /**
+   * Clear item occupancy - remove character from all items
+   */
+  function clearItemOccupancy(characterId) {
+    for (const itemId in itemOccupancy.value) {
+      const index = itemOccupancy.value[itemId].indexOf(characterId)
+      if (index !== -1) {
+        itemOccupancy.value[itemId].splice(index, 1)
+        console.log(`  🚪 ${characterId} no longer occupying ${itemId}`)
+        // Clean up empty arrays
+        if (itemOccupancy.value[itemId].length === 0) {
+          delete itemOccupancy.value[itemId]
+        }
+      }
     }
   }
 
@@ -338,6 +398,7 @@ export const useSimulationStore = defineStore('simulation', () => {
     isRunning,
     getCharacterState,
     recentActivityLog,
+    getItemActiveUsers,
 
     // Actions
     initializeCharacter,
