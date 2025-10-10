@@ -2,15 +2,8 @@
   <div>
     <Breadcrumbs :crumbs="breadcrumbs" />
 
-    <div v-if="loading" class="text-center py-12">
-      <p class="text-gray-500">Loading...</p>
-    </div>
-
-    <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-md p-4">
-      <p class="text-red-800">Error: {{ error }}</p>
-    </div>
-
-    <div v-else class="max-w-4xl mx-auto">
+    <AsyncContainer :loading="loading" :error="error">
+      <div class="max-w-4xl mx-auto">
       <!-- Space Header -->
       <div class="mb-6">
         <div class="flex items-center gap-3 mb-2">
@@ -224,23 +217,23 @@
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </AsyncContainer>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
+import AsyncContainer from '../components/AsyncContainer.vue'
 import { client, queries, mutations } from '../graphql'
 import { useSimulationStore } from '../stores/simulation'
+import { useRouteParams } from '../composables/useRouteParams'
+import { useBreadcrumbs } from '../composables/useBreadcrumbs'
 
 const simulationStore = useSimulationStore()
-const route = useRoute()
-const worldId = computed(() => route.params.worldId)
-const regionId = computed(() => route.params.regionId)
-const lotId = computed(() => route.params.lotId)
-const spaceId = computed(() => route.params.spaceId)
+const { worldId, regionId, lotId, spaceId } = useRouteParams()
+const { buildBreadcrumbs } = useBreadcrumbs()
 
 const space = ref(null)
 const items = ref([])
@@ -258,14 +251,16 @@ const newItem = ref({
   description: ''
 })
 
-const breadcrumbs = computed(() => [
-  { label: 'Worlds', to: '/' },
-  { label: world.value?.name || 'Loading...', to: `/world/${worldId.value}` },
-  { label: region.value?.name || 'Loading...', to: `/world/${worldId.value}/region/${regionId.value}` },
-  { label: 'Overview', to: `/world/${worldId.value}/region/${regionId.value}/overview` },
-  { label: lot.value?.name || 'Loading...', to: `/world/${worldId.value}/region/${regionId.value}/lot/${lotId.value}` },
-  { label: space.value?.name || 'Loading...', to: '#' }
-])
+const breadcrumbs = computed(() => buildBreadcrumbs({
+  worldId: worldId.value,
+  regionId: regionId.value,
+  lotId: lotId.value,
+  spaceId: spaceId.value,
+  world: world.value,
+  region: region.value,
+  lot: lot.value,
+  space: space.value
+}))
 
 // Enrich items with active users from simulation store
 const itemsWithActiveUsers = computed(() => {

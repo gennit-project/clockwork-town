@@ -29,14 +29,6 @@
       </div>
     </div>
 
-    <div v-if="loading" class="text-center py-12">
-      <p class="text-gray-500">Loading...</p>
-    </div>
-
-    <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-md p-4">
-      <p class="text-red-800">Error: {{ error }}</p>
-    </div>
-
     <!-- Debug Panel -->
     <DebugActionPanel
       v-if="showDebugPanel && !loading && !error"
@@ -44,17 +36,23 @@
       @close="showDebugPanel = false"
     />
 
-    <div v-else-if="lotsWithSpaces.length === 0" class="text-center py-12 bg-white rounded-lg shadow">
-      <p class="text-gray-500 dark:text-gray-300 mb-4">No lots in this region yet.</p>
-      <router-link
-        :to="`/world/${worldId}/region/${regionId}`"
-        class="text-blue-600 hover:text-blue-800 font-medium"
-      >
-        Go to Region to create lots
-      </router-link>
-    </div>
+    <AsyncContainer
+      :loading="loading"
+      :error="error"
+      :is-empty="lotsWithSpaces.length === 0"
+      empty-message="No lots in this region yet."
+    >
+      <template #empty>
+        <p class="text-gray-500 dark:text-gray-300 mb-4">No lots in this region yet.</p>
+        <router-link
+          :to="`/world/${worldId.value}/region/${regionId.value}`"
+          class="text-blue-600 hover:text-blue-800 font-medium"
+        >
+          Go to Region to create lots
+        </router-link>
+      </template>
 
-    <div v-else class="flex-1 flex gap-4 p-4 overflow-auto">
+      <div class="flex-1 flex gap-4 p-4 overflow-auto">
       <!-- Three Column Layout -->
       <!-- Residential Column -->
       <LotColumn
@@ -83,76 +81,74 @@
         empty-message="No community lots yet"
         @toggle-expanded="toggleLotRooms"
       />
-
-    </div>
+      </div>
+    </AsyncContainer>
 
     <!-- Edit Region Modal -->
-    <div v-if="showEditModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
-        <h2 class="text-2xl font-bold mb-4">Edit Region</h2>
-        <form @submit.prevent="saveRegion">
-          <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Region Name
-            </label>
-            <input
-              v-model="formData.name"
-              type="text"
-              required
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter region name"
-            />
-          </div>
-          <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Type
-            </label>
-            <input
-              v-model="formData.kind"
-              type="text"
-              required
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="e.g., urban, rural, mountain"
-            />
-          </div>
-          <div class="flex justify-end space-x-3">
-            <button
-              type="button"
-              @click="closeEditModal"
-              :disabled="saving"
-              class="px-4 py-2 text-gray-700 hover:text-gray-900 dark:text-gray-100"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              :disabled="saving"
-              class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md disabled:opacity-50"
-            >
-              {{ saving ? 'Saving...' : 'Save' }}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <Modal :is-open="showEditModal" title="Edit Region" @close="closeEditModal">
+      <form @submit.prevent="saveRegion">
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Region Name
+          </label>
+          <input
+            v-model="formData.name"
+            type="text"
+            required
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Enter region name"
+          />
+        </div>
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Type
+          </label>
+          <input
+            v-model="formData.kind"
+            type="text"
+            required
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="e.g., urban, rural, mountain"
+          />
+        </div>
+        <div class="flex justify-end space-x-3">
+          <button
+            type="button"
+            @click="closeEditModal"
+            :disabled="saving"
+            class="px-4 py-2 text-gray-700 hover:text-gray-900 dark:text-gray-100 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            :disabled="saving"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md disabled:opacity-50"
+          >
+            {{ saving ? 'Saving...' : 'Save' }}
+          </button>
+        </div>
+      </form>
+    </Modal>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
 import { gql } from 'graphql-request'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
+import AsyncContainer from '../components/AsyncContainer.vue'
+import Modal from '../components/Modal.vue'
 import LotColumn from '../components/LotColumn.vue'
 import DebugActionPanel from '../components/DebugActionPanel.vue'
 import { client, queries } from '../graphql'
 import { useSimulationStore } from '../stores/simulation'
+import { useRouteParams } from '../composables/useRouteParams'
+import { useBreadcrumbs } from '../composables/useBreadcrumbs'
 
 const simulationStore = useSimulationStore()
-
-const route = useRoute()
-const worldId = computed(() => route.params.worldId)
-const regionId = computed(() => route.params.regionId)
+const { worldId, regionId } = useRouteParams()
+const { buildBreadcrumbs } = useBreadcrumbs()
 
 const lotsWithSpaces = ref([])
 const world = ref(null)
@@ -167,12 +163,13 @@ const showDebugPanel = ref(false)
 const formData = ref({ name: '', kind: '' })
 const saving = ref(false)
 
-const breadcrumbs = computed(() => [
-  { label: 'Worlds', to: '/' },
-  { label: world.value?.name || 'Loading...', to: `/world/${worldId.value}` },
-  { label: region.value?.name || 'Loading...', to: `/world/${worldId.value}/region/${regionId.value}` },
-  { label: 'Overview', to: '#' }
-])
+const breadcrumbs = computed(() => buildBreadcrumbs({
+  worldId: worldId.value,
+  regionId: regionId.value,
+  world: world.value,
+  region: region.value,
+  current: 'Overview'
+}))
 
 const residentialLots = computed(() =>
   lotsWithSpaces.value.filter(lot => lot.lotType === 'RESIDENTIAL')
