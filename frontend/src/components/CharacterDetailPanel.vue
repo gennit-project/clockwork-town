@@ -1,7 +1,7 @@
 <template>
-  <div class="fixed bottom-4 left-4 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-2xl border-2 border-gray-300 dark:border-gray-600 z-40">
+  <div class="fixed bottom-4 left-4 w-80 h-[500px] bg-white dark:bg-gray-800 rounded-lg shadow-2xl border-2 border-gray-300 dark:border-gray-600 z-40 flex flex-col">
     <!-- Header -->
-    <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+    <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
       <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ character.name }}</h3>
       <button
         @click="$emit('close')"
@@ -15,31 +15,24 @@
     </div>
 
     <!-- Tabs -->
-    <div class="flex border-b border-gray-200 dark:border-gray-700">
+    <div class="flex border-b border-gray-200 dark:border-gray-700 overflow-x-auto flex-shrink-0">
       <button
-        @click="activeTab = 'needs'"
-        class="flex-1 px-4 py-2 text-sm font-medium transition-colors"
-        :class="activeTab === 'needs'
+        v-for="tab in tabs"
+        :key="tab"
+        @click="activeTab = tab"
+        class="flex-1 px-3 py-2 text-xs font-medium transition-colors whitespace-nowrap"
+        :class="activeTab === tab
           ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20'
           : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'"
       >
-        Needs
-      </button>
-      <button
-        @click="activeTab = 'bio'"
-        class="flex-1 px-4 py-2 text-sm font-medium transition-colors"
-        :class="activeTab === 'bio'
-          ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20'
-          : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'"
-      >
-        Bio
+        {{ tab }}
       </button>
     </div>
 
     <!-- Content -->
-    <div class="p-4 max-h-96 overflow-y-auto">
-      <!-- Needs Tab -->
-      <div v-if="activeTab === 'needs'" class="space-y-4">
+    <div class="p-4 overflow-y-auto flex-1">
+      <!-- Basics Tab -->
+      <div v-if="activeTab === 'Basics'" class="space-y-4">
         <!-- Location & Status -->
         <div class="flex items-center justify-between text-xs mb-4 pb-3 border-b border-gray-200 dark:border-gray-700">
           <div class="flex items-center text-gray-700 dark:text-gray-300">
@@ -57,32 +50,42 @@
           </div>
         </div>
 
-        <!-- Needs Categories -->
-        <div v-for="category in needsCategories" :key="category.title">
-          <h4 class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-2">{{ category.title }}</h4>
-          <div class="space-y-2">
-            <div v-for="need in category.needs" :key="need.key" class="flex items-center">
-              <span class="text-lg mr-2">{{ need.icon }}</span>
-              <div class="flex-1">
-                <div class="flex items-center justify-between mb-1">
-                  <span class="text-xs font-medium text-gray-700 dark:text-gray-300">{{ need.label }}</span>
-                  <span class="text-xs text-gray-600 dark:text-gray-400">{{ Math.round((characterState?.needs?.[need.key] || 0) * 100) }}%</span>
-                </div>
-                <div class="w-full bg-gray-200 dark:bg-gray-600 h-2 rounded-full overflow-hidden">
-                  <div
-                    class="h-full rounded-full transition-all"
-                    :class="getNeedColorClass(characterState?.needs?.[need.key] || 0)"
-                    :style="{ width: (characterState?.needs?.[need.key] || 0) * 100 + '%' }"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
+        <!-- Basic Needs -->
+        <div class="space-y-2">
+          <NeedBar
+            v-for="need in basicNeeds"
+            :key="need.key"
+            :icon="need.icon"
+            :label="need.label"
+            :percentage="(characterState?.needs?.[need.key] || 0) * 100"
+          />
         </div>
       </div>
 
+      <!-- Emotions Tab -->
+      <div v-else-if="activeTab === 'Emotions'" class="space-y-2">
+        <NeedBar
+          v-for="need in emotionalNeeds"
+          :key="need.key"
+          :icon="need.icon"
+          :label="need.label"
+          :percentage="(characterState?.needs?.[need.key] || 0) * 100"
+        />
+      </div>
+
+      <!-- Fulfillment Tab -->
+      <div v-else-if="activeTab === 'Fulfillment'" class="space-y-2">
+        <NeedBar
+          v-for="need in fulfillmentNeeds"
+          :key="need.key"
+          :icon="need.icon"
+          :label="need.label"
+          :percentage="(characterState?.needs?.[need.key] || 0) * 100"
+        />
+      </div>
+
       <!-- Bio Tab -->
-      <div v-else-if="activeTab === 'bio'" class="space-y-3">
+      <div v-else-if="activeTab === 'Bio'" class="space-y-3">
         <div>
           <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Age</p>
           <p class="text-base text-gray-900 dark:text-gray-100">{{ character.age }}</p>
@@ -113,6 +116,26 @@
           <p class="text-base text-gray-900 dark:text-gray-100">{{ formatAction(characterState.currentAction) }}</p>
         </div>
       </div>
+
+      <!-- Memories Tab -->
+      <div v-else-if="activeTab === 'Memories'" class="space-y-2">
+        <div v-if="characterState?.memories && characterState.memories.length > 0">
+          <div
+            v-for="(memory, index) in characterState.memories.slice().reverse()"
+            :key="index"
+            class="p-2 bg-gray-50 dark:bg-gray-700 rounded text-xs"
+          >
+            <div class="flex items-center justify-between mb-1">
+              <span class="font-medium text-gray-900 dark:text-gray-100">{{ formatAction(memory.action) }}</span>
+              <span class="text-gray-500 dark:text-gray-400">Tick {{ memory.tick }}</span>
+            </div>
+            <p class="text-gray-600 dark:text-gray-300">{{ memory.item }} at {{ memory.location }}</p>
+          </div>
+        </div>
+        <div v-else class="text-center py-8 text-gray-500 dark:text-gray-400">
+          <p class="text-sm">No memories yet</p>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -120,6 +143,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useSimulationStore } from '../stores/simulation'
+import NeedBar from './NeedBar.vue'
 
 const props = defineProps({
   character: {
@@ -131,7 +155,9 @@ const props = defineProps({
 defineEmits(['close'])
 
 const simulationStore = useSimulationStore()
-const activeTab = ref('needs')
+const activeTab = ref('Basics')
+
+const tabs = ['Basics', 'Emotions', 'Fulfillment', 'Bio', 'Memories']
 
 const characterState = computed(() => {
   return simulationStore.characterStates[props.character.id]
@@ -144,35 +170,19 @@ const formatAction = (action) => {
     .join(' ')
 }
 
-const getNeedColorClass = (value) => {
-  if (value >= 0.7) return 'bg-green-500'
-  if (value >= 0.4) return 'bg-yellow-500'
-  if (value >= 0.2) return 'bg-orange-500'
-  return 'bg-red-500'
-}
+const basicNeeds = [
+  { key: 'food', icon: '🍎', label: 'Food' },
+  { key: 'sleep', icon: '😴', label: 'Sleep' },
+  { key: 'health', icon: '💊', label: 'Health' }
+]
 
-const needsCategories = [
-  {
-    title: 'Basic Needs',
-    needs: [
-      { key: 'food', icon: '🍎', label: 'Food' },
-      { key: 'sleep', icon: '😴', label: 'Sleep' },
-      { key: 'health', icon: '💊', label: 'Health' }
-    ]
-  },
-  {
-    title: 'Emotional Needs',
-    needs: [
-      { key: 'friends', icon: '💬', label: 'Friends' },
-      { key: 'family', icon: '👨‍👩‍👧', label: 'Family' },
-      { key: 'romance', icon: '💕', label: 'Romance' }
-    ]
-  },
-  {
-    title: 'Self-Actualization',
-    needs: [
-      { key: 'fulfillment', icon: '✨', label: 'Fulfillment' }
-    ]
-  }
+const emotionalNeeds = [
+  { key: 'friends', icon: '💬', label: 'Friends' },
+  { key: 'family', icon: '👨‍👩‍👧', label: 'Family' },
+  { key: 'romance', icon: '💕', label: 'Romance' }
+]
+
+const fulfillmentNeeds = [
+  { key: 'fulfillment', icon: '✨', label: 'Fulfillment' }
 ]
 </script>
