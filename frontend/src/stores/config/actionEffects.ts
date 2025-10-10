@@ -2,11 +2,13 @@
 // ACTION EFFECTS DATA (from TICKS.md)
 // ============================================
 
+import type { ActionEffects, NeedWeights } from '../types'
+
 /**
  * Defines the effects and cooldowns for each action type
  * Effects are applied immediately when action executes
  */
-export const ACTION_EFFECTS = {
+export const ACTION_EFFECTS: ActionEffects = {
   eat: {
     primaryNeed: 'food',
     primaryEffect: 0.35,
@@ -85,7 +87,7 @@ export const ACTION_EFFECTS = {
  * Need weights for utility calculation
  * Higher weight = more important/urgent
  */
-export const NEED_WEIGHTS = {
+export const NEED_WEIGHTS: NeedWeights = {
   // Basic needs (physical survival)
   food: 3.0,
   sleep: 3.0,

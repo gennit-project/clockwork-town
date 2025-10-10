@@ -1,10 +1,21 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import type { Ref } from 'vue'
 import { client, mutations } from '../graphql'
-import { ACTION_EFFECTS } from './config/actionEffects.js'
-import { INITIAL_NEEDS, INITIAL_COOLDOWNS } from './config/needs.js'
-import { buildWorldData } from './utils/pathfinding.js'
-import { executeTick as runTick } from './utils/tickExecution.js'
+import type {
+  CharacterState,
+  WorldData,
+  ItemOccupancy,
+  ActivityLogEntry,
+  ActionName,
+  NeedName,
+  Intent,
+  InputLot
+} from './types'
+import { ACTION_EFFECTS } from './config/actionEffects'
+import { INITIAL_NEEDS, INITIAL_COOLDOWNS } from './config/needs'
+import { buildWorldData } from './utils/pathfinding'
+import { executeTick as runTick } from './utils/tickExecution'
 
 export const useSimulationStore = defineStore('simulation', () => {
   // ============================================
@@ -14,25 +25,25 @@ export const useSimulationStore = defineStore('simulation', () => {
   // Tick state
   const currentTick = ref(0)
   const isPaused = ref(true)
-  const tickIntervalId = ref(null)
+  const tickIntervalId: Ref<NodeJS.Timeout | null> = ref(null)
 
   // Activity log (for UI display)
-  const activityLog = ref([])
+  const activityLog: Ref<ActivityLogEntry[]> = ref([])
   const MAX_LOG_ENTRIES = 100
 
   // Character state (needs & cooldowns)
   // Structure: { [characterId]: { needs: {...}, cooldowns: {...}, currentAction: string, location: {...} } }
-  const characterStates = ref({})
+  const characterStates: Ref<Record<string, CharacterState>> = ref({})
 
   // Active character (for UI focus)
-  const activeCharacterId = ref(null)
+  const activeCharacterId: Ref<string | null> = ref(null)
 
   // Item occupancy tracking (which characters are using which items right now)
   // Structure: { [itemId]: [characterId1, characterId2, ...] }
-  const itemOccupancy = ref({})
+  const itemOccupancy: Ref<ItemOccupancy> = ref({})
 
   // World data for pathfinding (lots, spaces, items)
-  const worldData = ref({
+  const worldData: Ref<WorldData> = ref({
     lots: {},      // { [lotId]: { id, name, regionId, spaceIds: [] } }
     spaces: {},    // { [spaceId]: { id, name, lotId, itemIds: [] } }
     items: {},     // { [itemId]: { id, name, spaceId, lotId, regionId, allowedActivities: [] } }
@@ -46,7 +57,7 @@ export const useSimulationStore = defineStore('simulation', () => {
   const isRunning = computed(() => !isPaused.value && tickIntervalId.value !== null)
 
   // Get character state by ID
-  const getCharacterState = computed(() => (characterId) => {
+  const getCharacterState = computed(() => (characterId: string): CharacterState | null => {
     return characterStates.value[characterId] || null
   })
 
@@ -56,15 +67,15 @@ export const useSimulationStore = defineStore('simulation', () => {
   })
 
   // Get active users for a specific item (returns array of character objects)
-  const getItemActiveUsers = computed(() => (itemId) => {
+  const getItemActiveUsers = computed(() => (itemId: string) => {
     const occupantIds = itemOccupancy.value[itemId] || []
-    return occupantIds.map(charId => {
+    return occupantIds.map((charId: string) => {
       const charState = characterStates.value[charId]
       return charState ? {
         id: charId,
         name: charState.name || 'Unknown'
       } : null
-    }).filter(char => char !== null)
+    }).filter((char): char is { id: string; name: string } => char !== null)
   })
 
   // ============================================
@@ -74,7 +85,7 @@ export const useSimulationStore = defineStore('simulation', () => {
   /**
    * Initialize a character's state in the simulation
    */
-  function initializeCharacter(character) {
+  function initializeCharacter(character: { id: string; name: string; traits?: string[] }): void {
     if (!characterStates.value[character.id]) {
       characterStates.value[character.id] = {
         name: character.name || 'Unknown',
@@ -82,6 +93,7 @@ export const useSimulationStore = defineStore('simulation', () => {
         cooldowns: { ...INITIAL_COOLDOWNS },
         currentAction: 'idle',
         location: {
+          regionId: null,
           lotId: null,
           lotName: null,
           spaceId: null,
@@ -109,8 +121,8 @@ export const useSimulationStore = defineStore('simulation', () => {
   /**
    * Log an activity to the activity log
    */
-  function logActivity(characterId, action, details) {
-    const logEntry = {
+  function logActivity(characterId: string, action: string, details: string): void {
+    const logEntry: ActivityLogEntry = {
       tick: currentTick.value,
       timestamp: new Date().toISOString(),
       characterId,
@@ -132,13 +144,14 @@ export const useSimulationStore = defineStore('simulation', () => {
    * Apply the effects of an action to a character's needs
    * Updates needs, sets cooldown, and updates current action
    *
-   * @param {string} characterId - The character performing the action
-   * @param {string} action - The action name (e.g., 'eat', 'sleep', 'read')
-   * @param {string} [itemName] - Optional item name for logging
+   * @param characterId - The character performing the action
+   * @param action - The action name (e.g., 'eat', 'sleep', 'read')
+   * @param itemName - Optional item name for logging
    */
-  function applyActionEffects(characterId, action, itemName = null) {
+  function applyActionEffects(characterId: string, action: ActionName, itemName: string | null = null): void {
     // Validate action exists
-    if (!ACTION_EFFECTS[action]) {
+    const actionData = ACTION_EFFECTS[action]
+    if (!actionData) {
       console.error(`❌ Unknown action: ${action}`)
       return
     }
@@ -149,8 +162,6 @@ export const useSimulationStore = defineStore('simulation', () => {
       console.error(`❌ Character not found: ${characterId}`)
       return
     }
-
-    const actionData = ACTION_EFFECTS[action]
 
     console.log(`⚡ Applying action "${action}" to character ${characterId}`)
 
@@ -164,15 +175,19 @@ export const useSimulationStore = defineStore('simulation', () => {
 
     // Apply secondary effects
     for (const [need, effect] of Object.entries(actionData.secondaryEffects)) {
-      const oldValue = state.needs[need]
-      state.needs[need] = Math.min(1.0, Math.max(0, oldValue + effect))
-      const newValue = state.needs[need]
-      console.log(`  ✓ ${need}: ${oldValue.toFixed(2)} → ${newValue.toFixed(2)} (${effect >= 0 ? '+' : ''}${effect})`)
+      const needKey = need as NeedName
+      const effectValue = effect as number
+      const oldValue = state.needs[needKey]
+      state.needs[needKey] = Math.min(1.0, Math.max(0, oldValue + effectValue))
+      const newValue = state.needs[needKey]
+      console.log(`  ✓ ${need}: ${oldValue.toFixed(2)} → ${newValue.toFixed(2)} (${effectValue >= 0 ? '+' : ''}${effectValue})`)
     }
 
-    // Set cooldown
-    state.cooldowns[action] = actionData.cooldownTicks
-    console.log(`  ✓ Cooldown set: ${actionData.cooldownTicks} ticks`)
+    // Set cooldown (skip for idle action which doesn't have a cooldown)
+    if (action !== 'idle' && action in state.cooldowns) {
+      state.cooldowns[action] = actionData.cooldownTicks
+      console.log(`  ✓ Cooldown set: ${actionData.cooldownTicks} ticks`)
+    }
 
     // Update current action
     state.currentAction = action
@@ -188,10 +203,10 @@ export const useSimulationStore = defineStore('simulation', () => {
    * Execute an action for a character based on their intent
    * Step 12-13: Applies effects, handles movement, sets cooldown, updates state, creates memory
    *
-   * @param {string} characterId - The character performing the action
-   * @param {object} intent - The intent object from selectBestIntent()
+   * @param characterId - The character performing the action
+   * @param intent - The intent object from selectBestIntent()
    */
-  async function executeAction(characterId, intent) {
+  async function executeAction(characterId: string, intent: Intent): Promise<void> {
     const state = characterStates.value[characterId]
     if (!state) {
       console.error(`❌ Character not found: ${characterId}`)
@@ -227,9 +242,14 @@ export const useSimulationStore = defineStore('simulation', () => {
     }
 
     // Step 13: Handle movement if needed (travelCost > 0)
-    if (intent.travelCost > 0) {
+    if (intent.travelCost && intent.travelCost > 0) {
       const currentLotId = state.location?.lotId
       const targetLotId = intent.targetLotId
+
+      if (!targetLotId) {
+        console.warn('  ⚠️  No target lot specified for movement')
+        return
+      }
 
       if (currentLotId !== targetLotId) {
         console.log(`  🚶 Moving ${characterId} from ${state.location?.lotName || 'unknown'} to ${intent.targetLotName}`)
@@ -246,16 +266,17 @@ export const useSimulationStore = defineStore('simulation', () => {
           // Update Pinia state
           updateCharacterLocation(
             characterId,
-            state.location?.regionId, // Keep same region
+            state.location?.regionId || null, // Keep same region
             targetLotId,
-            intent.targetLotName,
-            intent.targetSpaceId,
-            intent.targetSpaceName
+            intent.targetLotName || '',
+            intent.targetSpaceId || '',
+            intent.targetSpaceName || ''
           )
 
           console.log(`  ✓ Moved to ${intent.targetLotName} (${intent.targetSpaceName})`)
         } catch (error) {
-          console.error(`  ❌ Failed to move character: ${error.message}`)
+          const errorMessage = error instanceof Error ? error.message : String(error)
+          console.error(`  ❌ Failed to move character: ${errorMessage}`)
           // Continue with action even if movement fails
         }
       }
@@ -284,8 +305,8 @@ export const useSimulationStore = defineStore('simulation', () => {
       const memory = {
         tick: currentTick.value,
         action: intent.action,
-        item: intent.itemName,
-        location: `${intent.targetSpaceName} (${intent.targetLotName})`,
+        item: intent.itemName || 'unknown',
+        location: `${intent.targetSpaceName || 'unknown'} (${intent.targetLotName || 'unknown'})`,
         utility: intent.utility
       }
 
@@ -302,18 +323,19 @@ export const useSimulationStore = defineStore('simulation', () => {
 
       console.log(`  📝 Memory created: ${intent.action} at ${intent.itemName}`)
     } catch (error) {
-      console.error(`  ❌ Failed to start activity in database: ${error.message}`)
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      console.error(`  ❌ Failed to start activity in database: ${errorMessage}`)
       // Don't apply effects if backend failed - character remains in previous state
       // Clear any item occupancy since action failed
       clearItemOccupancy(characterId)
-      logActivity(characterId, 'failed', `Could not perform ${intent.action}: ${error.message}`)
+      logActivity(characterId, 'failed', `Could not perform ${intent.action}: ${errorMessage}`)
     }
   }
 
   /**
    * Set item occupancy - add character to item's occupant list
    */
-  function setItemOccupancy(characterId, itemId) {
+  function setItemOccupancy(characterId: string, itemId: string): void {
     // First, clear any existing occupancy for this character
     clearItemOccupancy(characterId)
 
@@ -330,9 +352,9 @@ export const useSimulationStore = defineStore('simulation', () => {
   /**
    * Clear item occupancy - remove character from all items
    */
-  function clearItemOccupancy(characterId) {
+  function clearItemOccupancy(characterId: string): void {
     for (const itemId in itemOccupancy.value) {
-      const index = itemOccupancy.value[itemId].indexOf(characterId)
+      const index = itemOccupancy.value[itemId]?.indexOf(characterId) ?? -1
       if (index !== -1) {
         itemOccupancy.value[itemId].splice(index, 1)
         console.log(`  🚪 ${characterId} no longer occupying ${itemId}`)
@@ -384,7 +406,14 @@ export const useSimulationStore = defineStore('simulation', () => {
   /**
    * Update character location
    */
-  function updateCharacterLocation(characterId, regionId, lotId, lotName, spaceId, spaceName) {
+  function updateCharacterLocation(
+    characterId: string,
+    regionId: string | null,
+    lotId: string,
+    lotName: string,
+    spaceId: string,
+    spaceName: string
+  ): void {
     if (characterStates.value[characterId]) {
       characterStates.value[characterId].location = {
         regionId,
@@ -398,10 +427,10 @@ export const useSimulationStore = defineStore('simulation', () => {
 
   /**
    * Load world data (lots, spaces, items) for pathfinding
-   * @param {Array} lots - Array of lot objects with indoorRooms and outdoorAreas
-   * @param {string} regionId - Region ID that these lots belong to
+   * @param lots - Array of lot objects with indoorRooms and outdoorAreas
+   * @param regionId - Region ID that these lots belong to
    */
-  function loadWorldData(lots, regionId) {
+  function loadWorldData(lots: InputLot[], regionId: string): void {
     worldData.value = buildWorldData(lots, regionId)
   }
 
@@ -409,7 +438,7 @@ export const useSimulationStore = defineStore('simulation', () => {
   /**
    * Set the active character (for UI focus)
    */
-  function setActiveCharacter(characterId) {
+  function setActiveCharacter(characterId: string): void {
     activeCharacterId.value = characterId
   }
 

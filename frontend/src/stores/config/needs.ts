@@ -2,11 +2,13 @@
  * Need decay rates and configuration
  */
 
+import type { NeedDecayRates, Needs, Cooldowns } from '../types'
+
 /**
  * Need decay rates per tick
  * Higher value = faster decay
  */
-export const NEED_DECAY_RATES = {
+export const NEED_DECAY_RATES: NeedDecayRates = {
   food: 0.04,
   sleep: 0.02,
   health: 0.01,
@@ -19,7 +21,7 @@ export const NEED_DECAY_RATES = {
 /**
  * Initial need values for new characters
  */
-export const INITIAL_NEEDS = {
+export const INITIAL_NEEDS: Needs = {
   food: 0.8,
   sleep: 0.8,
   health: 0.9,
@@ -32,7 +34,7 @@ export const INITIAL_NEEDS = {
 /**
  * Initial cooldown values for new characters
  */
-export const INITIAL_COOLDOWNS = {
+export const INITIAL_COOLDOWNS: Cooldowns = {
   eat: 0,
   sleep: 0,
   medicate: 0,
