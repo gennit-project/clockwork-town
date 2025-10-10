@@ -57,6 +57,20 @@
             >
               <p class="font-medium text-sm text-gray-900 dark:text-gray-100">{{ room.name }}</p>
               <p class="text-xs text-gray-600 dark:text-gray-300 mt-1">{{ room.description }}</p>
+
+              <!-- Characters in this space -->
+              <div v-if="getCharactersInSpace(room.id).length > 0" class="mt-2">
+                <div class="flex flex-wrap gap-1">
+                  <span
+                    v-for="char in getCharactersInSpace(room.id)"
+                    :key="char.id"
+                    class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border border-blue-400 bg-blue-50 text-blue-800 dark:bg-blue-950 dark:border-blue-600 dark:text-blue-200"
+                    :title="getCharacterActivity(char, room)"
+                  >
+                    👤 {{ char.name }}{{ getCharacterItemText(char, room) }}
+                  </span>
+                </div>
+              </div>
             </router-link>
           </div>
         </div>
@@ -78,6 +92,20 @@
             >
               <p class="font-medium text-sm text-gray-900 dark:text-gray-100">{{ area.name }}</p>
               <p class="text-xs text-gray-600 dark:text-gray-300 mt-1">{{ area.description }}</p>
+
+              <!-- Characters in this space -->
+              <div v-if="getCharactersInSpace(area.id).length > 0" class="mt-2">
+                <div class="flex flex-wrap gap-1">
+                  <span
+                    v-for="char in getCharactersInSpace(area.id)"
+                    :key="char.id"
+                    class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border border-green-400 bg-green-50 text-green-800 dark:bg-green-950 dark:border-green-600 dark:text-green-200"
+                    :title="getCharacterActivity(char, area)"
+                  >
+                    👤 {{ char.name }}{{ getCharacterItemText(char, area) }}
+                  </span>
+                </div>
+              </div>
             </router-link>
           </div>
         </div>
@@ -100,6 +128,9 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useSimulationStore } from '../stores/simulation'
+
+const simulationStore = useSimulationStore()
 
 const props = defineProps({
   lot: {
@@ -137,6 +168,34 @@ const emit = defineEmits(['toggle-expanded'])
 
 const toggleExpanded = () => {
   emit('toggle-expanded', props.lot.id)
+}
+
+const getCharactersInSpace = (spaceId) => {
+  return props.charactersBySpace[spaceId] || []
+}
+
+const getCharacterActivity = (char, space) => {
+  const charState = simulationStore.characterStates[char.id]
+  if (charState?.currentActivity?.itemId) {
+    // Find the item in this space
+    const item = space.items?.find(i => i.id === charState.currentActivity.itemId)
+    if (item) {
+      return `${char.name} is using ${item.name}`
+    }
+  }
+  return `${char.name} is in ${space.name}`
+}
+
+const getCharacterItemText = (char, space) => {
+  const charState = simulationStore.characterStates[char.id]
+  if (charState?.currentActivity?.itemId) {
+    // Find the item in this space
+    const item = space.items?.find(i => i.id === charState.currentActivity.itemId)
+    if (item) {
+      return ` → ${item.name}`
+    }
+  }
+  return ''
 }
 
 const headerBgClass = computed(() => {

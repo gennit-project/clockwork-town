@@ -5,6 +5,15 @@
     <div class="flex justify-between items-center mb-6">
       <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Region Overview: {{ region?.name || 'Loading...' }}</h1>
       <div class="flex space-x-3 items-center">
+        <!-- Expand/Collapse All Button -->
+        <button
+          @click="toggleAllLots"
+          class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md font-medium"
+          title="Expand or collapse all lot cards"
+        >
+          {{ allLotsExpanded ? '▼ Collapse All' : '▶ Expand All' }}
+        </button>
+
         <!-- Debug Toggle Button -->
         <button
           @click="showDebugPanel = !showDebugPanel"
@@ -210,8 +219,22 @@ const charactersBySpace = computed(() => {
   return bySpace
 })
 
+const allLotsExpanded = computed(() => {
+  const lotIds = Object.keys(expandedLots.value)
+  return lotIds.length > 0 && lotIds.every(id => expandedLots.value[id])
+})
+
 const toggleLotRooms = (lotId) => {
   expandedLots.value[lotId] = !expandedLots.value[lotId]
+}
+
+const toggleAllLots = () => {
+  const shouldExpand = !allLotsExpanded.value
+  const newExpandedState = {}
+  lotsWithSpaces.value.forEach(lot => {
+    newExpandedState[lot.id] = shouldExpand
+  })
+  expandedLots.value = newExpandedState
 }
 
 const MUTATION_UPDATE_REGION = gql`
