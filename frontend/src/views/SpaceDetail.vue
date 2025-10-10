@@ -217,7 +217,7 @@
             <span
               v-for="char in idleCharacters"
               :key="char.id"
-              class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
+              class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium border-2 border-blue-400 bg-blue-50 text-blue-800 dark:bg-blue-950 dark:border-blue-600 dark:text-blue-200"
             >
               {{ char.name }}
             </span>

@@ -56,7 +56,7 @@
             </span>
           </div>
           <div v-else class="mt-2">
-            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-blue-200 text-blue-600 dark:bg-blue-700 dark:text-blue-400">
               no actions
             </span>
           </div>
@@ -71,7 +71,7 @@
         <span
           v-for="char in idleCharacters"
           :key="char.id"
-          class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-700 dark:text-blue-300"
+          class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border-2 border-blue-400 bg-blue-50 text-blue-800 dark:bg-blue-950 dark:border-blue-600 dark:text-blue-200"
         >
           {{ char.name }}
         </span>
