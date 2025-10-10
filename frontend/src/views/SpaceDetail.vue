@@ -166,17 +166,22 @@
                   <div
                     v-for="slotIndex in item.maxSimultaneousUsers"
                     :key="slotIndex"
-                    class="border-2 rounded p-1.5 min-h-[32px] flex items-center justify-center"
+                    class="border-2 rounded p-1.5 min-h-[48px] flex flex-col items-center justify-center"
                     :class="item.activeUsers && item.activeUsers[slotIndex - 1]
                       ? 'border-blue-400 bg-blue-50 dark:bg-blue-950 dark:border-blue-600'
                       : 'border-gray-300 bg-gray-100 dark:bg-gray-700 dark:border-gray-600'"
                   >
-                    <span
+                    <div
                       v-if="item.activeUsers && item.activeUsers[slotIndex - 1]"
-                      class="text-[10px] font-medium text-blue-800 dark:text-blue-200 truncate"
+                      class="text-center"
                     >
-                      👤 {{ item.activeUsers[slotIndex - 1].name }}
-                    </span>
+                      <div class="text-[10px] font-medium text-blue-800 dark:text-blue-200 truncate">
+                        👤 {{ item.activeUsers[slotIndex - 1].name }}
+                      </div>
+                      <div class="text-[9px] text-blue-600 dark:text-blue-300 mt-0.5 truncate">
+                        {{ getCharacterActivity(item.activeUsers[slotIndex - 1].id) }}
+                      </div>
+                    </div>
                     <span v-else class="text-[10px] text-gray-400 dark:text-gray-500">
                       —
                     </span>
@@ -311,6 +316,19 @@ const idleCharacters = computed(() => {
     return charState?.location?.spaceId === spaceId.value
   })
 })
+
+// Get character's current activity in readable format
+const getCharacterActivity = (characterId) => {
+  const charState = simulationStore.characterStates[characterId]
+  if (charState?.currentAction) {
+    // Convert action name to readable format (e.g., "chat_friend" -> "Chat Friend")
+    return charState.currentAction
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ')
+  }
+  return 'Idle'
+}
 
 const loadData = async () => {
   try {
