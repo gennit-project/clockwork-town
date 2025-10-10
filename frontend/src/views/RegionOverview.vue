@@ -133,7 +133,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { gql } from 'graphql-request'
 import Breadcrumbs from '../components/Breadcrumbs.vue'

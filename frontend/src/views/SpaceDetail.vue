@@ -222,7 +222,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
 import AsyncContainer from '../components/AsyncContainer.vue'

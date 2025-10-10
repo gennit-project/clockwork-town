@@ -23,7 +23,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import LotCard from './LotCard.vue'
 
 defineProps({

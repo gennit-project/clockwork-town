@@ -140,7 +140,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useSimulationStore } from '../stores/simulation'
 import NeedBar from './NeedBar.vue'
