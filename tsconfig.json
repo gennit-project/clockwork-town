@@ -7,7 +7,14 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "outDir": "dist"
+    "outDir": "dist",
+    "jsx": "preserve",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["node"],
+    "paths": {
+      "@/*": ["./frontend/src/*"]
+    }
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*", "frontend/src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }

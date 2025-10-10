@@ -1,3 +1,15 @@
+type BuildBreadcrumbsConfig = {
+  worldId?: string
+  regionId?: string
+  lotId?: string
+  spaceId?: string
+  world?: { id: string; name: string }
+  region?: { id: string; name: string }
+  lot?: { id: string; name: string }
+  space?: { id: string; name: string }
+  current?: string
+}
+
 /**
  * Composable for building breadcrumb trails
  * @returns {Object} Breadcrumb building utilities
@@ -17,7 +29,7 @@ export function useBreadcrumbs() {
    * @param {string} config.current - Current page label (no link)
    * @returns {Array} Array of breadcrumb objects
    */
-  const buildBreadcrumbs = (config) => {
+  const buildBreadcrumbs = (config: BuildBreadcrumbsConfig) => {
     const crumbs = []
     const { worldId, regionId, lotId, spaceId, world, region, lot, space, current } = config
 
