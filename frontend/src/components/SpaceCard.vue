@@ -5,16 +5,6 @@
         <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">{{ space.name }}</h3>
         <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">{{ space.description }}</p>
       </div>
-      <!-- Characters in this space -->
-      <div v-if="characters && characters.length > 0" class="flex flex-wrap gap-1 ml-3">
-        <span
-          v-for="char in characters"
-          :key="char.id"
-          class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-        >
-          {{ char.name }}
-        </span>
-      </div>
     </div>
 
     <div v-if="space.items && space.items.length > 0" class="mt-4">
@@ -74,6 +64,20 @@
       </div>
     </div>
 
+    <!-- Idle Characters Section -->
+    <div v-if="idleCharacters.length > 0" class="mt-4">
+      <h4 class="text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Idle</h4>
+      <div class="flex flex-wrap gap-2">
+        <span
+          v-for="char in idleCharacters"
+          :key="char.id"
+          class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
+        >
+          {{ char.name }}
+        </span>
+      </div>
+    </div>
+
     <div v-else-if="showEmptyState" class="mt-4 text-center py-4 bg-gray-50 dark:bg-gray-900 rounded">
       <p class="text-sm text-gray-400">No items in this space</p>
     </div>
@@ -81,11 +85,12 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { useSimulationStore } from '../stores/simulation'
 
 const simulationStore = useSimulationStore()
 
-defineProps({
+const props = defineProps({
   space: {
     type: Object,
     required: true
@@ -104,4 +109,20 @@ defineProps({
 function getActiveUsersForItem(itemId) {
   return simulationStore.getItemActiveUsers(itemId)
 }
+
+// Calculate idle characters (in space but not using any items)
+const idleCharacters = computed(() => {
+  // Get all character IDs currently using items in this space
+  const charactersUsingItems = new Set()
+
+  if (props.space.items) {
+    props.space.items.forEach(item => {
+      const activeUsers = getActiveUsersForItem(item.id)
+      activeUsers.forEach(user => charactersUsingItems.add(user.id))
+    })
+  }
+
+  // Filter characters who are not using items
+  return props.characters.filter(char => !charactersUsingItems.has(char.id))
+})
 </script>

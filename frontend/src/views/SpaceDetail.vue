@@ -209,6 +209,20 @@
             </div>
           </div>
         </div>
+
+        <!-- Idle Characters Section -->
+        <div v-if="idleCharacters.length > 0" class="mt-6">
+          <h2 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">Idle</h2>
+          <div class="flex flex-wrap gap-2">
+            <span
+              v-for="char in idleCharacters"
+              :key="char.id"
+              class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
+            >
+              {{ char.name }}
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -262,6 +276,34 @@ const itemsWithActiveUsers = computed(() => {
       activeUsers
     }
   })
+})
+
+// Get all characters in this space
+const charactersInSpace = computed(() => {
+  const chars = []
+  for (const [charId, charState] of Object.entries(simulationStore.characterStates)) {
+    if (charState.location?.spaceId === spaceId.value) {
+      chars.push({
+        id: charId,
+        name: charState.name
+      })
+    }
+  }
+  return chars
+})
+
+// Calculate idle characters (in space but not using any items)
+const idleCharacters = computed(() => {
+  // Get all character IDs currently using items
+  const charactersUsingItems = new Set()
+
+  items.value.forEach(item => {
+    const activeUsers = simulationStore.getItemActiveUsers(item.id)
+    activeUsers.forEach(user => charactersUsingItems.add(user.id))
+  })
+
+  // Filter characters who are not using items
+  return charactersInSpace.value.filter(char => !charactersUsingItems.has(char.id))
 })
 
 const loadData = async () => {

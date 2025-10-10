@@ -1,5 +1,5 @@
 <template>
-  <div class="fixed bottom-4 left-4 w-80 h-[500px] bg-white dark:bg-gray-800 rounded-lg shadow-2xl border-2 border-gray-300 dark:border-gray-600 z-40 flex flex-col">
+  <div class="fixed bottom-4 left-4 w-80 h-[300px] bg-white dark:bg-gray-800 rounded-lg shadow-2xl border-2 border-gray-300 dark:border-gray-600 z-40 flex flex-col">
     <!-- Header -->
     <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
       <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ character.name }}</h3>
