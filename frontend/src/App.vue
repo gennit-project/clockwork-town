@@ -336,6 +336,10 @@ const getCharacterLocation = (characterId) => {
   // First check simulation store (for reactive updates during simulation)
   const charState = simulationStore.characterStates[characterId]
   if (charState?.location?.lotName) {
+    // Include both lot and space if available
+    if (charState.location.spaceName) {
+      return `${charState.location.lotName} → ${charState.location.spaceName}`
+    }
     return charState.location.lotName
   }
 
