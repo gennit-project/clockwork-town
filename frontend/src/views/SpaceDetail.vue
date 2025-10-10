@@ -215,7 +215,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
 import { client, queries, mutations } from '../graphql'
@@ -374,4 +374,11 @@ const removeItem = async (itemId) => {
 }
 
 onMounted(loadData)
+
+// Watch for space ID changes in the route and reload data
+watch(spaceId, (newSpaceId, oldSpaceId) => {
+  if (newSpaceId && newSpaceId !== oldSpaceId) {
+    loadData()
+  }
+})
 </script>

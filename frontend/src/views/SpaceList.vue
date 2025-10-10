@@ -263,7 +263,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
 import SpaceCard from '../components/SpaceCard.vue'
@@ -524,4 +524,11 @@ const saveAsTemplate = async () => {
 }
 
 onMounted(loadData)
+
+// Watch for lot ID changes in the route and reload data
+watch(lotId, (newLotId, oldLotId) => {
+  if (newLotId && newLotId !== oldLotId) {
+    loadData()
+  }
+})
 </script>
