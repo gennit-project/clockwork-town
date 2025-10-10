@@ -122,7 +122,18 @@ const idleCharacters = computed(() => {
     })
   }
 
-  // Filter characters who are not using items
-  return props.characters.filter(char => !charactersUsingItems.has(char.id))
+  // Filter characters who are:
+  // 1. Not using items
+  // 2. Actually in this space according to simulation store
+  return props.characters.filter(char => {
+    // Skip if using an item
+    if (charactersUsingItems.has(char.id)) {
+      return false
+    }
+
+    // Verify character is actually in this space
+    const charState = simulationStore.characterStates[char.id]
+    return charState?.location?.spaceId === props.space.id
+  })
 })
 </script>

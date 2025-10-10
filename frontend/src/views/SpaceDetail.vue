@@ -302,8 +302,19 @@ const idleCharacters = computed(() => {
     activeUsers.forEach(user => charactersUsingItems.add(user.id))
   })
 
-  // Filter characters who are not using items
-  return charactersInSpace.value.filter(char => !charactersUsingItems.has(char.id))
+  // Filter characters who are:
+  // 1. Not using items
+  // 2. Actually in this space according to simulation store (double-check)
+  return charactersInSpace.value.filter(char => {
+    // Skip if using an item
+    if (charactersUsingItems.has(char.id)) {
+      return false
+    }
+
+    // Verify character is actually in this space (charactersInSpace already checks this, but be defensive)
+    const charState = simulationStore.characterStates[char.id]
+    return charState?.location?.spaceId === spaceId.value
+  })
 })
 
 const loadData = async () => {
