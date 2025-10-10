@@ -71,7 +71,7 @@
         <span
           v-for="char in idleCharacters"
           :key="char.id"
-          class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
+          class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-700 dark:text-blue-300"
         >
           {{ char.name }}
         </span>

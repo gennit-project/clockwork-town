@@ -296,6 +296,13 @@ const loadData = async () => {
 
     lotsWithSpaces.value = lotsWithSpacesData
 
+    // Expand all lots by default to show rooms
+    const expandedState = {}
+    lotsWithSpacesData.forEach(lot => {
+      expandedState[lot.id] = true
+    })
+    expandedLots.value = expandedState
+
     // Load world data into simulation store for pathfinding
     simulationStore.loadWorldData(lotsWithSpacesData, regionId.value)
 
