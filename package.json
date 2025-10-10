@@ -8,7 +8,10 @@
     "dev": "tsx watch src/server.ts",
     "dev:frontend": "vite",
     "build:frontend": "vite build",
-    "ddl": "tsx src/db.ts --ddl"
+    "ddl": "tsx src/db.ts --ddl",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage"
   },
   "dependencies": {
     "@graphql-tools/schema": "^10.0.25",
@@ -30,9 +33,12 @@
   },
   "devDependencies": {
     "@types/node": "^24.7.1",
+    "@vitest/ui": "^3.2.4",
     "@vue/tsconfig": "^0.8.1",
+    "happy-dom": "^20.0.0",
     "tsx": "^4.16.0",
     "typescript": "^5.6.3",
+    "vitest": "^3.2.4",
     "vue-tsc": "^3.1.1"
   }
 }

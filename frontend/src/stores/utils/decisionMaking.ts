@@ -2,20 +2,34 @@
  * Decision making utilities for calculating action utilities and selecting best intents
  */
 
-import { ACTION_EFFECTS, NEED_WEIGHTS } from '../config/actionEffects.js'
-import { findItemsWithAffordance } from './pathfinding.js'
+import type {
+  ActionName,
+  Needs,
+  CharacterState,
+  WorldData,
+  ItemOccupancy,
+  ItemOption,
+  Intent
+} from '../types'
+import { ACTION_EFFECTS, NEED_WEIGHTS } from '../config/actionEffects'
+import { findItemsWithAffordance } from './pathfinding'
 
 /**
  * Calculate utility score for a character performing an action at a specific item
  * Step 9: Utility = (need weight × need deficit) - travel cost + context bonus
  *
- * @param {string} characterId - Character ID (for logging)
- * @param {string} action - Action name (e.g., 'eat', 'sleep')
- * @param {object} characterNeeds - Character's current needs { food, sleep, health, ... }
- * @param {object} itemOption - Item option from findItemsWithAffordance
- * @returns {number} Utility score (higher is better)
+ * @param characterId - Character ID (for logging)
+ * @param action - Action name (e.g., 'eat', 'sleep')
+ * @param characterNeeds - Character's current needs { food, sleep, health, ... }
+ * @param itemOption - Item option from findItemsWithAffordance
+ * @returns Utility score (higher is better)
  */
-export function calculateUtility(characterId, action, characterNeeds, itemOption) {
+export function calculateUtility(
+  characterId: string,
+  action: ActionName,
+  characterNeeds: Needs,
+  itemOption: ItemOption
+): number {
   const actionData = ACTION_EFFECTS[action]
   if (!actionData) {
     console.warn(`Unknown action: ${action}`)
@@ -55,19 +69,24 @@ export function calculateUtility(characterId, action, characterNeeds, itemOption
  * Select the best action intent for a character
  * Step 10: Evaluate all actions, find items, calculate utilities, return best intent
  *
- * @param {string} characterId - Character ID
- * @param {object} characterState - Character state with needs, cooldowns, location
- * @param {object} worldData - World data structure
- * @param {object} itemOccupancy - Current item occupancy { [itemId]: [characterId1, ...] }
- * @returns {object} Intent: { action, itemId, itemName, targetSpaceId, targetLotId, utility } or { action: 'idle', utility: 0 }
+ * @param characterId - Character ID
+ * @param characterState - Character state with needs, cooldowns, location
+ * @param worldData - World data structure
+ * @param itemOccupancy - Current item occupancy { [itemId]: [characterId1, ...] }
+ * @returns Intent: { action, itemId, itemName, targetSpaceId, targetLotId, utility } or { action: 'idle', utility: 0 }
  */
-export function selectBestIntent(characterId, characterState, worldData, itemOccupancy = {}) {
+export function selectBestIntent(
+  characterId: string,
+  characterState: CharacterState,
+  worldData: WorldData,
+  itemOccupancy: ItemOccupancy = {}
+): Intent {
   console.log(`\n🎯 selectBestIntent for character ${characterId}`)
 
   // All possible actions (excluding idle and work for now)
-  const possibleActions = ['eat', 'sleep', 'medicate', 'chat_friend', 'call_mom', 'date', 'read', 'write', 'view_art', 'volunteer']
+  const possibleActions: ActionName[] = ['eat', 'sleep', 'medicate', 'chat_friend', 'call_mom', 'date', 'read', 'write', 'view_art', 'volunteer']
 
-  const intents = []
+  const intents: Intent[] = []
 
   // Evaluate each action
   for (const action of possibleActions) {

@@ -2,22 +2,44 @@
  * Tick execution logic for the simulation
  */
 
-import { NEED_DECAY_RATES } from '../config/needs.js'
-import { selectBestIntent } from './decisionMaking.js'
+import type { Ref } from 'vue'
+import type {
+  CharacterState,
+  WorldData,
+  ItemOccupancy,
+  Intent,
+  ActivityLogEntry,
+  ActionName
+} from '../types'
+import { NEED_DECAY_RATES } from '../config/needs'
+import { selectBestIntent } from './decisionMaking'
+
+/**
+ * Parameters for executeTick function
+ */
+export interface ExecuteTickParams {
+  currentTick: Ref<number>
+  characterStates: Ref<Record<string, CharacterState>>
+  worldData: Ref<WorldData>
+  itemOccupancy: Ref<ItemOccupancy>
+  activityLog: Ref<ActivityLogEntry[]>
+  executeAction: (characterId: string, intent: Intent) => Promise<void>
+}
 
 /**
  * Execute a single tick of the simulation
  * Processes all three phases: Decay, Decision Making, and Execution
  *
- * @param {object} refs - Object containing Vue refs and functions
- * @param {Ref<number>} refs.currentTick - Current tick counter
- * @param {Ref<object>} refs.characterStates - Character states
- * @param {Ref<object>} refs.worldData - World data
- * @param {Ref<object>} refs.itemOccupancy - Item occupancy tracking
- * @param {Ref<Array>} refs.activityLog - Activity log
- * @param {Function} refs.executeAction - Function to execute a character action
+ * @param params - Object containing Vue refs and functions
  */
-export async function executeTick({ currentTick, characterStates, worldData, itemOccupancy, activityLog, executeAction }) {
+export async function executeTick({
+  currentTick,
+  characterStates,
+  worldData,
+  itemOccupancy,
+  activityLog,
+  executeAction
+}: ExecuteTickParams): Promise<void> {
   currentTick.value++
 
   console.log(`\n========== TICK ${currentTick.value} ==========`)
@@ -37,15 +59,16 @@ export async function executeTick({ currentTick, characterStates, worldData, ite
 
     // Decrement cooldowns
     for (const action in state.cooldowns) {
-      if (state.cooldowns[action] > 0) {
-        state.cooldowns[action]--
+      const actionKey = action as ActionName
+      if (state.cooldowns[actionKey] > 0) {
+        state.cooldowns[actionKey]--
       }
     }
   }
 
   // Phase 2: Decision Making
   console.log('\n--- Phase 2: Decision Making ---')
-  const intents = {}
+  const intents: Record<string, Intent> = {}
   for (const characterId in characterStates.value) {
     // Select the best intent for this character (pass itemOccupancy to check slot availability)
     const intent = selectBestIntent(characterId, characterStates.value[characterId], worldData.value, itemOccupancy.value)

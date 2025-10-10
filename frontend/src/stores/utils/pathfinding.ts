@@ -2,18 +2,31 @@
  * Pathfinding utilities for finding accessible items in the world
  */
 
+import type {
+  WorldData,
+  CharacterLocation,
+  ItemOption,
+  ItemOccupancy
+} from '../types'
+
 /**
  * Find items with a specific affordance (action) accessible to a character
  * Step 8: Same space (cost 0) + Same lot (cost 1) + Same region (cost 2)
  *
- * @param {string} characterId - Character ID (for logging)
- * @param {string} action - Action name (e.g., 'eat', 'sleep')
- * @param {object} characterLocation - Character's location { spaceId, lotId, regionId }
- * @param {object} worldData - World data with lots, spaces, items, itemsByAffordance
- * @param {object} itemOccupancy - Current item occupancy { [itemId]: [characterId1, characterId2, ...] }
- * @returns {Array} Array of item options: [{ itemId, itemName, spaceId, spaceName, lotId, lotName, travelCost }]
+ * @param characterId - Character ID (for logging)
+ * @param action - Action name (e.g., 'eat', 'sleep')
+ * @param characterLocation - Character's location { spaceId, lotId, regionId }
+ * @param worldData - World data with lots, spaces, items, itemsByAffordance
+ * @param itemOccupancy - Current item occupancy { [itemId]: [characterId1, characterId2, ...] }
+ * @returns Array of item options: [{ itemId, itemName, spaceId, spaceName, lotId, lotName, travelCost }]
  */
-export function findItemsWithAffordance(characterId, action, characterLocation, worldData, itemOccupancy = {}) {
+export function findItemsWithAffordance(
+  characterId: string,
+  action: string,
+  characterLocation: CharacterLocation,
+  worldData: WorldData,
+  itemOccupancy: ItemOccupancy = {}
+): ItemOption[] {
   const { spaceId: currentSpaceId, lotId: currentLotId, regionId: currentRegionId } = characterLocation
 
   if (!currentSpaceId || !currentLotId || !currentRegionId) {
@@ -82,13 +95,15 @@ export function findItemsWithAffordance(characterId, action, characterLocation, 
   return results
 }
 
+import type { InputLot } from '../types'
+
 /**
  * Load world data (lots, spaces, items) for pathfinding
- * @param {Array} lots - Array of lot objects with indoorRooms and outdoorAreas
- * @param {string} regionId - Region ID that these lots belong to
- * @returns {object} World data structure { lots, spaces, items, itemsByAffordance }
+ * @param lots - Array of lot objects with indoorRooms and outdoorAreas
+ * @param regionId - Region ID that these lots belong to
+ * @returns World data structure { lots, spaces, items, itemsByAffordance }
  */
-export function buildWorldData(lots, regionId) {
+export function buildWorldData(lots: InputLot[], regionId: string): WorldData {
   console.log('🗺️  Loading world data for pathfinding...')
 
   const worldData = {
