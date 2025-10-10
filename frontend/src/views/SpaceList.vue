@@ -3,7 +3,7 @@
     <Breadcrumbs :crumbs="breadcrumbs" />
 
     <div class="flex justify-between items-center mb-6">
-      <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Spaces</h1>
+      <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">{{ lot?.name || 'Loading...' }}</h1>
       <div class="flex gap-3">
         <button
           @click="showSaveTemplateModal = true"
@@ -34,36 +34,16 @@
 
     <div v-else>
       <!-- Household Info Banner -->
-      <div v-if="household" class="mb-6 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-        <h2 class="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-2">{{ household.name }}</h2>
-
-        <!-- Currently at lot -->
-        <div class="mb-3">
-          <p class="text-xs font-medium text-blue-800 dark:text-blue-200 mb-1">Currently here:</p>
-          <div v-if="charactersAtLot.length > 0" class="flex flex-wrap gap-2">
-            <span
-              v-for="char in charactersAtLot"
-              :key="char.id"
-              class="text-sm bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100 px-3 py-1 rounded-full"
-            >
-              👤 {{ char.name }}
-            </span>
-          </div>
-          <p v-else class="text-sm text-blue-600 dark:text-blue-300 italic">No one is here</p>
-        </div>
-
-        <!-- All household members -->
-        <div v-if="household.characters.length > 0">
-          <p class="text-xs font-medium text-blue-800 dark:text-blue-200 mb-1">Household members:</p>
-          <div class="flex flex-wrap gap-2">
-            <span
-              v-for="char in household.characters"
-              :key="char.id"
-              class="text-sm bg-white dark:bg-gray-800 text-blue-800 dark:text-blue-100 px-3 py-1 rounded-full border border-blue-200 dark:border-blue-700"
-            >
-              {{ char.name }} ({{ char.age }})
-            </span>
-          </div>
+      <div v-if="household" class="mb-6 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+        <h2 class="text-base font-semibold text-blue-900 dark:text-blue-100 mb-2">{{ household.name }}</h2>
+        <div v-if="household.characters.length > 0" class="flex flex-wrap gap-2">
+          <span
+            v-for="char in household.characters"
+            :key="char.id"
+            class="text-sm bg-white dark:bg-gray-800 text-blue-800 dark:text-blue-100 px-3 py-1 rounded-full border border-blue-200 dark:border-blue-700"
+          >
+            {{ char.name }} - <span :class="isCharacterAtLot(char.id) ? 'text-green-600 dark:text-green-400 font-medium' : 'text-gray-500 dark:text-gray-400'">{{ isCharacterAtLot(char.id) ? 'here' : 'away' }}</span>
+          </span>
         </div>
       </div>
 
@@ -336,6 +316,11 @@ const charactersAtLot = computed(() => {
     return char.location?.id === lotId.value
   })
 })
+
+const isCharacterAtLot = (characterId) => {
+  const char = characters.value.find(c => c.id === characterId)
+  return char?.location?.id === lotId.value
+}
 
 const breadcrumbs = computed(() => [
   { label: 'Worlds', to: '/' },
