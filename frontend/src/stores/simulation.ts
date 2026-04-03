@@ -6,31 +6,18 @@ import type {
   WorldData,
   ItemOccupancy,
   ActivityLogEntry,
-  ActionName,
   Intent,
   InputLot
 } from './types'
 import {
-  createCharacterLongTermMemory,
-  deleteCharacterLongTermMemory,
-  fetchCharacterDetails,
   moveCharacterToLot,
-  persistCharacterBio,
-  startCharacterActivity,
-  updateCharacterLongTermMemory
+  startCharacterActivity
 } from './simulationPersistence'
 import {
   appendShortTermMemory,
   createCharacterState,
-  enqueueManualIntent,
+  enqueueManualIntent
 } from './utils/characterState'
-import {
-  addLongTermMemory,
-  editLongTermMemory,
-  refreshCharacterDetails,
-  removeLongTermMemory,
-  saveCharacterBio
-} from './utils/characterDetails'
 import { buildWorldData } from './utils/pathfinding'
 import { createSimulationRuntime } from './utils/simulationRuntime'
 
@@ -50,9 +37,6 @@ export const useSimulationStore = defineStore('simulation', () => {
   // Character state (needs & cooldowns)
   // Structure: { [characterId]: { needs: {...}, cooldowns: {...}, currentAction: string, location: {...} } }
   const characterStates: Ref<Record<string, CharacterState>> = ref({})
-
-  // Active character (for UI focus)
-  const activeCharacterId: Ref<string | null> = ref(null)
 
   // Item occupancy tracking (which characters are using which items right now)
   // Structure: { [itemId]: [characterId1, characterId2, ...] }
@@ -128,7 +112,7 @@ export const useSimulationStore = defineStore('simulation', () => {
       characterStates,
       worldData,
       itemOccupancy,
-      activeCharacterId
+      activeCharacterId: ref<string | null>(null)
     },
     {
       recordShortTermMemory,
@@ -155,64 +139,6 @@ export const useSimulationStore = defineStore('simulation', () => {
     enqueueManualIntent(state, intent)
   }
 
-  async function loadCharacterDetails(characterId: string): Promise<void> {
-    const state = characterStates.value[characterId]
-    if (!state) {
-      return
-    }
-
-    await refreshCharacterDetails(state, characterId, { fetchCharacterDetails })
-  }
-
-  async function updateCharacterBio(characterId: string, bio: string): Promise<void> {
-    await saveCharacterBio(characterId, bio, { persistCharacterBio })
-  }
-
-  async function createLongTermMemory(characterId: string, content: string): Promise<void> {
-    const state = characterStates.value[characterId]
-    if (!state) {
-      return
-    }
-
-    await addLongTermMemory(state, characterId, content, {
-      createCharacterLongTermMemory,
-      fetchCharacterDetails
-    })
-  }
-
-  async function updateLongTermMemory(characterId: string, memoryId: string, content: string): Promise<void> {
-    const state = characterStates.value[characterId]
-    if (!state) {
-      return
-    }
-
-    await editLongTermMemory(state, characterId, memoryId, content, {
-      updateCharacterLongTermMemory,
-      fetchCharacterDetails
-    })
-  }
-
-  async function deleteLongTermMemory(characterId: string, memoryId: string): Promise<void> {
-    const state = characterStates.value[characterId]
-    if (!state) {
-      return
-    }
-
-    await removeLongTermMemory(state, characterId, memoryId, {
-      deleteCharacterLongTermMemory,
-      fetchCharacterDetails
-    })
-  }
-
-
-  /**
-   * Set the active character (for UI focus)
-   */
-  function setActiveCharacter(characterId: string): void {
-    activeCharacterId.value = characterId
-    void loadCharacterDetails(characterId)
-  }
-
   return {
     // State
     currentTick,
@@ -220,7 +146,6 @@ export const useSimulationStore = defineStore('simulation', () => {
     activityLog,
     characterStates,
     worldData,
-    activeCharacterId,
 
     // Getters
     isRunning,
@@ -235,16 +160,10 @@ export const useSimulationStore = defineStore('simulation', () => {
     applyActionEffects: runtime.applyActionEffects,
     executeAction: runtime.executeAction,
     enqueueIntent,
-    loadCharacterDetails,
-    updateCharacterBio,
-    createLongTermMemory,
-    updateLongTermMemory,
-    deleteLongTermMemory,
     startAutoTick: runtime.startAutoTick,
     pauseAutoTick: runtime.pauseAutoTick,
     resetSimulation: runtime.resetSimulation,
     updateCharacterLocation: runtime.updateCharacterLocation,
-    loadWorldData,
-    setActiveCharacter
+    loadWorldData
   }
 })

@@ -166,7 +166,7 @@
                   v-for="character in regionCharacters"
                   :key="character.id"
                   class="p-3 rounded-lg cursor-pointer transition-all"
-                  :class="simulationStore.activeCharacterId === character.id
+                  :class="characterPanelStore.activeCharacterId === character.id
                     ? 'bg-blue-100 dark:bg-blue-900/40 border-2 border-blue-400 dark:border-blue-500 shadow-md'
                     : 'bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600'"
                   @click="selectCharacter(character)"
@@ -284,6 +284,7 @@ import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDarkMode } from './composables/useDarkMode'
 import { useSimulationStore } from './stores/simulation'
+import { useCharacterPanelStore } from './stores/characterPanel'
 import { client, queries } from './graphql'
 import CharacterDetailPanel from './components/CharacterDetailPanel.vue'
 import AnimalDetailPanel from './components/AnimalDetailPanel.vue'
@@ -292,6 +293,7 @@ const route = useRoute()
 const router = useRouter()
 const { isDark, toggle: toggleDarkMode } = useDarkMode()
 const simulationStore = useSimulationStore()
+const characterPanelStore = useCharacterPanelStore()
 
 const showActivityLog = ref(false)
 const showMobileNav = ref(false)
@@ -317,6 +319,7 @@ const manualTick = () => {
 const resetSimulation = () => {
   if (confirm('Reset simulation? This will clear all character states and activity logs.')) {
     simulationStore.resetSimulation()
+    characterPanelStore.resetPanel()
   }
 }
 
@@ -347,7 +350,7 @@ watch(currentRegionId, () => {
 // Character/Animal selection - navigate to their location and show panel
 const selectCharacter = (character) => {
   // Set as active character
-  simulationStore.setActiveCharacter(character.id)
+  characterPanelStore.setActiveCharacter(character.id)
 
   // Show character detail panel
   selectedCharacterForPanel.value = character

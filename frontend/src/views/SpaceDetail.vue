@@ -320,10 +320,12 @@ import Breadcrumbs from '../components/Breadcrumbs.vue'
 import AsyncContainer from '../components/AsyncContainer.vue'
 import { client, queries, mutations } from '../graphql'
 import { useSimulationStore } from '../stores/simulation'
+import { useCharacterPanelStore } from '../stores/characterPanel'
 import { useRouteParams } from '../composables/useRouteParams'
 import { useBreadcrumbs } from '../composables/useBreadcrumbs'
 
 const simulationStore = useSimulationStore()
+const characterPanelStore = useCharacterPanelStore()
 const { worldId, regionId, lotId, spaceId } = useRouteParams()
 const { buildBreadcrumbs } = useBreadcrumbs()
 
@@ -560,7 +562,7 @@ watch(spaceId, (newSpaceId, oldSpaceId) => {
 })
 
 const activeCharacter = computed(() => {
-  const activeId = simulationStore.activeCharacterId
+  const activeId = characterPanelStore.activeCharacterId
   if (!activeId) {
     return null
   }

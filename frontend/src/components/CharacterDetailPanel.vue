@@ -235,6 +235,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useSimulationStore } from '../stores/simulation'
+import { useCharacterPanelStore } from '../stores/characterPanel'
 import { useCharacterIntentOptions } from '../composables/useCharacterIntentOptions'
 import NeedBar from './NeedBar.vue'
 
@@ -252,6 +253,7 @@ const props = defineProps({
 defineEmits(['close'])
 
 const simulationStore = useSimulationStore()
+const characterPanelStore = useCharacterPanelStore()
 const activeTab = ref('Basics')
 const showNeedPicker = ref(false)
 const editingBio = ref(false)
@@ -313,7 +315,7 @@ function queueIntent(intent: any) {
 }
 
 async function saveBio() {
-  await simulationStore.updateCharacterBio(props.character.id, bioDraft.value)
+  await characterPanelStore.updateCharacterBio(props.character.id, bioDraft.value)
   props.character.bio = bioDraft.value
   editingBio.value = false
 }
@@ -322,7 +324,7 @@ async function saveMemory() {
   if (!memoryDraft.value.trim()) {
     return
   }
-  await simulationStore.createLongTermMemory(props.character.id, memoryDraft.value.trim())
+  await characterPanelStore.createLongTermMemory(props.character.id, memoryDraft.value.trim())
   memoryDraft.value = ''
 }
 
@@ -330,13 +332,13 @@ async function saveEditedMemory() {
   if (!editingMemoryId.value) {
     return
   }
-  await simulationStore.updateLongTermMemory(props.character.id, editingMemoryId.value, editingMemoryContent.value)
+  await characterPanelStore.updateLongTermMemory(props.character.id, editingMemoryId.value, editingMemoryContent.value)
   editingMemoryId.value = null
   editingMemoryContent.value = ''
 }
 
 async function removeMemory(memoryId: string) {
-  await simulationStore.deleteLongTermMemory(props.character.id, memoryId)
+  await characterPanelStore.deleteLongTermMemory(props.character.id, memoryId)
 }
 
 function startEditingMemory(memory: any) {
