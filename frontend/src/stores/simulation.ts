@@ -12,7 +12,6 @@ import type {
   InputLot
 } from './types'
 import { ACTION_EFFECTS } from './config/actionEffects'
-import { INITIAL_NEEDS, INITIAL_COOLDOWNS } from './config/needs'
 import {
   createCharacterLongTermMemory,
   deleteCharacterLongTermMemory,
@@ -22,6 +21,13 @@ import {
   startCharacterActivity,
   updateCharacterLongTermMemory
 } from './simulationPersistence'
+import {
+  appendShortTermMemory,
+  createActivityLogEntry,
+  createCharacterState,
+  enqueueManualIntent,
+  updateStateLocation
+} from './utils/characterState'
 import { buildWorldData } from './utils/pathfinding'
 import { advanceTask, buildCompletionIntent, createTaskFromIntent, getActionDuration, isTaskComplete } from './utils/taskLifecycle'
 import { executeTick as runTick } from './utils/tickExecution'
@@ -96,23 +102,7 @@ export const useSimulationStore = defineStore('simulation', () => {
    */
   function initializeCharacter(character: { id: string; name: string; traits?: string[] }): void {
     if (!characterStates.value[character.id]) {
-      characterStates.value[character.id] = {
-        name: character.name || 'Unknown',
-        needs: { ...INITIAL_NEEDS },
-        cooldowns: { ...INITIAL_COOLDOWNS },
-        currentAction: 'idle',
-        location: {
-          regionId: null,
-          lotId: null,
-          lotName: null,
-          spaceId: null,
-          spaceName: null
-        },
-        traits: character.traits || [],
-        queuedActions: [],
-        currentTask: null,
-        longTermMemories: []
-      }
+      characterStates.value[character.id] = createCharacterState(character)
     }
   }
 
@@ -135,13 +125,7 @@ export const useSimulationStore = defineStore('simulation', () => {
    * Log an activity to the activity log
    */
   function logActivity(characterId: string, action: string, details: string): void {
-    const logEntry: ActivityLogEntry = {
-      tick: currentTick.value,
-      timestamp: new Date().toISOString(),
-      characterId,
-      action,
-      details
-    }
+    const logEntry = createActivityLogEntry(currentTick.value, characterId, action, details)
 
     activityLog.value.push(logEntry)
 
@@ -159,22 +143,7 @@ export const useSimulationStore = defineStore('simulation', () => {
       return
     }
 
-    const memory = {
-      tick: currentTick.value,
-      action: intent.action,
-      item: intent.itemName || intent.socialTargetName || 'unknown',
-      location: `${intent.targetSpaceName || 'unknown'} (${intent.targetLotName || 'unknown'})`,
-      utility: intent.utility
-    }
-
-    if (!state.memories) {
-      state.memories = []
-    }
-    state.memories.push(memory)
-
-    if (state.memories.length > 20) {
-      state.memories = state.memories.slice(-20)
-    }
+    appendShortTermMemory(state, currentTick.value, intent)
   }
 
   async function completeIntent(characterId: string, intent: Intent): Promise<void> {
@@ -463,13 +432,13 @@ export const useSimulationStore = defineStore('simulation', () => {
     spaceName: string
   ): void {
     if (characterStates.value[characterId]) {
-      characterStates.value[characterId].location = {
+      updateStateLocation(characterStates.value[characterId], {
         regionId,
         lotId,
         lotName,
         spaceId,
         spaceName
-      }
+      })
     }
   }
 
@@ -488,14 +457,7 @@ export const useSimulationStore = defineStore('simulation', () => {
       return
     }
 
-    if (!state.queuedActions) {
-      state.queuedActions = []
-    }
-
-    state.queuedActions.push({
-      ...intent,
-      source: 'manual'
-    })
+    enqueueManualIntent(state, intent)
   }
 
   async function loadCharacterDetails(characterId: string): Promise<void> {
