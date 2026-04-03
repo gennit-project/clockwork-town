@@ -42,7 +42,8 @@ import {
 } from './utils/characterState'
 import { assignItemOccupancy, clearCharacterOccupancy } from './utils/itemOccupancy'
 import { buildWorldData } from './utils/pathfinding'
-import { advanceTask, buildCompletionIntent, createTaskFromIntent, getActionDuration, isTaskComplete } from './utils/taskLifecycle'
+import { createTaskFromIntent, getActionDuration } from './utils/taskLifecycle'
+import { progressActiveTask } from './utils/taskProgression'
 import { executeTick as runTick } from './utils/tickExecution'
 
 export const useSimulationStore = defineStore('simulation', () => {
@@ -171,27 +172,14 @@ export const useSimulationStore = defineStore('simulation', () => {
 
   async function progressTask(characterId: string): Promise<boolean> {
     const state = characterStates.value[characterId]
-    const task = state?.currentTask
-
-    if (!state || !task) {
+    if (!state) {
       return false
     }
-
-    const nextTask = advanceTask(task)
-    state.currentTask = nextTask
-
-    if (!isTaskComplete(nextTask)) {
-      state.currentAction = nextTask.action
-      logActivity(characterId, nextTask.action, `In progress (${nextTask.remainingTicks}/${nextTask.totalTicks} ticks remaining)`)
-      return true
-    }
-
-    const completedIntent: Intent = buildCompletionIntent(nextTask)
-
-    await completeIntent(characterId, completedIntent)
-    state.currentTask = null
-    clearItemOccupancy(characterId)
-    return true
+    return progressActiveTask(characterId, state, {
+      logActivity,
+      completeIntent,
+      clearItemOccupancy
+    })
   }
 
   /**
