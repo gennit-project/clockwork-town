@@ -27,6 +27,13 @@ import {
   validateIntentItemAvailability
 } from './utils/actionExecution'
 import {
+  finalizeStartedIntent,
+  handleIdleIntent,
+  handleStartActivityFailure,
+  handleUnavailableIntent,
+  performIntentMovement
+} from './utils/actionFlow'
+import {
   appendShortTermMemory,
   createActivityLogEntry,
   createCharacterState,
@@ -251,10 +258,7 @@ export const useSimulationStore = defineStore('simulation', () => {
     console.log(`\n⚡ Executing action for ${characterId}`)
 
     if (intent.action === 'idle') {
-      state.currentAction = 'idle'
-      state.currentTask = null
-      clearItemOccupancy(characterId)
-      logActivity(characterId, 'idle', 'No satisfying actions available')
+      handleIdleIntent(characterId, state, { clearItemOccupancy, logActivity })
       console.log(`  ${characterId}: idle (no actions available)`)
       return
     }
@@ -265,9 +269,10 @@ export const useSimulationStore = defineStore('simulation', () => {
       const maxUsers = intent.itemId ? worldData.value.items[intent.itemId]?.maxSimultaneousUsers : null
       console.log(`  ⚠️  Item ${intent.itemName} became full during this tick (${currentOccupants.length}/${maxUsers})`)
       console.log(`  ${characterId}: falling back to idle`)
-      state.currentAction = 'idle'
-      clearItemOccupancy(characterId)
-      logActivity(characterId, 'idle', availability.reason || `${intent.itemName} became unavailable`)
+      handleUnavailableIntent(characterId, state, availability.reason || `${intent.itemName} became unavailable`, {
+        clearItemOccupancy,
+        logActivity
+      })
       return
     }
 
@@ -281,16 +286,10 @@ export const useSimulationStore = defineStore('simulation', () => {
       console.log(`  🚶 Moving ${characterId} from ${state.location?.lotName || 'unknown'} to ${intent.targetLotName}`)
 
       try {
-        await moveCharacterToLot(characterId, movementPlan.targetLotId)
-
-        updateCharacterLocation(
-          characterId,
-          state.location?.regionId || null,
-          movementPlan.targetLotId,
-          movementPlan.targetLotName,
-          movementPlan.targetSpaceId,
-          movementPlan.targetSpaceName
-        )
+        await performIntentMovement(characterId, state, movementPlan, {
+          moveCharacterToLot,
+          updateCharacterLocation
+        })
 
         console.log(`  ✓ Moved to ${intent.targetLotName} (${intent.targetSpaceName})`)
       } catch (error) {
@@ -305,26 +304,18 @@ export const useSimulationStore = defineStore('simulation', () => {
 
       const duration = getActionDuration(intent.action)
       const startedActionPlan = buildStartedActionPlan(intent, duration)
-
-      if (intent.itemId) {
-        setItemOccupancy(characterId, intent.itemId)
-      }
-
-      if (startedActionPlan.isMultiTick) {
-        state.currentAction = intent.action
-        state.currentTask = createTaskFromIntent(intent)
-        logActivity(characterId, intent.action, startedActionPlan.logDetails || 'Started multi-tick action')
-        return
-      }
-
-      await completeIntent(characterId, intent)
+      await finalizeStartedIntent(characterId, state, intent, startedActionPlan, {
+        setItemOccupancy,
+        createTaskFromIntent,
+        completeIntent,
+        logActivity
+      })
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
+      const errorMessage = await handleStartActivityFailure(characterId, intent, error, {
+        clearItemOccupancy,
+        logActivity
+      })
       console.error(`  ❌ Failed to start activity in database: ${errorMessage}`)
-      // Don't apply effects if backend failed - character remains in previous state
-      // Clear any item occupancy since action failed
-      clearItemOccupancy(characterId)
-      logActivity(characterId, 'failed', `Could not perform ${intent.action}: ${errorMessage}`)
     }
   }
 
