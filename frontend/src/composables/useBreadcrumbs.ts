@@ -29,7 +29,9 @@ export function useBreadcrumbs() {
    * @param {string} config.current - Current page label (no link)
    * @returns {Array} Array of breadcrumb objects
    */
-  const buildBreadcrumbs = (config: BuildBreadcrumbsConfig) => {
+  const buildBreadcrumbs = (config: BuildBreadcrumbsConfig
+    
+  ) => {
     const crumbs = []
     const { worldId, regionId, lotId, spaceId, world, region, lot, space, current } = config
 
