@@ -7,7 +7,6 @@ import type {
   ItemOccupancy,
   ActivityLogEntry,
   ActionName,
-  NeedName,
   Intent,
   InputLot
 } from './types'
@@ -21,6 +20,7 @@ import {
   startCharacterActivity,
   updateCharacterLongTermMemory
 } from './simulationPersistence'
+import { applyActionToCharacterState } from './utils/actionState'
 import {
   appendShortTermMemory,
   createActivityLogEntry,
@@ -191,7 +191,6 @@ export const useSimulationStore = defineStore('simulation', () => {
    * @param itemName - Optional item name for logging
    */
   function applyActionEffects(characterId: string, action: ActionName, itemName: string | null = null): void {
-    // Validate action exists
     const actionData = ACTION_EFFECTS[action]
     if (!actionData) {
       console.error(`❌ Unknown action: ${action}`)
@@ -207,34 +206,23 @@ export const useSimulationStore = defineStore('simulation', () => {
 
     console.log(`⚡ Applying action "${action}" to character ${characterId}`)
 
-    // Apply primary effect
-    if (actionData.primaryNeed && actionData.primaryEffect !== 0) {
-      const oldValue = state.needs[actionData.primaryNeed]
-      state.needs[actionData.primaryNeed] = Math.min(1.0, Math.max(0, oldValue + actionData.primaryEffect))
-      const newValue = state.needs[actionData.primaryNeed]
-      console.log(`  ✓ ${actionData.primaryNeed}: ${oldValue.toFixed(2)} → ${newValue.toFixed(2)} (+${actionData.primaryEffect})`)
+    const stateChange = applyActionToCharacterState(state, action, actionData)
+
+    if (stateChange.primaryNeedChange) {
+      const { need, oldValue, newValue, effect } = stateChange.primaryNeedChange
+      console.log(`  ✓ ${need}: ${oldValue.toFixed(2)} → ${newValue.toFixed(2)} (+${effect})`)
     }
 
-    // Apply secondary effects
-    for (const [need, effect] of Object.entries(actionData.secondaryEffects)) {
-      const needKey = need as NeedName
-      const effectValue = effect as number
-      const oldValue = state.needs[needKey]
-      state.needs[needKey] = Math.min(1.0, Math.max(0, oldValue + effectValue))
-      const newValue = state.needs[needKey]
-      console.log(`  ✓ ${need}: ${oldValue.toFixed(2)} → ${newValue.toFixed(2)} (${effectValue >= 0 ? '+' : ''}${effectValue})`)
+    for (const change of stateChange.secondaryNeedChanges) {
+      console.log(
+        `  ✓ ${change.need}: ${change.oldValue.toFixed(2)} → ${change.newValue.toFixed(2)} (${change.effect >= 0 ? '+' : ''}${change.effect})`
+      )
     }
 
-    // Set cooldown (skip for idle action which doesn't have a cooldown)
-    if (action !== 'idle' && action in state.cooldowns) {
-      state.cooldowns[action] = actionData.cooldownTicks
-      console.log(`  ✓ Cooldown set: ${actionData.cooldownTicks} ticks`)
+    if (stateChange.cooldownTicksApplied !== null) {
+      console.log(`  ✓ Cooldown set: ${stateChange.cooldownTicksApplied} ticks`)
     }
 
-    // Update current action
-    state.currentAction = action
-
-    // Log activity
     const details = itemName ? `using ${itemName}` : 'action performed'
     logActivity(characterId, action, details)
 
