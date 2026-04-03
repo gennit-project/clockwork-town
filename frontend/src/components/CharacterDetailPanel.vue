@@ -235,7 +235,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useSimulationStore } from '../stores/simulation'
-import { findItemsWithAffordance } from '../stores/utils/pathfinding'
+import { useCharacterIntentOptions } from '../composables/useCharacterIntentOptions'
 import NeedBar from './NeedBar.vue'
 
 const props = defineProps({
@@ -254,7 +254,6 @@ defineEmits(['close'])
 const simulationStore = useSimulationStore()
 const activeTab = ref('Basics')
 const showNeedPicker = ref(false)
-const selectedNeed = ref<string | null>(null)
 const editingBio = ref(false)
 const bioDraft = ref('')
 const memoryDraft = ref('')
@@ -263,9 +262,10 @@ const editingMemoryContent = ref('')
 
 const tabs = ['Basics', 'Emotions', 'Fulfillment', 'Bio', 'Memories']
 
-const characterState = computed(() => {
-  return simulationStore.characterStates[props.character.id]
-})
+const { characterState, selectedNeed, selectableOptions } = useCharacterIntentOptions(
+  props.character,
+  props.availableRomanceTargets
+)
 
 watch(
   () => props.character.bio,
@@ -299,57 +299,6 @@ const emotionalNeeds = [
 const fulfillmentNeeds = [
   { key: 'fulfillment', icon: '✨', label: 'Fulfillment' }
 ]
-
-const selectableOptions = computed(() => {
-  const state = characterState.value
-  if (!state || !selectedNeed.value) {
-    return []
-  }
-
-  const needToAction = {
-    food: 'eat',
-    sleep: 'sleep',
-    bladder: 'use_toilet',
-    hygiene: 'shower',
-    health: 'medicate',
-    romance: 'date',
-    friends: 'chat_friend',
-    family: 'call_mom',
-    fulfillment: 'read'
-  }
-
-  if (selectedNeed.value === 'romance') {
-    return (props.availableRomanceTargets || [])
-      .filter((target: any) => target.id !== props.character.id)
-      .flatMap((target: any) => ([
-        { label: `Text ${target.name}`, intent: { action: 'text_romance', utility: 1, source: 'manual', socialTargetId: target.id, socialTargetName: target.name } },
-        { label: `Call ${target.name}`, intent: { action: 'call_romance', utility: 1, source: 'manual', socialTargetId: target.id, socialTargetName: target.name } },
-        { label: `Invite ${target.name} over`, intent: { action: 'invite_over', utility: 1, source: 'manual', socialTargetId: target.id, socialTargetName: target.name } }
-      ]))
-  }
-
-  const action = needToAction[selectedNeed.value]
-  if (!action) {
-    return []
-  }
-
-  return findItemsWithAffordance(props.character.id, action, state.location, simulationStore.worldData, {})
-    .map((option) => ({
-      label: `${option.itemName} in ${option.lotName} → ${option.spaceName}`,
-      intent: {
-        action,
-        itemId: option.itemId,
-        itemName: option.itemName,
-        targetSpaceId: option.spaceId,
-        targetSpaceName: option.spaceName,
-        targetLotId: option.lotId,
-        targetLotName: option.lotName,
-        travelCost: option.travelCost,
-        utility: option.affordanceWeight,
-        source: 'manual'
-      }
-    }))
-})
 
 const longTermMemories = computed(() => characterState.value?.longTermMemories || [])
 
