@@ -21,6 +21,18 @@ export const ACTION_EFFECTS: ActionEffects = {
     secondaryEffects: {},
     cooldownTicks: 12  // 60 minutes
   },
+  use_toilet: {
+    primaryNeed: 'bladder',
+    primaryEffect: 0.65,
+    secondaryEffects: {},
+    cooldownTicks: 4
+  },
+  shower: {
+    primaryNeed: 'hygiene',
+    primaryEffect: 0.55,
+    secondaryEffects: {},
+    cooldownTicks: 8
+  },
   medicate: {
     primaryNeed: 'health',
     primaryEffect: 0.40,
@@ -44,6 +56,24 @@ export const ACTION_EFFECTS: ActionEffects = {
     primaryEffect: 0.35,
     secondaryEffects: { friends: 0.10 },
     cooldownTicks: 18  // 90 minutes
+  },
+  text_romance: {
+    primaryNeed: 'romance',
+    primaryEffect: 0.15,
+    secondaryEffects: { friends: 0.05 },
+    cooldownTicks: 6
+  },
+  call_romance: {
+    primaryNeed: 'romance',
+    primaryEffect: 0.22,
+    secondaryEffects: { friends: 0.05 },
+    cooldownTicks: 10
+  },
+  invite_over: {
+    primaryNeed: 'romance',
+    primaryEffect: 0.28,
+    secondaryEffects: { friends: 0.08 },
+    cooldownTicks: 16
   },
   read: {
     primaryNeed: 'fulfillment',
@@ -91,6 +121,8 @@ export const NEED_WEIGHTS: NeedWeights = {
   // Basic needs (physical survival)
   food: 3.0,
   sleep: 3.0,
+  bladder: 3.0,
+  hygiene: 2.25,
   health: 2.5,
 
   // Emotional needs (social connection)

@@ -90,6 +90,7 @@
               World Name
             </label>
             <input
+              ref="worldNameInput"
               v-model="formData.name"
               type="text"
               required
@@ -154,7 +155,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { client, queries, mutations } from '../graphql'
 import WorldBackupModal from '../components/WorldBackupModal.vue'
@@ -168,6 +169,7 @@ const editingWorld = ref(null)
 const deletingWorld = ref(null)
 const saving = ref(false)
 const formData = ref({ name: '' })
+const worldNameInput = ref<HTMLInputElement | null>(null)
 
 // Backup/Restore state
 const showBackupModal = ref(false)
@@ -269,6 +271,16 @@ const handleBackupSuccess = async ({ mode }) => {
     await loadWorlds()
   }
 }
+
+watch(
+  () => showCreateModal.value || !!editingWorld.value,
+  async (isOpen) => {
+    if (isOpen) {
+      await nextTick()
+      worldNameInput.value?.focus()
+    }
+  }
+)
 
 onMounted(loadWorlds)
 </script>

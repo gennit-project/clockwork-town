@@ -119,6 +119,10 @@ export const queries = {
             name
             description
             allowedActivities
+            affordances {
+              action
+              weight
+            }
             maxSimultaneousUsers
             activeUsers {
               id
@@ -135,6 +139,10 @@ export const queries = {
             name
             description
             allowedActivities
+            affordances {
+              action
+              weight
+            }
             maxSimultaneousUsers
             activeUsers {
               id
@@ -158,6 +166,10 @@ export const queries = {
           name
           description
           allowedActivities
+          affordances {
+            action
+            weight
+          }
           maxSimultaneousUsers
           activeUsers {
             id
@@ -246,6 +258,22 @@ export const queries = {
           name
           age
           traits
+        }
+      }
+    }
+  `,
+
+  getCharacter: `
+    query GetCharacter($id: ID!) {
+      character(id: $id) {
+        id
+        name
+        age
+        bio
+        longTermMemories {
+          id
+          content
+          createdAt
         }
       }
     }
@@ -364,6 +392,12 @@ export const mutations = {
         id
         name
         description
+        allowedActivities
+        maxSimultaneousUsers
+        affordances {
+          action
+          weight
+        }
       }
     }
   `,
@@ -374,7 +408,12 @@ export const mutations = {
         id
         name
         description
+        allowedActivities
         maxSimultaneousUsers
+        affordances {
+          action
+          weight
+        }
       }
     }
   `,
@@ -499,6 +538,41 @@ export const mutations = {
   moveCharacter: `
     mutation MoveCharacter($input: MoveInput!) {
       moveCharacter(input: $input)
+    }
+  `,
+
+  updateCharacterBio: `
+    mutation UpdateCharacterBio($characterId: ID!, $bio: String!) {
+      updateCharacterBio(characterId: $characterId, bio: $bio) {
+        id
+        bio
+      }
+    }
+  `,
+
+  createCharacterLongTermMemory: `
+    mutation CreateCharacterLongTermMemory($characterId: ID!, $content: String!) {
+      createCharacterLongTermMemory(characterId: $characterId, content: $content) {
+        id
+        content
+        createdAt
+      }
+    }
+  `,
+
+  updateCharacterLongTermMemory: `
+    mutation UpdateCharacterLongTermMemory($memoryId: ID!, $content: String!) {
+      updateCharacterLongTermMemory(memoryId: $memoryId, content: $content) {
+        id
+        content
+        createdAt
+      }
+    }
+  `,
+
+  deleteCharacterLongTermMemory: `
+    mutation DeleteCharacterLongTermMemory($memoryId: ID!) {
+      deleteCharacterLongTermMemory(memoryId: $memoryId)
     }
   `,
 

@@ -81,7 +81,8 @@ export function findItemsWithAffordance(
         spaceName: space.name,
         lotId: item.lotId,
         lotName: lot.name,
-        travelCost
+        travelCost,
+        affordanceWeight: item.affordances.find((entry) => entry.action === action)?.weight ?? 1
       })
     }
   }
@@ -141,6 +142,7 @@ export function buildWorldData(lots: InputLot[], regionId: string): WorldData {
           lotId: lot.id,
           regionId: regionId,
           allowedActivities: item.allowedActivities || [],
+          affordances: item.affordances || (item.allowedActivities || []).map((action) => ({ action, weight: 1 })),
           maxSimultaneousUsers: item.maxSimultaneousUsers || null
         }
 

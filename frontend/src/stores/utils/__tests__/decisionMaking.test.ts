@@ -27,7 +27,8 @@ describe('calculateUtility', () => {
       spaceName: 'Test Space',
       lotId: 'lot-1',
       lotName: 'Test Lot',
-      travelCost: 0
+      travelCost: 0,
+      affordanceWeight: 1
     }
   })
 

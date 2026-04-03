@@ -125,6 +125,7 @@ type Item {
   satisfiesNeeds: [String!]
   canStoreItems: Boolean
   allowedActivities: [String!]
+  affordances: [ItemAffordance!]!
   storedItems: [Item!]!      # items contained within this item (bags/chests/fridges/etc.)
   cost: Int
   count: Int
@@ -138,6 +139,11 @@ type Memory {
   id: ID!
   content: String!
   createdAt: DateTime!
+}
+
+type ItemAffordance {
+  action: String!
+  weight: Float!
 }
 
 # -----------------------------
@@ -437,6 +443,8 @@ input NewItem {
   spaceId: ID!
   name: String!
   description: String!
+  affordances: [ItemAffordanceInput!]
+  maxSimultaneousUsers: Int
 }
 
 input UpdateItemInput {
@@ -444,10 +452,16 @@ input UpdateItemInput {
   name: String
   description: String
   allowedActivities: [String!]
+  affordances: [ItemAffordanceInput!]
   canBeUsedByHumans: Boolean
   canBeUsedByAnimals: Boolean
   minimumAgeToUse: Int
   maxSimultaneousUsers: Int
+}
+
+input ItemAffordanceInput {
+  action: String!
+  weight: Float!
 }
 
 input ItemInput {
@@ -520,6 +534,10 @@ type Mutation {
   deleteHousehold(id: ID!): Boolean!
 
   createCharacter(input: NewCharacter!): Character!
+  updateCharacterBio(characterId: ID!, bio: String!): Character!
+  createCharacterLongTermMemory(characterId: ID!, content: String!): Memory!
+  updateCharacterLongTermMemory(memoryId: ID!, content: String!): Memory!
+  deleteCharacterLongTermMemory(memoryId: ID!): Boolean!
   moveCharacter(input: MoveInput!): Boolean!
   startActivity(input: PerformInput!): Boolean!
   stopAllActivities(characterId: ID!): Boolean!

@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { Ref } from 'vue'
-import { client, mutations } from '../graphql'
+import { client, mutations, queries } from '../graphql'
 import type {
   CharacterState,
   WorldData,
@@ -16,6 +16,12 @@ import { ACTION_EFFECTS } from './config/actionEffects'
 import { INITIAL_NEEDS, INITIAL_COOLDOWNS } from './config/needs'
 import { buildWorldData } from './utils/pathfinding'
 import { executeTick as runTick } from './utils/tickExecution'
+
+const ACTION_DURATIONS: Partial<Record<ActionName, number>> = {
+  sleep: 3,
+  shower: 2,
+  invite_over: 2
+}
 
 export const useSimulationStore = defineStore('simulation', () => {
   // ============================================
@@ -99,7 +105,10 @@ export const useSimulationStore = defineStore('simulation', () => {
           spaceId: null,
           spaceName: null
         },
-        traits: character.traits || []
+        traits: character.traits || [],
+        queuedActions: [],
+        currentTask: null,
+        longTermMemories: []
       }
     }
   }
@@ -114,7 +123,8 @@ export const useSimulationStore = defineStore('simulation', () => {
       worldData,
       itemOccupancy,
       activityLog,
-      executeAction
+      executeAction,
+      progressTask
     })
   }
 
@@ -138,6 +148,80 @@ export const useSimulationStore = defineStore('simulation', () => {
     }
 
     console.log(`[Tick ${currentTick.value}] Character ${characterId}: ${action} - ${details}`)
+  }
+
+  function getActionDuration(action: ActionName): number {
+    return ACTION_DURATIONS[action] || 1
+  }
+
+  function recordShortTermMemory(characterId: string, intent: Intent): void {
+    const state = characterStates.value[characterId]
+    if (!state) {
+      return
+    }
+
+    const memory = {
+      tick: currentTick.value,
+      action: intent.action,
+      item: intent.itemName || intent.socialTargetName || 'unknown',
+      location: `${intent.targetSpaceName || 'unknown'} (${intent.targetLotName || 'unknown'})`,
+      utility: intent.utility
+    }
+
+    if (!state.memories) {
+      state.memories = []
+    }
+    state.memories.push(memory)
+
+    if (state.memories.length > 20) {
+      state.memories = state.memories.slice(-20)
+    }
+  }
+
+  async function completeIntent(characterId: string, intent: Intent): Promise<void> {
+    applyActionEffects(characterId, intent.action, intent.itemName || intent.socialTargetName || null)
+
+    if (intent.itemId) {
+      setItemOccupancy(characterId, intent.itemId)
+    }
+
+    recordShortTermMemory(characterId, intent)
+  }
+
+  async function progressTask(characterId: string): Promise<boolean> {
+    const state = characterStates.value[characterId]
+    const task = state?.currentTask
+
+    if (!state || !task) {
+      return false
+    }
+
+    task.remainingTicks -= 1
+
+    if (task.remainingTicks > 0) {
+      state.currentAction = task.action
+      logActivity(characterId, task.action, `In progress (${task.remainingTicks}/${task.totalTicks} ticks remaining)`)
+      return true
+    }
+
+    const completedIntent: Intent = {
+      action: task.action,
+      itemId: task.itemId,
+      itemName: task.itemName,
+      targetSpaceId: task.targetSpaceId,
+      targetSpaceName: task.targetSpaceName,
+      targetLotId: task.targetLotId,
+      targetLotName: task.targetLotName,
+      utility: 0,
+      source: 'manual',
+      socialTargetId: task.socialTargetId,
+      socialTargetName: task.socialTargetName
+    }
+
+    await completeIntent(characterId, completedIntent)
+    state.currentTask = null
+    clearItemOccupancy(characterId)
+    return true
   }
 
   /**
@@ -218,6 +302,7 @@ export const useSimulationStore = defineStore('simulation', () => {
     // Handle idle case
     if (intent.action === 'idle') {
       state.currentAction = 'idle'
+      state.currentTask = null
       // Clear any item occupancy for this character
       clearItemOccupancy(characterId)
       logActivity(characterId, 'idle', 'No satisfying actions available')
@@ -292,36 +377,32 @@ export const useSimulationStore = defineStore('simulation', () => {
       })
       console.log(`  ✓ Started activity "${intent.action}" in database`)
 
-      // Only apply effects if backend succeeded
-      // Apply action effects (updates needs, sets cooldown, updates currentAction, logs activity)
-      applyActionEffects(characterId, intent.action, intent.itemName)
+      const duration = getActionDuration(intent.action)
 
-      // Track item occupancy in Pinia
       if (intent.itemId) {
         setItemOccupancy(characterId, intent.itemId)
       }
 
-      // Create memory
-      const memory = {
-        tick: currentTick.value,
-        action: intent.action,
-        item: intent.itemName || 'unknown',
-        location: `${intent.targetSpaceName || 'unknown'} (${intent.targetLotName || 'unknown'})`,
-        utility: intent.utility
+      if (duration > 1) {
+        state.currentAction = intent.action
+        state.currentTask = {
+          action: intent.action,
+          itemId: intent.itemId,
+          itemName: intent.itemName,
+          targetSpaceId: intent.targetSpaceId,
+          targetSpaceName: intent.targetSpaceName,
+          targetLotId: intent.targetLotId,
+          targetLotName: intent.targetLotName,
+          remainingTicks: duration - 1,
+          totalTicks: duration,
+          socialTargetId: intent.socialTargetId,
+          socialTargetName: intent.socialTargetName
+        }
+        logActivity(characterId, intent.action, `Started multi-tick action at ${intent.itemName || intent.socialTargetName || 'target'}`)
+        return
       }
 
-      // Store memory in character state (for future reference)
-      if (!state.memories) {
-        state.memories = []
-      }
-      state.memories.push(memory)
-
-      // Keep only last 20 memories to avoid memory bloat
-      if (state.memories.length > 20) {
-        state.memories = state.memories.slice(-20)
-      }
-
-      console.log(`  📝 Memory created: ${intent.action} at ${intent.itemName}`)
+      await completeIntent(characterId, intent)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
       console.error(`  ❌ Failed to start activity in database: ${errorMessage}`)
@@ -400,6 +481,8 @@ export const useSimulationStore = defineStore('simulation', () => {
     currentTick.value = 0
     activityLog.value = []
     characterStates.value = {}
+    itemOccupancy.value = {}
+    activeCharacterId.value = null
     console.log('Simulation reset')
   }
 
@@ -434,12 +517,58 @@ export const useSimulationStore = defineStore('simulation', () => {
     worldData.value = buildWorldData(lots, regionId)
   }
 
+  function enqueueIntent(characterId: string, intent: Intent): void {
+    const state = characterStates.value[characterId]
+    if (!state) {
+      return
+    }
+
+    if (!state.queuedActions) {
+      state.queuedActions = []
+    }
+
+    state.queuedActions.push({
+      ...intent,
+      source: 'manual'
+    })
+  }
+
+  async function loadCharacterDetails(characterId: string): Promise<void> {
+    const state = characterStates.value[characterId]
+    if (!state) {
+      return
+    }
+
+    const data = await client.request(queries.getCharacter, { id: characterId })
+    state.longTermMemories = data.character?.longTermMemories || []
+  }
+
+  async function updateCharacterBio(characterId: string, bio: string): Promise<void> {
+    await client.request(mutations.updateCharacterBio, { characterId, bio })
+  }
+
+  async function createLongTermMemory(characterId: string, content: string): Promise<void> {
+    await client.request(mutations.createCharacterLongTermMemory, { characterId, content })
+    await loadCharacterDetails(characterId)
+  }
+
+  async function updateLongTermMemory(characterId: string, memoryId: string, content: string): Promise<void> {
+    await client.request(mutations.updateCharacterLongTermMemory, { memoryId, content })
+    await loadCharacterDetails(characterId)
+  }
+
+  async function deleteLongTermMemory(characterId: string, memoryId: string): Promise<void> {
+    await client.request(mutations.deleteCharacterLongTermMemory, { memoryId })
+    await loadCharacterDetails(characterId)
+  }
+
 
   /**
    * Set the active character (for UI focus)
    */
   function setActiveCharacter(characterId: string): void {
     activeCharacterId.value = characterId
+    void loadCharacterDetails(characterId)
   }
 
   return {
@@ -463,6 +592,12 @@ export const useSimulationStore = defineStore('simulation', () => {
     logActivity,
     applyActionEffects,
     executeAction,
+    enqueueIntent,
+    loadCharacterDetails,
+    updateCharacterBio,
+    createLongTermMemory,
+    updateLongTermMemory,
+    deleteLongTermMemory,
     startAutoTick,
     pauseAutoTick,
     resetSimulation,

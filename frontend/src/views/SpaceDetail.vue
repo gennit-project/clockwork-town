@@ -52,6 +52,52 @@
               ></textarea>
             </div>
             <div class="flex gap-4">
+              <div class="flex-1">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                  Max Simultaneous Users
+                </label>
+                <input
+                  v-model.number="newItem.maxSimultaneousUsers"
+                  type="number"
+                  min="1"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Leave empty for unlimited"
+                />
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                Affordances
+              </label>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <label
+                  v-for="option in affordanceOptions"
+                  :key="option.action"
+                  class="rounded border border-gray-200 px-3 py-2 text-sm"
+                >
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        :checked="newItem.affordances.some((entry) => entry.action === option.action)"
+                        @change="toggleAffordance(newItem, option.action, $event.target.checked)"
+                      />
+                      {{ option.label }}
+                    </span>
+                    <input
+                      v-if="newItem.affordances.some((entry) => entry.action === option.action)"
+                      :value="getAffordanceWeight(newItem, option.action)"
+                      type="number"
+                      min="0.1"
+                      step="0.1"
+                      class="w-20 rounded border border-gray-300 px-2 py-1 text-xs"
+                      @input="setAffordanceWeight(newItem, option.action, $event.target.value)"
+                    />
+                  </div>
+                </label>
+              </div>
+            </div>
+            <div class="flex gap-4">
               <button
                 type="submit"
                 :disabled="saving"
@@ -129,6 +175,36 @@
                   Cancel
                 </button>
               </div>
+              <div>
+                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Affordances
+                </label>
+                <div class="space-y-2">
+                  <label
+                    v-for="option in affordanceOptions"
+                    :key="option.action"
+                    class="flex items-center justify-between gap-2 text-xs"
+                  >
+                    <span class="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        :checked="editingItem.affordances.some((entry) => entry.action === option.action)"
+                        @change="toggleAffordance(editingItem, option.action, $event.target.checked)"
+                      />
+                      {{ option.label }}
+                    </span>
+                    <input
+                      v-if="editingItem.affordances.some((entry) => entry.action === option.action)"
+                      :value="getAffordanceWeight(editingItem, option.action)"
+                      type="number"
+                      min="0.1"
+                      step="0.1"
+                      class="w-20 rounded border border-gray-300 px-2 py-1 text-xs dark:text-white"
+                      @input="setAffordanceWeight(editingItem, option.action, $event.target.value)"
+                    />
+                  </label>
+                </div>
+              </div>
             </div>
 
             <!-- View Mode -->
@@ -192,17 +268,28 @@
               <!-- Affordances -->
               <div v-if="item.allowedActivities && item.allowedActivities.length > 0" class="flex flex-wrap gap-1 mt-2">
                 <span
-                  v-for="activity in item.allowedActivities"
-                  :key="activity"
+                  v-for="affordance in item.affordances || []"
+                  :key="affordance.action"
                   class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
                 >
-                  {{ activity }}
+                  {{ affordance.action }} ({{ affordance.weight }})
                 </span>
               </div>
               <div v-else class="mt-2">
                 <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
                   no actions
                 </span>
+              </div>
+              <div v-if="activeCharacter && item.allowedActivities?.length" class="mt-3 flex flex-wrap gap-1">
+                <button
+                  v-for="activity in item.allowedActivities"
+                  :key="activity"
+                  type="button"
+                  class="rounded bg-blue-600 px-2 py-1 text-[10px] text-white"
+                  @click="queueItemAction(item, activity)"
+                >
+                  Send {{ activeCharacter.name }} to {{ activity }}
+                </button>
               </div>
             </div>
           </div>
@@ -250,10 +337,25 @@ const error = ref(null)
 const showAddItemForm = ref(false)
 const saving = ref(false)
 const editingItem = ref(null)
+const affordanceOptions = [
+  { action: 'eat', label: 'Eat' },
+  { action: 'sleep', label: 'Sleep' },
+  { action: 'use_toilet', label: 'Use Toilet' },
+  { action: 'shower', label: 'Shower' },
+  { action: 'medicate', label: 'Medicate' },
+  { action: 'chat_friend', label: 'Chat Friend' },
+  { action: 'date', label: 'Date' },
+  { action: 'read', label: 'Read' },
+  { action: 'write', label: 'Write' },
+  { action: 'view_art', label: 'View Art' },
+  { action: 'volunteer', label: 'Volunteer' }
+]
 
 const newItem = ref({
   name: '',
-  description: ''
+  description: '',
+  maxSimultaneousUsers: null,
+  affordances: [] as Array<{ action: string; weight: number }>
 })
 
 const breadcrumbs = computed(() => buildBreadcrumbs({
@@ -366,7 +468,9 @@ const addItem = async () => {
         id: itemId,
         spaceId: spaceId.value,
         name: newItem.value.name,
-        description: newItem.value.description
+        description: newItem.value.description,
+        maxSimultaneousUsers: newItem.value.maxSimultaneousUsers || null,
+        affordances: newItem.value.affordances
       }
     })
 
@@ -374,11 +478,14 @@ const addItem = async () => {
     items.value.push({
       id: itemId,
       name: newItem.value.name,
-      description: newItem.value.description
+      description: newItem.value.description,
+      maxSimultaneousUsers: newItem.value.maxSimultaneousUsers || null,
+      affordances: newItem.value.affordances,
+      allowedActivities: newItem.value.affordances.map((entry) => entry.action)
     })
 
     // Reset form
-    newItem.value = { name: '', description: '' }
+    newItem.value = { name: '', description: '', maxSimultaneousUsers: null, affordances: [] }
     showAddItemForm.value = false
   } catch (e) {
     error.value = e.message
@@ -388,7 +495,10 @@ const addItem = async () => {
 }
 
 const startEditItem = (item) => {
-  editingItem.value = { ...item }
+  editingItem.value = {
+    ...item,
+    affordances: item.affordances || (item.allowedActivities || []).map((action) => ({ action, weight: 1 }))
+  }
   showAddItemForm.value = false
 }
 
@@ -406,7 +516,8 @@ const saveEdit = async () => {
         id: editingItem.value.id,
         name: editingItem.value.name,
         description: editingItem.value.description,
-        maxSimultaneousUsers: editingItem.value.maxSimultaneousUsers || null
+        maxSimultaneousUsers: editingItem.value.maxSimultaneousUsers || null,
+        affordances: editingItem.value.affordances || []
       }
     })
 
@@ -447,4 +558,53 @@ watch(spaceId, (newSpaceId, oldSpaceId) => {
     loadData()
   }
 })
+
+const activeCharacter = computed(() => {
+  const activeId = simulationStore.activeCharacterId
+  if (!activeId) {
+    return null
+  }
+  const charState = simulationStore.characterStates[activeId]
+  return charState ? { id: activeId, ...charState } : null
+})
+
+function toggleAffordance(target, action: string, checked: boolean) {
+  const affordances = target.affordances || []
+  if (checked) {
+    if (!affordances.find((entry) => entry.action === action)) {
+      affordances.push({ action, weight: 1 })
+    }
+  } else {
+    target.affordances = affordances.filter((entry) => entry.action !== action)
+  }
+}
+
+function getAffordanceWeight(target, action: string) {
+  return target.affordances?.find((entry) => entry.action === action)?.weight ?? 1
+}
+
+function setAffordanceWeight(target, action: string, rawValue: string) {
+  const weight = Number(rawValue) || 1
+  target.affordances = (target.affordances || []).map((entry) =>
+    entry.action === action ? { ...entry, weight } : entry
+  )
+}
+
+function queueItemAction(item, action: string) {
+  if (!activeCharacter.value) {
+    return
+  }
+
+  simulationStore.enqueueIntent(activeCharacter.value.id, {
+    action,
+    itemId: item.id,
+    itemName: item.name,
+    targetSpaceId: spaceId.value,
+    targetSpaceName: space.value?.name || '',
+    targetLotId: lotId.value,
+    targetLotName: lot.value?.name || '',
+    utility: item.affordances?.find((entry) => entry.action === action)?.weight || 1,
+    source: 'manual'
+  })
+}
 </script>

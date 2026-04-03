@@ -27,6 +27,8 @@ describe('executeTick', () => {
           needs: {
             food: 0.5,
             sleep: 0.5,
+            bladder: 0.6,
+            hygiene: 0.7,
             health: 0.9,
             friends: 0.7,
             family: 0.7,
@@ -36,10 +38,15 @@ describe('executeTick', () => {
           cooldowns: {
             eat: 0,
             sleep: 0,
+            use_toilet: 0,
+            shower: 0,
             medicate: 0,
             chat_friend: 0,
             call_mom: 0,
             date: 0,
+            text_romance: 0,
+            call_romance: 0,
+            invite_over: 0,
             read: 0,
             write: 0,
             view_art: 0,
@@ -147,6 +154,8 @@ describe('executeTick', () => {
         needs: {
           food: 0.8,
           sleep: 0.8,
+          bladder: 0.8,
+          hygiene: 0.8,
           health: 0.9,
           friends: 0.7,
           family: 0.7,

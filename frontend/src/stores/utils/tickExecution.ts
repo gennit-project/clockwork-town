@@ -24,6 +24,7 @@ export interface ExecuteTickParams {
   itemOccupancy: Ref<ItemOccupancy>
   activityLog: Ref<ActivityLogEntry[]>
   executeAction: (characterId: string, intent: Intent) => Promise<void>
+  progressTask?: (characterId: string) => Promise<boolean>
 }
 
 /**
@@ -38,7 +39,8 @@ export async function executeTick({
   worldData,
   itemOccupancy,
   activityLog,
-  executeAction
+  executeAction,
+  progressTask
 }: ExecuteTickParams): Promise<void> {
   currentTick.value++
 
@@ -51,6 +53,8 @@ export async function executeTick({
     // Decay needs using constants from config
     state.needs.food = Math.max(0, state.needs.food - NEED_DECAY_RATES.food)
     state.needs.sleep = Math.max(0, state.needs.sleep - NEED_DECAY_RATES.sleep)
+    state.needs.bladder = Math.max(0, state.needs.bladder - NEED_DECAY_RATES.bladder)
+    state.needs.hygiene = Math.max(0, state.needs.hygiene - NEED_DECAY_RATES.hygiene)
     state.needs.health = Math.max(0, state.needs.health - NEED_DECAY_RATES.health)
     state.needs.friends = Math.max(0, state.needs.friends - NEED_DECAY_RATES.friends)
     state.needs.family = Math.max(0, state.needs.family - NEED_DECAY_RATES.family)
@@ -70,8 +74,22 @@ export async function executeTick({
   console.log('\n--- Phase 2: Decision Making ---')
   const intents: Record<string, Intent> = {}
   for (const characterId in characterStates.value) {
+    const state = characterStates.value[characterId]
+
+    if (state.currentTask && progressTask) {
+      const consumedTick = await progressTask(characterId)
+      if (consumedTick) {
+        continue
+      }
+    }
+
+    if (state.queuedActions && state.queuedActions.length > 0) {
+      intents[characterId] = state.queuedActions.shift() as Intent
+      continue
+    }
+
     // Select the best intent for this character (pass itemOccupancy to check slot availability)
-    const intent = selectBestIntent(characterId, characterStates.value[characterId], worldData.value, itemOccupancy.value)
+    const intent = selectBestIntent(characterId, state, worldData.value, itemOccupancy.value)
     intents[characterId] = intent
 
     // Log the intent

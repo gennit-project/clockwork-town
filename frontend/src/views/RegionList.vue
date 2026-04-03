@@ -94,6 +94,7 @@
               Region Name
             </label>
             <input
+              ref="regionNameInput"
               v-model="formData.name"
               type="text"
               required
@@ -184,7 +185,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
 import { client, queries, mutations } from '../graphql'
@@ -208,6 +209,7 @@ const deletingRegion = ref(null)
 const deletingHousehold = ref(null)
 const saving = ref(false)
 const formData = ref({ name: '', kind: '' })
+const regionNameInput = ref<HTMLInputElement | null>(null)
 
 const breadcrumbs = computed(() => {
   if (isRegionDetailView.value) {
@@ -366,6 +368,16 @@ watch(() => route.path, (newPath, oldPath) => {
     loadData()
   }
 })
+
+watch(
+  () => showCreateModal.value || !!editingRegion.value,
+  async (isOpen) => {
+    if (isOpen) {
+      await nextTick()
+      regionNameInput.value?.focus()
+    }
+  }
+)
 
 onMounted(loadData)
 </script>

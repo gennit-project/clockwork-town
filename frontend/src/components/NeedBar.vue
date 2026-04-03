@@ -1,5 +1,11 @@
 <template>
-  <div class="flex items-center">
+  <button
+    type="button"
+    class="flex items-center w-full text-left"
+    :disabled="!clickable"
+    :class="clickable ? 'cursor-pointer hover:opacity-90' : 'cursor-default'"
+    @click="$emit('select')"
+  >
     <span class="text-lg mr-2">{{ icon }}</span>
     <div class="flex-1">
       <div class="flex items-center justify-between mb-1">
@@ -14,7 +20,7 @@
         />
       </div>
     </div>
-  </div>
+  </button>
 </template>
 
 <script setup lang="ts">
@@ -31,8 +37,14 @@ defineProps({
     type: Number,
     required: true,
     default: 0
+  },
+  clickable: {
+    type: Boolean,
+    default: false
   }
 })
+
+defineEmits(['select'])
 
 const getColorClass = (value) => {
   if (value >= 0.7) return 'bg-green-500'

@@ -17,6 +17,40 @@ const decodeTemplateData = (encoded: string): any => {
   }
 };
 
+const decodeAffordances = (item: { allowedActivities?: string[]; satisfiesNeeds?: string[] }) => {
+  const encodedAffordances = item.satisfiesNeeds || [];
+  const parsed = encodedAffordances
+    .map((entry) => {
+      const [action, rawWeight] = entry.split(":");
+      const weight = Number(rawWeight);
+      if (!action || Number.isNaN(weight)) {
+        return null;
+      }
+      return { action, weight };
+    })
+    .filter((entry): entry is { action: string; weight: number } => entry !== null);
+
+  if (parsed.length > 0) {
+    return parsed;
+  }
+
+  return (item.allowedActivities || []).map((action) => ({ action, weight: 1 }));
+};
+
+const encodeAffordances = (affordances?: Array<{ action: string; weight: number }>) => {
+  if (!affordances || affordances.length === 0) {
+    return {
+      allowedActivities: [],
+      satisfiesNeeds: []
+    };
+  }
+
+  return {
+    allowedActivities: affordances.map((entry) => entry.action),
+    satisfiesNeeds: affordances.map((entry) => `${entry.action}:${entry.weight}`)
+  };
+};
+
 export const WorldResolvers = {
   Space: {
     items: async (parent: any) => {
@@ -56,6 +90,9 @@ export const WorldResolvers = {
   Item: {
     allowedActivities: (parent: any) => {
       return parent.allowedActivities || [];
+    },
+    affordances: (parent: any) => {
+      return decodeAffordances(parent);
     },
     satisfiesNeeds: (parent: any) => {
       return parent.satisfiesNeeds || [];
@@ -587,8 +624,16 @@ export const WorldResolvers = {
       return true;
     },
 
-    createItem: async (_: any, { input }: { input: { id: string; spaceId: string; name: string; description: string } }) => {
-      const { id, spaceId, name, description } = input;
+    createItem: async (_: any, { input }: { input: {
+      id: string;
+      spaceId: string;
+      name: string;
+      description: string;
+      affordances?: Array<{ action: string; weight: number }>;
+      maxSimultaneousUsers?: number | null;
+    } }) => {
+      const { id, spaceId, name, description, affordances, maxSimultaneousUsers } = input;
+      const encodedAffordances = encodeAffordances(affordances);
       await batch(async () => {
         // Create item with basic properties (other fields can be null/default)
         await q(`CREATE (:Item {
@@ -600,9 +645,17 @@ export const WorldResolvers = {
           canStoreItems: false,
           cost: 0,
           count: 1,
-          satisfiesNeeds: [],
-          allowedActivities: []
-        })`, { id, name, description });
+          maxSimultaneousUsers: $maxSimultaneousUsers,
+          satisfiesNeeds: $satisfiesNeeds,
+          allowedActivities: $allowedActivities
+        })`, {
+          id,
+          name,
+          description,
+          maxSimultaneousUsers: maxSimultaneousUsers ?? null,
+          satisfiesNeeds: encodedAffordances.satisfiesNeeds,
+          allowedActivities: encodedAffordances.allowedActivities
+        });
 
         // Link to space
         await q(`
@@ -666,6 +719,7 @@ export const WorldResolvers = {
         name?: string;
         description?: string;
         allowedActivities?: string[];
+        affordances?: Array<{ action: string; weight: number }>;
         canBeUsedByHumans?: boolean;
         canBeUsedByAnimals?: boolean;
         minimumAgeToUse?: number;
@@ -689,6 +743,13 @@ export const WorldResolvers = {
       if (updates.allowedActivities !== undefined) {
         setFields.push('i.allowedActivities = $allowedActivities');
         params.allowedActivities = updates.allowedActivities;
+      }
+      if (updates.affordances !== undefined) {
+        const encodedAffordances = encodeAffordances(updates.affordances);
+        setFields.push('i.allowedActivities = $allowedActivities');
+        setFields.push('i.satisfiesNeeds = $satisfiesNeeds');
+        params.allowedActivities = encodedAffordances.allowedActivities;
+        params.satisfiesNeeds = encodedAffordances.satisfiesNeeds;
       }
       if (updates.canBeUsedByHumans !== undefined) {
         setFields.push('i.canBeUsedByHumans = $canBeUsedByHumans');

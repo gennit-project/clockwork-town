@@ -56,11 +56,14 @@ export function calculateUtility(
   // Travel penalty (from pathfinding cost)
   const travelPenalty = itemOption.travelCost
 
+  // Item-specific weighting for this affordance
+  const affordanceBonus = itemOption.affordanceWeight - 1
+
   // Context bonus (will be implemented in Step 14 for trait-based bonuses)
   const contextBonus = 0
 
   // Final utility
-  const utility = baseUtility - travelPenalty + contextBonus
+  const utility = baseUtility - travelPenalty + contextBonus + affordanceBonus
 
   return utility
 }
@@ -84,7 +87,7 @@ export function selectBestIntent(
   console.log(`\n🎯 selectBestIntent for character ${characterId}`)
 
   // All possible actions (excluding idle and work for now)
-  const possibleActions: ActionName[] = ['eat', 'sleep', 'medicate', 'chat_friend', 'call_mom', 'date', 'read', 'write', 'view_art', 'volunteer']
+  const possibleActions: ActionName[] = ['eat', 'sleep', 'use_toilet', 'shower', 'medicate', 'chat_friend', 'call_mom', 'date', 'read', 'write', 'view_art', 'volunteer']
 
   const intents: Intent[] = []
 

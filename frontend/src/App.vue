@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-gray-100 dark:bg-gray-900 flex">
     <!-- Left Sidebar -->
-    <aside class="w-16 bg-gray-800 flex flex-col items-center py-4 space-y-4">
+    <aside class="hidden md:flex w-16 bg-gray-800 flex-col items-center py-4 space-y-4">
       <router-link
         to="/"
         class="p-3 rounded-lg hover:bg-gray-700 transition-colors"
@@ -31,6 +31,15 @@
         <div class="mx-auto px-4 sm:px-6 lg:px-8">
           <div class="flex justify-between h-16">
             <div class="flex items-center">
+              <button
+                type="button"
+                class="mr-3 rounded-lg bg-gray-100 p-2 text-gray-700 dark:bg-gray-700 dark:text-gray-200 md:hidden"
+                @click="showMobileNav = !showMobileNav"
+              >
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
               <span class="text-xl font-bold text-gray-900 dark:text-gray-100 dark:text-white">
                 Clockwork Town
               </span>
@@ -114,6 +123,28 @@
         </div>
       </nav>
 
+      <div
+        v-if="showMobileNav"
+        class="border-b border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800 md:hidden"
+      >
+        <div class="flex flex-col gap-2">
+          <router-link
+            to="/"
+            class="rounded px-3 py-2 text-sm font-medium text-gray-900 dark:text-gray-100"
+            @click="showMobileNav = false"
+          >
+            Worlds
+          </router-link>
+          <router-link
+            to="/library"
+            class="rounded px-3 py-2 text-sm font-medium text-gray-900 dark:text-gray-100"
+            @click="showMobileNav = false"
+          >
+            Library
+          </router-link>
+        </div>
+      </div>
+
       <!-- Main content area with right sidebar -->
       <div class="flex flex-1 overflow-hidden">
         <main class="flex-1 w-full mx-auto py-6 sm:px-6 lg:px-8 overflow-auto">
@@ -121,7 +152,7 @@
         </main>
 
         <!-- Right Sidebar - Characters & Animals -->
-        <aside v-if="currentRegionId" class="w-80 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 p-4 overflow-y-auto">
+        <aside v-if="currentRegionId" class="hidden lg:block w-80 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 p-4 overflow-y-auto">
           <h2 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">Characters & Animals</h2>
           <div v-if="regionCharacters.length === 0 && regionAnimals.length === 0" class="text-sm text-gray-500 dark:text-gray-400">
             No characters or animals in this region yet.
@@ -236,7 +267,14 @@
     <CharacterDetailPanel
       v-if="selectedCharacterForPanel"
       :character="selectedCharacterForPanel"
+      :available-romance-targets="regionCharacters"
       @close="selectedCharacterForPanel = null"
+    />
+
+    <AnimalDetailPanel
+      v-if="selectedAnimalForPanel"
+      :animal="selectedAnimalForPanel"
+      @close="selectedAnimalForPanel = null"
     />
   </div>
 </template>
@@ -248,6 +286,7 @@ import { useDarkMode } from './composables/useDarkMode'
 import { useSimulationStore } from './stores/simulation'
 import { client, queries } from './graphql'
 import CharacterDetailPanel from './components/CharacterDetailPanel.vue'
+import AnimalDetailPanel from './components/AnimalDetailPanel.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -255,9 +294,11 @@ const { isDark, toggle: toggleDarkMode } = useDarkMode()
 const simulationStore = useSimulationStore()
 
 const showActivityLog = ref(false)
+const showMobileNav = ref(false)
 const regionCharacters = ref([])
 const regionAnimals = ref([])
 const selectedCharacterForPanel = ref(null)
+const selectedAnimalForPanel = ref(null)
 
 const currentRegionId = computed(() => route.params.regionId)
 
@@ -327,8 +368,7 @@ const selectCharacter = (character) => {
 }
 
 const selectAnimal = (animal) => {
-  console.log('Selected animal:', animal)
-  // TODO: Navigate to animal location when implemented
+  selectedAnimalForPanel.value = animal
 }
 
 // Get character location from simulation store (or fallback to API data)

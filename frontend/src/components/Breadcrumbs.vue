@@ -1,7 +1,7 @@
 <template>
-  <nav class="flex mb-6" aria-label="Breadcrumb">
-    <ol class="inline-flex items-center space-x-1 md:space-x-3">
-      <li v-for="(crumb, index) in crumbs" :key="index" class="inline-flex items-center">
+  <nav class="mb-6" aria-label="Breadcrumb">
+    <ol class="flex flex-wrap items-center gap-x-1 gap-y-1 md:gap-x-3">
+      <li v-for="(crumb, index) in crumbs" :key="index" class="inline-flex items-center whitespace-nowrap">
         <svg v-if="index > 0" class="w-3 h-3 mx-1 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
           <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>
         </svg>

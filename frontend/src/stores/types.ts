@@ -9,10 +9,15 @@
 export type ActionName =
   | 'eat'
   | 'sleep'
+  | 'use_toilet'
+  | 'shower'
   | 'medicate'
   | 'chat_friend'
   | 'call_mom'
   | 'date'
+  | 'text_romance'
+  | 'call_romance'
+  | 'invite_over'
   | 'read'
   | 'write'
   | 'view_art'
@@ -23,6 +28,8 @@ export type ActionName =
 export type NeedName =
   | 'food'
   | 'sleep'
+  | 'bladder'
+  | 'hygiene'
   | 'health'
   | 'friends'
   | 'family'
@@ -32,6 +39,8 @@ export type NeedName =
 export interface Needs {
   food: number
   sleep: number
+  bladder: number
+  hygiene: number
   health: number
   friends: number
   family: number
@@ -42,10 +51,15 @@ export interface Needs {
 export interface Cooldowns {
   eat: number
   sleep: number
+  use_toilet: number
+  shower: number
   medicate: number
   chat_friend: number
   call_mom: number
   date: number
+  text_romance: number
+  call_romance: number
+  invite_over: number
   read: number
   write: number
   view_art: number
@@ -66,6 +80,26 @@ export interface CharacterActivity {
   actionName: string | null
 }
 
+export interface LongTermMemory {
+  id: string
+  content: string
+  createdAt: string
+}
+
+export interface ActiveTask {
+  action: ActionName
+  itemId?: string
+  itemName?: string
+  targetSpaceId?: string
+  targetSpaceName?: string
+  targetLotId?: string
+  targetLotName?: string
+  remainingTicks: number
+  totalTicks: number
+  socialTargetId?: string
+  socialTargetName?: string
+}
+
 export interface CharacterState {
   name: string
   needs: Needs
@@ -75,6 +109,9 @@ export interface CharacterState {
   currentActivity?: CharacterActivity
   traits: string[]
   memories?: Memory[]
+  longTermMemories?: LongTermMemory[]
+  queuedActions?: Intent[]
+  currentTask?: ActiveTask | null
 }
 
 export interface Memory {
@@ -113,7 +150,13 @@ export interface ItemData {
   lotId: string
   regionId: string
   allowedActivities: string[]
+  affordances: ItemAffordance[]
   maxSimultaneousUsers: number | null
+}
+
+export interface ItemAffordance {
+  action: string
+  weight: number
 }
 
 export interface SpaceData {
@@ -151,6 +194,7 @@ export interface ItemOption {
   lotId: string
   lotName: string
   travelCost: number
+  affordanceWeight: number
 }
 
 // ============================================
@@ -167,6 +211,9 @@ export interface Intent {
   targetLotName?: string
   travelCost?: number
   utility: number
+  source?: 'auto' | 'manual'
+  socialTargetId?: string
+  socialTargetName?: string
 }
 
 // ============================================
@@ -190,6 +237,7 @@ export interface InputItem {
   name: string
   description?: string
   allowedActivities?: string[]
+  affordances?: ItemAffordance[]
   maxSimultaneousUsers?: number | null
 }
 

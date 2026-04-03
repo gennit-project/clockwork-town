@@ -58,6 +58,8 @@
             :icon="need.icon"
             :label="need.label"
             :percentage="(characterState?.needs?.[need.key] || 0) * 100"
+            clickable
+            @select="openNeedPicker(need.key)"
           />
         </div>
       </div>
@@ -70,6 +72,8 @@
           :icon="need.icon"
           :label="need.label"
           :percentage="(characterState?.needs?.[need.key] || 0) * 100"
+          clickable
+          @select="openNeedPicker(need.key)"
         />
       </div>
 
@@ -81,14 +85,44 @@
           :icon="need.icon"
           :label="need.label"
           :percentage="(characterState?.needs?.[need.key] || 0) * 100"
+          clickable
+          @select="openNeedPicker(need.key)"
         />
       </div>
 
       <!-- Bio Tab -->
       <div v-else-if="activeTab === 'Bio'" class="space-y-3">
+        <div class="flex items-start justify-between gap-2">
+          <div>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Age</p>
+            <p class="text-base text-gray-900 dark:text-gray-100">{{ character.age }}</p>
+          </div>
+          <button
+            type="button"
+            class="text-xs text-blue-600 dark:text-blue-400"
+            @click="editingBio = !editingBio"
+          >
+            {{ editingBio ? 'Cancel' : 'Edit Bio' }}
+          </button>
+        </div>
+
         <div>
-          <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Age</p>
-          <p class="text-base text-gray-900 dark:text-gray-100">{{ character.age }}</p>
+          <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Bio</p>
+          <textarea
+            v-if="editingBio"
+            v-model="bioDraft"
+            rows="5"
+            class="w-full rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 text-sm"
+          />
+          <p v-else class="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{{ character.bio || 'No bio yet.' }}</p>
+          <button
+            v-if="editingBio"
+            type="button"
+            class="mt-2 rounded bg-blue-600 px-3 py-1 text-xs text-white"
+            @click="saveBio"
+          >
+            Save Bio
+          </button>
         </div>
 
         <div v-if="character.traits && character.traits.length > 0">
@@ -119,36 +153,99 @@
 
       <!-- Memories Tab -->
       <div v-else-if="activeTab === 'Memories'" class="space-y-2">
-        <div v-if="characterState?.memories && characterState.memories.length > 0">
+        <div class="space-y-2 mb-4">
+          <textarea
+            v-model="memoryDraft"
+            rows="3"
+            class="w-full rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 text-sm"
+            placeholder="Add a long-term memory"
+          />
+          <button
+            type="button"
+            class="rounded bg-blue-600 px-3 py-1 text-xs text-white"
+            @click="saveMemory"
+          >
+            Add Memory
+          </button>
+        </div>
+        <div v-if="longTermMemories.length > 0">
           <div
-            v-for="(memory, index) in characterState.memories.slice().reverse()"
-            :key="index"
+            v-for="memory in longTermMemories"
+            :key="memory.id"
             class="p-2 bg-gray-50 dark:bg-gray-700 rounded text-xs"
           >
-            <div class="flex items-center justify-between mb-1">
-              <span class="font-medium text-gray-900 dark:text-gray-100">{{ formatAction(memory.action) }}</span>
-              <span class="text-gray-500 dark:text-gray-400">Tick {{ memory.tick }}</span>
+            <div class="flex items-center justify-between mb-1 gap-2">
+              <span class="font-medium text-gray-900 dark:text-gray-100">{{ new Date(memory.createdAt).toLocaleDateString() }}</span>
+              <div class="flex gap-2">
+                <button type="button" class="text-blue-600 dark:text-blue-400" @click="startEditingMemory(memory)">Edit</button>
+                <button type="button" class="text-red-600 dark:text-red-400" @click="removeMemory(memory.id)">Delete</button>
+              </div>
             </div>
-            <p class="text-gray-600 dark:text-gray-300">{{ memory.item }} at {{ memory.location }}</p>
+            <textarea
+              v-if="editingMemoryId === memory.id"
+              v-model="editingMemoryContent"
+              rows="3"
+              class="w-full rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white px-2 py-1"
+            />
+            <p v-else class="text-gray-600 dark:text-gray-300 whitespace-pre-wrap">{{ memory.content }}</p>
+            <button
+              v-if="editingMemoryId === memory.id"
+              type="button"
+              class="mt-2 rounded bg-blue-600 px-2 py-1 text-[11px] text-white"
+              @click="saveEditedMemory"
+            >
+              Save
+            </button>
           </div>
         </div>
         <div v-else class="text-center py-8 text-gray-500 dark:text-gray-400">
-          <p class="text-sm">No memories yet</p>
+          <p class="text-sm">No long-term memories yet</p>
         </div>
+      </div>
+    </div>
+
+    <div
+      v-if="showNeedPicker"
+      class="absolute inset-0 bg-white/95 dark:bg-gray-900/95 p-4 overflow-y-auto"
+    >
+      <div class="flex items-center justify-between mb-3">
+        <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-100">
+          Satisfy {{ selectedNeed }}
+        </h4>
+        <button type="button" class="text-xs text-gray-500" @click="showNeedPicker = false">Close</button>
+      </div>
+      <div v-if="selectableOptions.length === 0" class="text-xs text-gray-500 dark:text-gray-400">
+        No options available right now.
+      </div>
+      <div v-else class="space-y-2">
+        <button
+          v-for="option in selectableOptions"
+          :key="option.label"
+          type="button"
+          class="w-full rounded border border-gray-200 dark:border-gray-700 px-3 py-2 text-left text-xs text-gray-900 dark:text-gray-100"
+          @click="queueIntent(option.intent)"
+        >
+          {{ option.label }}
+        </button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useSimulationStore } from '../stores/simulation'
+import { findItemsWithAffordance } from '../stores/utils/pathfinding'
 import NeedBar from './NeedBar.vue'
 
 const props = defineProps({
   character: {
     type: Object,
     required: true
+  },
+  availableRomanceTargets: {
+    type: Array,
+    default: () => []
   }
 })
 
@@ -156,12 +253,27 @@ defineEmits(['close'])
 
 const simulationStore = useSimulationStore()
 const activeTab = ref('Basics')
+const showNeedPicker = ref(false)
+const selectedNeed = ref<string | null>(null)
+const editingBio = ref(false)
+const bioDraft = ref('')
+const memoryDraft = ref('')
+const editingMemoryId = ref<string | null>(null)
+const editingMemoryContent = ref('')
 
 const tabs = ['Basics', 'Emotions', 'Fulfillment', 'Bio', 'Memories']
 
 const characterState = computed(() => {
   return simulationStore.characterStates[props.character.id]
 })
+
+watch(
+  () => props.character.bio,
+  (value) => {
+    bioDraft.value = value || ''
+  },
+  { immediate: true }
+)
 
 const formatAction = (action) => {
   return action
@@ -173,6 +285,8 @@ const formatAction = (action) => {
 const basicNeeds = [
   { key: 'food', icon: '🍎', label: 'Food' },
   { key: 'sleep', icon: '😴', label: 'Sleep' },
+  { key: 'bladder', icon: '🚽', label: 'Bladder' },
+  { key: 'hygiene', icon: '🫧', label: 'Hygiene' },
   { key: 'health', icon: '💊', label: 'Health' }
 ]
 
@@ -185,4 +299,99 @@ const emotionalNeeds = [
 const fulfillmentNeeds = [
   { key: 'fulfillment', icon: '✨', label: 'Fulfillment' }
 ]
+
+const selectableOptions = computed(() => {
+  const state = characterState.value
+  if (!state || !selectedNeed.value) {
+    return []
+  }
+
+  const needToAction = {
+    food: 'eat',
+    sleep: 'sleep',
+    bladder: 'use_toilet',
+    hygiene: 'shower',
+    health: 'medicate',
+    romance: 'date',
+    friends: 'chat_friend',
+    family: 'call_mom',
+    fulfillment: 'read'
+  }
+
+  if (selectedNeed.value === 'romance') {
+    return (props.availableRomanceTargets || [])
+      .filter((target: any) => target.id !== props.character.id)
+      .flatMap((target: any) => ([
+        { label: `Text ${target.name}`, intent: { action: 'text_romance', utility: 1, source: 'manual', socialTargetId: target.id, socialTargetName: target.name } },
+        { label: `Call ${target.name}`, intent: { action: 'call_romance', utility: 1, source: 'manual', socialTargetId: target.id, socialTargetName: target.name } },
+        { label: `Invite ${target.name} over`, intent: { action: 'invite_over', utility: 1, source: 'manual', socialTargetId: target.id, socialTargetName: target.name } }
+      ]))
+  }
+
+  const action = needToAction[selectedNeed.value]
+  if (!action) {
+    return []
+  }
+
+  return findItemsWithAffordance(props.character.id, action, state.location, simulationStore.worldData, {})
+    .map((option) => ({
+      label: `${option.itemName} in ${option.lotName} → ${option.spaceName}`,
+      intent: {
+        action,
+        itemId: option.itemId,
+        itemName: option.itemName,
+        targetSpaceId: option.spaceId,
+        targetSpaceName: option.spaceName,
+        targetLotId: option.lotId,
+        targetLotName: option.lotName,
+        travelCost: option.travelCost,
+        utility: option.affordanceWeight,
+        source: 'manual'
+      }
+    }))
+})
+
+const longTermMemories = computed(() => characterState.value?.longTermMemories || [])
+
+function openNeedPicker(needKey: string) {
+  selectedNeed.value = needKey
+  showNeedPicker.value = true
+}
+
+function queueIntent(intent: any) {
+  simulationStore.enqueueIntent(props.character.id, intent)
+  showNeedPicker.value = false
+}
+
+async function saveBio() {
+  await simulationStore.updateCharacterBio(props.character.id, bioDraft.value)
+  props.character.bio = bioDraft.value
+  editingBio.value = false
+}
+
+async function saveMemory() {
+  if (!memoryDraft.value.trim()) {
+    return
+  }
+  await simulationStore.createLongTermMemory(props.character.id, memoryDraft.value.trim())
+  memoryDraft.value = ''
+}
+
+async function saveEditedMemory() {
+  if (!editingMemoryId.value) {
+    return
+  }
+  await simulationStore.updateLongTermMemory(props.character.id, editingMemoryId.value, editingMemoryContent.value)
+  editingMemoryId.value = null
+  editingMemoryContent.value = ''
+}
+
+async function removeMemory(memoryId: string) {
+  await simulationStore.deleteLongTermMemory(props.character.id, memoryId)
+}
+
+function startEditingMemory(memory: any) {
+  editingMemoryId.value = memory.id
+  editingMemoryContent.value = memory.content
+}
 </script>

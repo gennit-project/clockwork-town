@@ -9,6 +9,20 @@ export const CharacterResolvers = {
       `, { cid: parent.id });
       return loc ?? null;
     },
+    longTermMemories: async (parent: { id: string }) => {
+      return q(`
+        MATCH (c:Character {id:$cid})-[:HAS_LONG_TERM_MEMORY]->(m:Memory)
+        RETURN m.id AS id, m.content AS content, m.createdAt AS createdAt
+        ORDER BY m.createdAt DESC
+      `, { cid: parent.id });
+    },
+    shortTermMemories: async (parent: { id: string }) => {
+      return q(`
+        MATCH (c:Character {id:$cid})-[:HAS_SHORT_TERM_MEMORY]->(m:Memory)
+        RETURN m.id AS id, m.content AS content, m.createdAt AS createdAt
+        ORDER BY m.createdAt DESC
+      `, { cid: parent.id });
+    },
   },
 
   Query: {
@@ -90,6 +104,63 @@ export const CharacterResolvers = {
         RETURN c.id AS id, c.name AS name, c.age AS age, c.bio AS bio
       `, { id });
       return created;
+    },
+
+    updateCharacterBio: async (_: any, { characterId, bio }: { characterId: string; bio: string }) => {
+      await q(`
+        MATCH (c:Character {id:$characterId})
+        SET c.bio = $bio
+      `, { characterId, bio });
+
+      const [updated] = await q(`
+        MATCH (c:Character {id:$characterId})
+        RETURN c.id AS id, c.name AS name, c.age AS age, c.bio AS bio
+      `, { characterId });
+
+      return updated ?? null;
+    },
+
+    createCharacterLongTermMemory: async (_: any, { characterId, content }: { characterId: string; content: string }) => {
+      const id = crypto.randomUUID();
+      const createdAt = new Date().toISOString();
+
+      await batch(async () => {
+        await q(`CREATE (:Memory {id:$id, content:$content, createdAt:$createdAt})`, { id, content, createdAt });
+        await q(`
+          MATCH (c:Character {id:$characterId}), (m:Memory {id:$id})
+          CREATE (c)-[:HAS_LONG_TERM_MEMORY]->(m)
+        `, { characterId, id });
+      });
+
+      const [memory] = await q(`
+        MATCH (m:Memory {id:$id})
+        RETURN m.id AS id, m.content AS content, m.createdAt AS createdAt
+      `, { id });
+
+      return memory;
+    },
+
+    updateCharacterLongTermMemory: async (_: any, { memoryId, content }: { memoryId: string; content: string }) => {
+      await q(`
+        MATCH (m:Memory {id:$memoryId})
+        SET m.content = $content
+      `, { memoryId, content });
+
+      const [memory] = await q(`
+        MATCH (m:Memory {id:$memoryId})
+        RETURN m.id AS id, m.content AS content, m.createdAt AS createdAt
+      `, { memoryId });
+
+      return memory ?? null;
+    },
+
+    deleteCharacterLongTermMemory: async (_: any, { memoryId }: { memoryId: string }) => {
+      await q(`
+        MATCH (m:Memory {id:$memoryId})
+        DETACH DELETE m
+      `, { memoryId });
+
+      return true;
     },
 
     moveCharacter: async (_: any, { input }: { input: { characterId: string, lotId: string } }) => {

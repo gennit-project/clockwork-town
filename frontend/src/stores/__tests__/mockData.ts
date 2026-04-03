@@ -13,6 +13,8 @@ import type {
 export const createMockNeeds = (overrides: Partial<Needs> = {}): Needs => ({
   food: 0.5,
   sleep: 0.5,
+  bladder: 0.6,
+  hygiene: 0.7,
   health: 0.9,
   friends: 0.7,
   family: 0.7,
@@ -24,10 +26,15 @@ export const createMockNeeds = (overrides: Partial<Needs> = {}): Needs => ({
 export const createMockCooldowns = (overrides: Partial<Cooldowns> = {}): Cooldowns => ({
   eat: 0,
   sleep: 0,
+  use_toilet: 0,
+  shower: 0,
   medicate: 0,
   chat_friend: 0,
   call_mom: 0,
   date: 0,
+  text_romance: 0,
+  call_romance: 0,
+  invite_over: 0,
   read: 0,
   write: 0,
   view_art: 0,
@@ -49,6 +56,9 @@ export const createMockCharacterState = (overrides: Partial<CharacterState> = {}
     spaceName: 'Living Room'
   },
   traits: [],
+  queuedActions: [],
+  currentTask: null,
+  longTermMemories: [],
   ...overrides
 })
 
@@ -95,6 +105,7 @@ export const createMockWorldData = (): WorldData => ({
       lotId: 'lot-1',
       regionId: 'region-1',
       allowedActivities: ['read', 'chat_friend'],
+      affordances: [{ action: 'read', weight: 1 }, { action: 'chat_friend', weight: 1 }],
       maxSimultaneousUsers: 3
     },
     'item-2': {
@@ -104,6 +115,7 @@ export const createMockWorldData = (): WorldData => ({
       lotId: 'lot-1',
       regionId: 'region-1',
       allowedActivities: ['sleep'],
+      affordances: [{ action: 'sleep', weight: 1 }],
       maxSimultaneousUsers: 1
     },
     'item-3': {
@@ -113,6 +125,7 @@ export const createMockWorldData = (): WorldData => ({
       lotId: 'lot-1',
       regionId: 'region-1',
       allowedActivities: ['eat'],
+      affordances: [{ action: 'eat', weight: 1 }],
       maxSimultaneousUsers: null
     },
     'item-4': {
@@ -122,6 +135,7 @@ export const createMockWorldData = (): WorldData => ({
       lotId: 'lot-2',
       regionId: 'region-1',
       allowedActivities: ['read'],
+      affordances: [{ action: 'read', weight: 1 }],
       maxSimultaneousUsers: null
     }
   },
