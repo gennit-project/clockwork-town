@@ -58,7 +58,8 @@ describe('executeTick', () => {
       worldData: ref(createMockWorldData()),
       itemOccupancy: ref(createMockItemOccupancy()),
       activityLog: ref<ActivityLogEntry[]>([]),
-      executeAction: vi.fn(async () => {})
+      executeAction: vi.fn(async () => {}),
+      progressTask: vi.fn(async () => false)
     }
   })
 
@@ -205,10 +206,15 @@ describe('executeTick', () => {
       params.characterStates.value['char-1'].cooldowns = {
         eat: 5,
         sleep: 5,
+        use_toilet: 5,
+        shower: 5,
         medicate: 5,
         chat_friend: 5,
         call_mom: 5,
         date: 5,
+        text_romance: 5,
+        call_romance: 5,
+        invite_over: 5,
         read: 5,
         write: 5,
         view_art: 5,
@@ -225,6 +231,31 @@ describe('executeTick', () => {
           utility: 0
         })
       )
+    })
+
+    it('should prefer queued manual intents before autonomous decisions', async () => {
+      params.characterStates.value['char-1'].queuedActions = [{
+        action: 'shower',
+        itemId: 'item-shower',
+        itemName: 'Shower',
+        targetSpaceId: 'space-bathroom',
+        targetSpaceName: 'Bathroom',
+        targetLotId: 'lot-1',
+        targetLotName: 'Test House',
+        utility: 10,
+        source: 'manual'
+      }]
+
+      await executeTick(params)
+
+      expect(params.executeAction).toHaveBeenCalledWith(
+        'char-1',
+        expect.objectContaining({
+          action: 'shower',
+          source: 'manual'
+        })
+      )
+      expect(params.characterStates.value['char-1'].queuedActions).toEqual([])
     })
   })
 
@@ -267,6 +298,26 @@ describe('executeTick', () => {
       await executeTick(params)
 
       expect(executionOrder).toEqual(['char-1', 'char-2'])
+    })
+
+    it('should skip executeAction when an in-progress task consumes the tick', async () => {
+      params.characterStates.value['char-1'].currentTask = {
+        action: 'sleep',
+        itemId: 'item-2',
+        itemName: 'Bed',
+        targetSpaceId: 'space-1',
+        targetSpaceName: 'Living Room',
+        targetLotId: 'lot-1',
+        targetLotName: 'Test House',
+        remainingTicks: 2,
+        totalTicks: 3
+      }
+      params.progressTask = vi.fn(async () => true)
+
+      await executeTick(params)
+
+      expect(params.progressTask).toHaveBeenCalledWith('char-1')
+      expect(params.executeAction).not.toHaveBeenCalled()
     })
   })
 
