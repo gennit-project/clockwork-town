@@ -22,6 +22,11 @@ import {
 } from './simulationPersistence'
 import { applyActionToCharacterState } from './utils/actionState'
 import {
+  buildMovementPlan,
+  buildStartedActionPlan,
+  validateIntentItemAvailability
+} from './utils/actionExecution'
+import {
   appendShortTermMemory,
   createActivityLogEntry,
   createCharacterState,
@@ -245,83 +250,70 @@ export const useSimulationStore = defineStore('simulation', () => {
 
     console.log(`\n⚡ Executing action for ${characterId}`)
 
-    // Handle idle case
     if (intent.action === 'idle') {
       state.currentAction = 'idle'
       state.currentTask = null
-      // Clear any item occupancy for this character
       clearItemOccupancy(characterId)
       logActivity(characterId, 'idle', 'No satisfying actions available')
       console.log(`  ${characterId}: idle (no actions available)`)
       return
     }
 
-    // Re-validate item availability (important for sequential execution within same tick)
-    if (intent.itemId) {
-      const item = worldData.value.items[intent.itemId]
-      if (item && item.maxSimultaneousUsers !== null && item.maxSimultaneousUsers !== undefined) {
-        const currentOccupants = itemOccupancy.value[intent.itemId] || []
-        if (currentOccupants.length >= item.maxSimultaneousUsers) {
-          console.log(`  ⚠️  Item ${intent.itemName} became full during this tick (${currentOccupants.length}/${item.maxSimultaneousUsers})`)
-          console.log(`  ${characterId}: falling back to idle`)
-          state.currentAction = 'idle'
-          clearItemOccupancy(characterId)
-          logActivity(characterId, 'idle', `${intent.itemName} became unavailable`)
-          return
-        }
+    const availability = validateIntentItemAvailability(intent, worldData.value, itemOccupancy.value)
+    if (!availability.available) {
+      const currentOccupants = intent.itemId ? itemOccupancy.value[intent.itemId] || [] : []
+      const maxUsers = intent.itemId ? worldData.value.items[intent.itemId]?.maxSimultaneousUsers : null
+      console.log(`  ⚠️  Item ${intent.itemName} became full during this tick (${currentOccupants.length}/${maxUsers})`)
+      console.log(`  ${characterId}: falling back to idle`)
+      state.currentAction = 'idle'
+      clearItemOccupancy(characterId)
+      logActivity(characterId, 'idle', availability.reason || `${intent.itemName} became unavailable`)
+      return
+    }
+
+    const movementPlan = buildMovementPlan(state.location, intent)
+    if (intent.travelCost && intent.travelCost > 0 && !movementPlan.targetLotId) {
+      console.warn('  ⚠️  No target lot specified for movement')
+      return
+    }
+
+    if (movementPlan.shouldMove && movementPlan.targetLotId) {
+      console.log(`  🚶 Moving ${characterId} from ${state.location?.lotName || 'unknown'} to ${intent.targetLotName}`)
+
+      try {
+        await moveCharacterToLot(characterId, movementPlan.targetLotId)
+
+        updateCharacterLocation(
+          characterId,
+          state.location?.regionId || null,
+          movementPlan.targetLotId,
+          movementPlan.targetLotName,
+          movementPlan.targetSpaceId,
+          movementPlan.targetSpaceName
+        )
+
+        console.log(`  ✓ Moved to ${intent.targetLotName} (${intent.targetSpaceName})`)
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        console.error(`  ❌ Failed to move character: ${errorMessage}`)
       }
     }
 
-    // Step 13: Handle movement if needed (travelCost > 0)
-    if (intent.travelCost && intent.travelCost > 0) {
-      const currentLotId = state.location?.lotId
-      const targetLotId = intent.targetLotId
-
-      if (!targetLotId) {
-        console.warn('  ⚠️  No target lot specified for movement')
-        return
-      }
-
-      if (currentLotId !== targetLotId) {
-        console.log(`  🚶 Moving ${characterId} from ${state.location?.lotName || 'unknown'} to ${intent.targetLotName}`)
-
-        try {
-          await moveCharacterToLot(characterId, targetLotId)
-
-          // Update Pinia state
-          updateCharacterLocation(
-            characterId,
-            state.location?.regionId || null, // Keep same region
-            targetLotId,
-            intent.targetLotName || '',
-            intent.targetSpaceId || '',
-            intent.targetSpaceName || ''
-          )
-
-          console.log(`  ✓ Moved to ${intent.targetLotName} (${intent.targetSpaceName})`)
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : String(error)
-          console.error(`  ❌ Failed to move character: ${errorMessage}`)
-          // Continue with action even if movement fails
-        }
-      }
-    }
-
-    // Call backend mutation to create Activity and USING edge in database
     try {
       await startCharacterActivity(characterId, intent.action)
       console.log(`  ✓ Started activity "${intent.action}" in database`)
 
       const duration = getActionDuration(intent.action)
+      const startedActionPlan = buildStartedActionPlan(intent, duration)
 
       if (intent.itemId) {
         setItemOccupancy(characterId, intent.itemId)
       }
 
-      if (duration > 1) {
+      if (startedActionPlan.isMultiTick) {
         state.currentAction = intent.action
         state.currentTask = createTaskFromIntent(intent)
-        logActivity(characterId, intent.action, `Started multi-tick action at ${intent.itemName || intent.socialTargetName || 'target'}`)
+        logActivity(characterId, intent.action, startedActionPlan.logDetails || 'Started multi-tick action')
         return
       }
 
