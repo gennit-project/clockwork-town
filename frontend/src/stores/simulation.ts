@@ -40,6 +40,13 @@ import {
   enqueueManualIntent,
   updateStateLocation
 } from './utils/characterState'
+import {
+  addLongTermMemory,
+  editLongTermMemory,
+  refreshCharacterDetails,
+  removeLongTermMemory,
+  saveCharacterBio
+} from './utils/characterDetails'
 import { assignItemOccupancy, clearCharacterOccupancy } from './utils/itemOccupancy'
 import { buildWorldData } from './utils/pathfinding'
 import { createTaskFromIntent, getActionDuration } from './utils/taskLifecycle'
@@ -415,27 +422,47 @@ export const useSimulationStore = defineStore('simulation', () => {
       return
     }
 
-    const data = await fetchCharacterDetails(characterId)
-    state.longTermMemories = data.character?.longTermMemories || []
+    await refreshCharacterDetails(state, characterId, { fetchCharacterDetails })
   }
 
   async function updateCharacterBio(characterId: string, bio: string): Promise<void> {
-    await persistCharacterBio(characterId, bio)
+    await saveCharacterBio(characterId, bio, { persistCharacterBio })
   }
 
   async function createLongTermMemory(characterId: string, content: string): Promise<void> {
-    await createCharacterLongTermMemory(characterId, content)
-    await loadCharacterDetails(characterId)
+    const state = characterStates.value[characterId]
+    if (!state) {
+      return
+    }
+
+    await addLongTermMemory(state, characterId, content, {
+      createCharacterLongTermMemory,
+      fetchCharacterDetails
+    })
   }
 
   async function updateLongTermMemory(characterId: string, memoryId: string, content: string): Promise<void> {
-    await updateCharacterLongTermMemory(memoryId, content)
-    await loadCharacterDetails(characterId)
+    const state = characterStates.value[characterId]
+    if (!state) {
+      return
+    }
+
+    await editLongTermMemory(state, characterId, memoryId, content, {
+      updateCharacterLongTermMemory,
+      fetchCharacterDetails
+    })
   }
 
   async function deleteLongTermMemory(characterId: string, memoryId: string): Promise<void> {
-    await deleteCharacterLongTermMemory(memoryId)
-    await loadCharacterDetails(characterId)
+    const state = characterStates.value[characterId]
+    if (!state) {
+      return
+    }
+
+    await removeLongTermMemory(state, characterId, memoryId, {
+      deleteCharacterLongTermMemory,
+      fetchCharacterDetails
+    })
   }
 
 
