@@ -28,6 +28,7 @@ import {
   enqueueManualIntent,
   updateStateLocation
 } from './utils/characterState'
+import { assignItemOccupancy, clearCharacterOccupancy } from './utils/itemOccupancy'
 import { buildWorldData } from './utils/pathfinding'
 import { advanceTask, buildCompletionIntent, createTaskFromIntent, getActionDuration, isTaskComplete } from './utils/taskLifecycle'
 import { executeTick as runTick } from './utils/tickExecution'
@@ -351,33 +352,22 @@ export const useSimulationStore = defineStore('simulation', () => {
    * Set item occupancy - add character to item's occupant list
    */
   function setItemOccupancy(characterId: string, itemId: string): void {
-    // First, clear any existing occupancy for this character
-    clearItemOccupancy(characterId)
-
-    // Add character to item's occupant list
-    if (!itemOccupancy.value[itemId]) {
-      itemOccupancy.value[itemId] = []
-    }
-    if (!itemOccupancy.value[itemId].includes(characterId)) {
-      itemOccupancy.value[itemId].push(characterId)
-      console.log(`  🪑 ${characterId} now occupying ${itemId}`)
-    }
+    assignItemOccupancy(itemOccupancy.value, characterId, itemId)
+    console.log(`  🪑 ${characterId} now occupying ${itemId}`)
   }
 
   /**
    * Clear item occupancy - remove character from all items
    */
   function clearItemOccupancy(characterId: string): void {
-    for (const itemId in itemOccupancy.value) {
-      const index = itemOccupancy.value[itemId]?.indexOf(characterId) ?? -1
-      if (index !== -1) {
-        itemOccupancy.value[itemId].splice(index, 1)
-        console.log(`  🚪 ${characterId} no longer occupying ${itemId}`)
-        // Clean up empty arrays
-        if (itemOccupancy.value[itemId].length === 0) {
-          delete itemOccupancy.value[itemId]
-        }
-      }
+    const occupiedItemIds = Object.keys(itemOccupancy.value).filter((itemId) =>
+      itemOccupancy.value[itemId]?.includes(characterId)
+    )
+
+    clearCharacterOccupancy(itemOccupancy.value, characterId)
+
+    for (const itemId of occupiedItemIds) {
+      console.log(`  🚪 ${characterId} no longer occupying ${itemId}`)
     }
   }
 
