@@ -15,6 +15,7 @@ import type {
 import { ACTION_DURATIONS, ACTION_EFFECTS } from './config/actionEffects'
 import { INITIAL_NEEDS, INITIAL_COOLDOWNS } from './config/needs'
 import { buildWorldData } from './utils/pathfinding'
+import { advanceTask, buildCompletionIntent, createTaskFromIntent, getActionDuration, isTaskComplete } from './utils/taskLifecycle'
 import { executeTick as runTick } from './utils/tickExecution'
 
 export const useSimulationStore = defineStore('simulation', () => {
@@ -144,10 +145,6 @@ export const useSimulationStore = defineStore('simulation', () => {
     console.log(`[Tick ${currentTick.value}] Character ${characterId}: ${action} - ${details}`)
   }
 
-  function getActionDuration(action: ActionName): number {
-    return ACTION_DURATIONS[action] || 1
-  }
-
   function recordShortTermMemory(characterId: string, intent: Intent): void {
     const state = characterStates.value[characterId]
     if (!state) {
@@ -190,27 +187,16 @@ export const useSimulationStore = defineStore('simulation', () => {
       return false
     }
 
-    task.remainingTicks -= 1
+    const nextTask = advanceTask(task)
+    state.currentTask = nextTask
 
-    if (task.remainingTicks > 0) {
-      state.currentAction = task.action
-      logActivity(characterId, task.action, `In progress (${task.remainingTicks}/${task.totalTicks} ticks remaining)`)
+    if (!isTaskComplete(nextTask)) {
+      state.currentAction = nextTask.action
+      logActivity(characterId, nextTask.action, `In progress (${nextTask.remainingTicks}/${nextTask.totalTicks} ticks remaining)`)
       return true
     }
 
-    const completedIntent: Intent = {
-      action: task.action,
-      itemId: task.itemId,
-      itemName: task.itemName,
-      targetSpaceId: task.targetSpaceId,
-      targetSpaceName: task.targetSpaceName,
-      targetLotId: task.targetLotId,
-      targetLotName: task.targetLotName,
-      utility: 0,
-      source: 'manual',
-      socialTargetId: task.socialTargetId,
-      socialTargetName: task.socialTargetName
-    }
+    const completedIntent: Intent = buildCompletionIntent(nextTask)
 
     await completeIntent(characterId, completedIntent)
     state.currentTask = null
@@ -379,19 +365,7 @@ export const useSimulationStore = defineStore('simulation', () => {
 
       if (duration > 1) {
         state.currentAction = intent.action
-        state.currentTask = {
-          action: intent.action,
-          itemId: intent.itemId,
-          itemName: intent.itemName,
-          targetSpaceId: intent.targetSpaceId,
-          targetSpaceName: intent.targetSpaceName,
-          targetLotId: intent.targetLotId,
-          targetLotName: intent.targetLotName,
-          remainingTicks: duration - 1,
-          totalTicks: duration,
-          socialTargetId: intent.socialTargetId,
-          socialTargetName: intent.socialTargetName
-        }
+        state.currentTask = createTaskFromIntent(intent)
         logActivity(characterId, intent.action, `Started multi-tick action at ${intent.itemName || intent.socialTargetName || 'target'}`)
         return
       }
