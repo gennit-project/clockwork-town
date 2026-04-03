@@ -1,4 +1,5 @@
 import { batch, q } from "../kuzuHelpers";
+import { decodeAffordances, encodeAffordances } from "./itemAffordances";
 
 // Helper functions to safely encode/decode template data with special characters
 const encodeTemplateData = (data: any): string => {
@@ -15,40 +16,6 @@ const decodeTemplateData = (encoded: string): any => {
     console.warn('Failed to decode base64 template data, attempting direct parse:', e);
     return JSON.parse(encoded);
   }
-};
-
-const decodeAffordances = (item: { allowedActivities?: string[]; satisfiesNeeds?: string[] }) => {
-  const encodedAffordances = item.satisfiesNeeds || [];
-  const parsed = encodedAffordances
-    .map((entry) => {
-      const [action, rawWeight] = entry.split(":");
-      const weight = Number(rawWeight);
-      if (!action || Number.isNaN(weight)) {
-        return null;
-      }
-      return { action, weight };
-    })
-    .filter((entry): entry is { action: string; weight: number } => entry !== null);
-
-  if (parsed.length > 0) {
-    return parsed;
-  }
-
-  return (item.allowedActivities || []).map((action) => ({ action, weight: 1 }));
-};
-
-const encodeAffordances = (affordances?: Array<{ action: string; weight: number }>) => {
-  if (!affordances || affordances.length === 0) {
-    return {
-      allowedActivities: [],
-      satisfiesNeeds: []
-    };
-  }
-
-  return {
-    allowedActivities: affordances.map((entry) => entry.action),
-    satisfiesNeeds: affordances.map((entry) => `${entry.action}:${entry.weight}`)
-  };
 };
 
 export const WorldResolvers = {
