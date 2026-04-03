@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { Ref } from 'vue'
-import { client, mutations, queries } from '../graphql'
 import type {
   CharacterState,
   WorldData,
@@ -12,8 +11,17 @@ import type {
   Intent,
   InputLot
 } from './types'
-import { ACTION_DURATIONS, ACTION_EFFECTS } from './config/actionEffects'
+import { ACTION_EFFECTS } from './config/actionEffects'
 import { INITIAL_NEEDS, INITIAL_COOLDOWNS } from './config/needs'
+import {
+  createCharacterLongTermMemory,
+  deleteCharacterLongTermMemory,
+  fetchCharacterDetails,
+  moveCharacterToLot,
+  persistCharacterBio,
+  startCharacterActivity,
+  updateCharacterLongTermMemory
+} from './simulationPersistence'
 import { buildWorldData } from './utils/pathfinding'
 import { advanceTask, buildCompletionIntent, createTaskFromIntent, getActionDuration, isTaskComplete } from './utils/taskLifecycle'
 import { executeTick as runTick } from './utils/tickExecution'
@@ -320,13 +328,7 @@ export const useSimulationStore = defineStore('simulation', () => {
         console.log(`  🚶 Moving ${characterId} from ${state.location?.lotName || 'unknown'} to ${intent.targetLotName}`)
 
         try {
-          // Call GraphQL mutation to update database
-          await client.request(mutations.moveCharacter, {
-            input: {
-              characterId,
-              lotId: targetLotId
-            }
-          })
+          await moveCharacterToLot(characterId, targetLotId)
 
           // Update Pinia state
           updateCharacterLocation(
@@ -349,12 +351,7 @@ export const useSimulationStore = defineStore('simulation', () => {
 
     // Call backend mutation to create Activity and USING edge in database
     try {
-      await client.request(mutations.startActivity, {
-        input: {
-          characterId,
-          actionName: intent.action
-        }
-      })
+      await startCharacterActivity(characterId, intent.action)
       console.log(`  ✓ Started activity "${intent.action}" in database`)
 
       const duration = getActionDuration(intent.action)
@@ -507,26 +504,26 @@ export const useSimulationStore = defineStore('simulation', () => {
       return
     }
 
-    const data = await client.request(queries.getCharacter, { id: characterId })
+    const data = await fetchCharacterDetails(characterId)
     state.longTermMemories = data.character?.longTermMemories || []
   }
 
   async function updateCharacterBio(characterId: string, bio: string): Promise<void> {
-    await client.request(mutations.updateCharacterBio, { characterId, bio })
+    await persistCharacterBio(characterId, bio)
   }
 
   async function createLongTermMemory(characterId: string, content: string): Promise<void> {
-    await client.request(mutations.createCharacterLongTermMemory, { characterId, content })
+    await createCharacterLongTermMemory(characterId, content)
     await loadCharacterDetails(characterId)
   }
 
   async function updateLongTermMemory(characterId: string, memoryId: string, content: string): Promise<void> {
-    await client.request(mutations.updateCharacterLongTermMemory, { memoryId, content })
+    await updateCharacterLongTermMemory(memoryId, content)
     await loadCharacterDetails(characterId)
   }
 
   async function deleteLongTermMemory(characterId: string, memoryId: string): Promise<void> {
-    await client.request(mutations.deleteCharacterLongTermMemory, { memoryId })
+    await deleteCharacterLongTermMemory(memoryId)
     await loadCharacterDetails(characterId)
   }
 
