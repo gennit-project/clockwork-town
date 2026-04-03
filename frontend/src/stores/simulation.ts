@@ -12,16 +12,10 @@ import type {
   Intent,
   InputLot
 } from './types'
-import { ACTION_EFFECTS } from './config/actionEffects'
+import { ACTION_DURATIONS, ACTION_EFFECTS } from './config/actionEffects'
 import { INITIAL_NEEDS, INITIAL_COOLDOWNS } from './config/needs'
 import { buildWorldData } from './utils/pathfinding'
 import { executeTick as runTick } from './utils/tickExecution'
-
-const ACTION_DURATIONS: Partial<Record<ActionName, number>> = {
-  sleep: 3,
-  shower: 2,
-  invite_over: 2
-}
 
 export const useSimulationStore = defineStore('simulation', () => {
   // ============================================

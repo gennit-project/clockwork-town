@@ -113,6 +113,12 @@ export const ACTION_EFFECTS: ActionEffects = {
   }
 }
 
+export const ACTION_DURATIONS = {
+  sleep: 3,
+  shower: 2,
+  invite_over: 2
+} as const
+
 /**
  * Need weights for utility calculation
  * Higher weight = more important/urgent
