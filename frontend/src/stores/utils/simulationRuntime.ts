@@ -21,13 +21,12 @@ import {
   handleUnavailableIntent,
   performIntentMovement
 } from './actionFlow'
-import { createActivityLogEntry, updateStateLocation } from './characterState'
+import { updateStateLocation } from './characterState'
 import { assignItemOccupancy, clearCharacterOccupancy } from './itemOccupancy'
+import { createSimulationLogger } from './simulationLogger'
 import { createTaskFromIntent, getActionDuration } from './taskLifecycle'
 import { progressActiveTask } from './taskProgression'
 import { executeTick as runTick } from './tickExecution'
-
-const MAX_LOG_ENTRIES = 100
 
 export interface SimulationRuntimeRefs {
   currentTick: Ref<number>
@@ -50,20 +49,16 @@ export function createSimulationRuntime(
   refs: SimulationRuntimeRefs,
   dependencies: SimulationRuntimeDependencies
 ) {
-  function logActivity(characterId: string, action: string, details: string): void {
-    const logEntry = createActivityLogEntry(refs.currentTick.value, characterId, action, details)
+  const logger = createSimulationLogger({
+    currentTick: refs.currentTick,
+    activityLog: refs.activityLog
+  })
 
-    refs.activityLog.value.push(logEntry)
-    if (refs.activityLog.value.length > MAX_LOG_ENTRIES) {
-      refs.activityLog.value = refs.activityLog.value.slice(-MAX_LOG_ENTRIES)
-    }
-
-    console.log(`[Tick ${refs.currentTick.value}] Character ${characterId}: ${action} - ${details}`)
-  }
+  const { logActivity } = logger
 
   function setItemOccupancy(characterId: string, itemId: string): void {
     assignItemOccupancy(refs.itemOccupancy.value, characterId, itemId)
-    console.log(`  🪑 ${characterId} now occupying ${itemId}`)
+    logger.logItemOccupied(characterId, itemId)
   }
 
   function clearItemOccupancy(characterId: string): void {
@@ -74,7 +69,7 @@ export function createSimulationRuntime(
     clearCharacterOccupancy(refs.itemOccupancy.value, characterId)
 
     for (const itemId of occupiedItemIds) {
-      console.log(`  🚪 ${characterId} no longer occupying ${itemId}`)
+      logger.logItemReleased(characterId, itemId)
     }
   }
 
@@ -100,39 +95,37 @@ export function createSimulationRuntime(
   function applyActionEffects(characterId: string, action: ActionName, itemName: string | null = null): void {
     const actionData = ACTION_EFFECTS[action]
     if (!actionData) {
-      console.error(`❌ Unknown action: ${action}`)
+      logger.logUnknownAction(action)
       return
     }
 
     const state = refs.characterStates.value[characterId]
     if (!state) {
-      console.error(`❌ Character not found: ${characterId}`)
+      logger.logMissingCharacter(characterId)
       return
     }
 
-    console.log(`⚡ Applying action "${action}" to character ${characterId}`)
+    logger.debug(`⚡ Applying action "${action}" to character ${characterId}`)
 
     const stateChange = applyActionToCharacterState(state, action, actionData)
 
     if (stateChange.primaryNeedChange) {
       const { need, oldValue, newValue, effect } = stateChange.primaryNeedChange
-      console.log(`  ✓ ${need}: ${oldValue.toFixed(2)} → ${newValue.toFixed(2)} (+${effect})`)
+      logger.logNeedChange(need, oldValue, newValue, effect)
     }
 
     for (const change of stateChange.secondaryNeedChanges) {
-      console.log(
-        `  ✓ ${change.need}: ${change.oldValue.toFixed(2)} → ${change.newValue.toFixed(2)} (${change.effect >= 0 ? '+' : ''}${change.effect})`
-      )
+      logger.logNeedChange(change.need, change.oldValue, change.newValue, change.effect)
     }
 
     if (stateChange.cooldownTicksApplied !== null) {
-      console.log(`  ✓ Cooldown set: ${stateChange.cooldownTicksApplied} ticks`)
+      logger.logCooldownApplied(stateChange.cooldownTicksApplied)
     }
 
     const details = itemName ? `using ${itemName}` : 'action performed'
     logActivity(characterId, action, details)
 
-    console.log(`✅ Action "${action}" applied successfully`)
+    logger.logActionApplied(action, characterId)
   }
 
   async function completeIntent(characterId: string, intent: Intent): Promise<void> {
@@ -161,15 +154,15 @@ export function createSimulationRuntime(
   async function executeAction(characterId: string, intent: Intent): Promise<void> {
     const state = refs.characterStates.value[characterId]
     if (!state) {
-      console.error(`❌ Character not found: ${characterId}`)
+      logger.logMissingCharacter(characterId)
       return
     }
 
-    console.log(`\n⚡ Executing action for ${characterId}`)
+    logger.logCharacterActionStart(characterId)
 
     if (intent.action === 'idle') {
       handleIdleIntent(characterId, state, { clearItemOccupancy, logActivity })
-      console.log(`  ${characterId}: idle (no actions available)`)
+      logger.logIdle(characterId)
       return
     }
 
@@ -177,8 +170,7 @@ export function createSimulationRuntime(
     if (!availability.available) {
       const currentOccupants = intent.itemId ? refs.itemOccupancy.value[intent.itemId] || [] : []
       const maxUsers = intent.itemId ? refs.worldData.value.items[intent.itemId]?.maxSimultaneousUsers : null
-      console.log(`  ⚠️  Item ${intent.itemName} became full during this tick (${currentOccupants.length}/${maxUsers})`)
-      console.log(`  ${characterId}: falling back to idle`)
+      logger.logUnavailableItem(characterId, intent.itemName, currentOccupants.length, maxUsers)
       handleUnavailableIntent(characterId, state, availability.reason || `${intent.itemName} became unavailable`, {
         clearItemOccupancy,
         logActivity
@@ -188,12 +180,12 @@ export function createSimulationRuntime(
 
     const movementPlan = buildMovementPlan(state.location, intent)
     if (intent.travelCost && intent.travelCost > 0 && !movementPlan.targetLotId) {
-      console.warn('  ⚠️  No target lot specified for movement')
+      logger.warn('  ⚠️  No target lot specified for movement')
       return
     }
 
     if (movementPlan.shouldMove && movementPlan.targetLotId) {
-      console.log(`  🚶 Moving ${characterId} from ${state.location?.lotName || 'unknown'} to ${intent.targetLotName}`)
+      logger.logMoveStart(characterId, state.location?.lotName, intent.targetLotName)
 
       try {
         await performIntentMovement(characterId, state, movementPlan, {
@@ -201,16 +193,16 @@ export function createSimulationRuntime(
           updateCharacterLocation
         })
 
-        console.log(`  ✓ Moved to ${intent.targetLotName} (${intent.targetSpaceName})`)
+        logger.logMoveSuccess(intent.targetLotName, intent.targetSpaceName)
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error)
-        console.error(`  ❌ Failed to move character: ${errorMessage}`)
+        logger.error(`  ❌ Failed to move character: ${errorMessage}`)
       }
     }
 
     try {
       await dependencies.startCharacterActivity(characterId, intent.action)
-      console.log(`  ✓ Started activity "${intent.action}" in database`)
+      logger.logActivityStart(intent.action)
 
       const duration = getActionDuration(intent.action)
       const startedActionPlan = buildStartedActionPlan(intent, duration)
@@ -225,7 +217,7 @@ export function createSimulationRuntime(
         clearItemOccupancy,
         logActivity
       })
-      console.error(`  ❌ Failed to start activity in database: ${errorMessage}`)
+      logger.error(`  ❌ Failed to start activity in database: ${errorMessage}`)
     }
   }
 
@@ -247,7 +239,7 @@ export function createSimulationRuntime(
       refs.tickIntervalId.value = null
     }
     refs.isPaused.value = true
-    console.log('Auto-tick paused')
+    logger.logAutoTickPaused()
   }
 
   function startAutoTick() {
@@ -258,7 +250,7 @@ export function createSimulationRuntime(
       executeTick()
     }, 5000)
 
-    console.log('Auto-tick started (5s interval)')
+    logger.logAutoTickStarted()
   }
 
   function resetSimulation() {
@@ -268,7 +260,7 @@ export function createSimulationRuntime(
     refs.characterStates.value = {}
     refs.itemOccupancy.value = {}
     refs.activeCharacterId.value = null
-    console.log('Simulation reset')
+    logger.logSimulationReset()
   }
 
   return {
