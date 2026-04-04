@@ -48,12 +48,15 @@ export function buildMovementPlan(
   intent: Intent
 ): MovementPlan {
   const targetLotId = intent.targetLotId || null
+  const targetSpaceId = intent.targetSpaceId || ''
+  const changingLots = Boolean(targetLotId && currentLocation.lotId !== targetLotId)
+  const changingSpaces = Boolean(targetSpaceId && currentLocation.spaceId !== targetSpaceId)
 
   return {
-    shouldMove: Boolean(intent.travelCost && intent.travelCost > 0 && targetLotId && currentLocation.lotId !== targetLotId),
+    shouldMove: Boolean(intent.travelCost && intent.travelCost > 0 && (changingLots || changingSpaces)),
     targetLotId,
     targetLotName: intent.targetLotName || '',
-    targetSpaceId: intent.targetSpaceId || '',
+    targetSpaceId,
     targetSpaceName: intent.targetSpaceName || ''
   }
 }

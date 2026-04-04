@@ -70,6 +70,33 @@ describe('actionExecution utilities', () => {
     })
   })
 
+  it('builds a movement plan for same-lot room changes', () => {
+    const location: CharacterLocation = {
+      regionId: 'region-1',
+      lotId: 'lot-1',
+      lotName: 'Home',
+      spaceId: 'space-1',
+      spaceName: 'Living Room'
+    }
+    const intent: Intent = {
+      action: 'use_toilet',
+      targetLotId: 'lot-1',
+      targetLotName: 'Home',
+      targetSpaceId: 'space-2',
+      targetSpaceName: 'Bathroom',
+      travelCost: 1,
+      utility: 1
+    }
+
+    expect(buildMovementPlan(location, intent)).toEqual({
+      shouldMove: true,
+      targetLotId: 'lot-1',
+      targetLotName: 'Home',
+      targetSpaceId: 'space-2',
+      targetSpaceName: 'Bathroom'
+    })
+  })
+
   it('builds multi-tick start metadata from duration', () => {
     const multiTick = buildStartedActionPlan(
       { action: 'sleep', itemName: 'Bed', utility: 4 } as Intent,

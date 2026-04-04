@@ -68,6 +68,31 @@ describe('actionFlow utilities', () => {
     expect(updateCharacterLocation).toHaveBeenCalledWith('char-1', 'region-1', 'lot-2', 'Library', 'space-2', 'Reading Room')
   })
 
+  it('updates local room location without triggering a lot move when staying on the same lot', async () => {
+    const state = createState()
+    state.location.regionId = 'region-1'
+    state.location.lotId = 'lot-1'
+    const moveCharacterToLot = vi.fn().mockResolvedValue(undefined)
+    const updateCharacterLocation = vi.fn()
+
+    const result = await performIntentMovement(
+      'char-1',
+      state,
+      {
+        shouldMove: true,
+        targetLotId: 'lot-1',
+        targetLotName: 'Home',
+        targetSpaceId: 'space-2',
+        targetSpaceName: 'Bathroom'
+      },
+      { moveCharacterToLot, updateCharacterLocation }
+    )
+
+    expect(result).toBe(true)
+    expect(moveCharacterToLot).not.toHaveBeenCalled()
+    expect(updateCharacterLocation).toHaveBeenCalledWith('char-1', 'region-1', 'lot-1', 'Home', 'space-2', 'Bathroom')
+  })
+
   it('finalizes a started multi-tick intent by assigning occupancy and task state', async () => {
     const state = createState()
     const intent = {

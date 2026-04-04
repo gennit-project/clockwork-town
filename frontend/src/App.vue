@@ -294,6 +294,7 @@
 import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDarkMode } from './composables/useDarkMode'
+import { getCharacterStatusText } from './composables/useCharacterStatus'
 import { useSimulationStore } from './stores/simulation'
 import { useCharacterPanelStore } from './stores/characterPanel'
 import { client, queries } from './graphql'
@@ -414,13 +415,6 @@ const getCharacterLocation = (characterId) => {
 // Get character status/activity from simulation store
 const getCharacterStatus = (characterId) => {
   const charState = simulationStore.characterStates[characterId]
-  if (charState?.currentAction) {
-    // Convert action name to readable format (e.g., "chat_friend" -> "Chat Friend")
-    return charState.currentAction
-      .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ')
-  }
-  return 'Idle'
+  return getCharacterStatusText(charState)
 }
 </script>

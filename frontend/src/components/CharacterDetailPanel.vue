@@ -2,7 +2,12 @@
   <div class="fixed bottom-4 left-4 w-80 h-[300px] bg-white dark:bg-gray-800 rounded-lg shadow-2xl border-2 border-gray-300 dark:border-gray-600 z-40 flex flex-col">
     <!-- Header -->
     <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-      <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ character.name }}</h3>
+      <div class="min-w-0">
+        <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ character.name }}</h3>
+        <p class="mt-1 truncate text-xs font-medium text-blue-700 dark:text-blue-300">
+          {{ statusSummary }}
+        </p>
+      </div>
       <button
         @click="$emit('close')"
         class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
@@ -40,13 +45,13 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
-            <span>{{ characterState?.location?.lotName || 'Unknown' }}</span>
+            <span>{{ statusLocation }}</span>
           </div>
           <div class="flex items-center text-purple-600 dark:text-purple-400">
             <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
-            <span>{{ formatAction(characterState?.currentAction || 'idle') }}</span>
+            <span>{{ statusSummary }}</span>
           </div>
         </div>
 
@@ -116,9 +121,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useSimulationStore } from '../stores/simulation'
 import { useCharacterIntentOptions } from '../composables/useCharacterIntentOptions'
+import { getCharacterStatusMeta } from '../composables/useCharacterStatus'
 import CharacterBioTab from './CharacterBioTab.vue'
 import CharacterMemoriesTab from './CharacterMemoriesTab.vue'
 import CharacterNeedPicker from './CharacterNeedPicker.vue'
@@ -147,6 +153,10 @@ const { characterState, selectedNeed, selectableOptions } = useCharacterIntentOp
   props.character,
   props.availableRomanceTargets
 )
+
+const statusMeta = computed(() => getCharacterStatusMeta(characterState.value))
+const statusSummary = computed(() => statusMeta.value.summary)
+const statusLocation = computed(() => statusMeta.value.location)
 
 const formatAction = (action) => {
   return action

@@ -52,7 +52,7 @@ export async function performIntentMovement(
   },
   dependencies: Pick<ActionFlowDependencies, 'moveCharacterToLot' | 'updateCharacterLocation'>
 ): Promise<boolean> {
-  if (!movementPlan.targetLotId) {
+  if (!movementPlan.targetLotId || !movementPlan.targetSpaceId) {
     return false
   }
 
@@ -60,7 +60,10 @@ export async function performIntentMovement(
     return true
   }
 
-  await dependencies.moveCharacterToLot(characterId, movementPlan.targetLotId)
+  if (state.location?.lotId !== movementPlan.targetLotId) {
+    await dependencies.moveCharacterToLot(characterId, movementPlan.targetLotId)
+  }
+
   dependencies.updateCharacterLocation(
     characterId,
     state.location?.regionId || null,

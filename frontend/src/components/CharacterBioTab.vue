@@ -54,14 +54,15 @@
     </div>
 
     <div v-if="characterState?.currentAction">
-      <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Current Activity</p>
-      <p class="text-base text-gray-900 dark:text-gray-100">{{ formatAction(characterState.currentAction) }}</p>
+      <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Current Status</p>
+      <p class="text-base text-gray-900 dark:text-gray-100">{{ statusSummary }}</p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { getCharacterStatusText } from '../composables/useCharacterStatus'
 import { useCharacterPanelStore } from '../stores/characterPanel'
 
 const props = defineProps({
@@ -82,6 +83,7 @@ const props = defineProps({
 const characterPanelStore = useCharacterPanelStore()
 const editingBio = ref(false)
 const bioDraft = ref('')
+const statusSummary = computed(() => getCharacterStatusText(props.characterState))
 
 watch(
   () => props.character.bio,

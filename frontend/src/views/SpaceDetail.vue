@@ -129,8 +129,8 @@
           <div
             v-for="item in itemsWithActiveUsers"
             :key="item.id"
-            class=" rounded-lg p-3 transition-colors"
-            :class="editingItem?.id === item.id ? 'border-blue-400 bg-blue-50 dark:bg-blue-950' : 'border-gray-200 hover:border-blue-300 bg-gray-50 dark:bg-gray-900'"
+            class="rounded-lg border p-3 transition-colors"
+            :class="getItemCardClass(item)"
           >
             <!-- Edit Mode -->
             <div v-if="editingItem?.id === item.id" class="space-y-2">
@@ -209,6 +209,24 @@
 
             <!-- View Mode -->
             <div v-else>
+              <div
+                v-if="item.activeUsers?.length"
+                class="mb-3 rounded-lg border border-blue-200 bg-blue-100/80 px-2.5 py-2 dark:border-blue-700 dark:bg-blue-900/40"
+              >
+                <p class="text-[11px] font-semibold uppercase tracking-wide text-blue-800 dark:text-blue-200">
+                  In use now
+                </p>
+                <div class="mt-1 space-y-1">
+                  <p
+                    v-for="user in item.activeUsers"
+                    :key="user.id"
+                    class="text-xs font-medium text-blue-900 dark:text-blue-100"
+                  >
+                    {{ user.name }}: {{ getCharacterStatus(user.id) }}
+                  </p>
+                </div>
+              </div>
+
               <div class="flex justify-between items-start mb-2">
                 <div class="flex-1">
                   <h3 class="font-medium text-sm text-gray-900 dark:text-gray-100">{{ item.name }}</h3>
@@ -275,11 +293,6 @@
                   {{ affordance.action }} ({{ affordance.weight }})
                 </span>
               </div>
-              <div v-else class="mt-2">
-                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
-                  no actions
-                </span>
-              </div>
               <div v-if="activeCharacter && getItemActions(item).length" class="mt-3 flex flex-wrap gap-1">
                 <button
                   v-for="activity in getItemActions(item)"
@@ -318,6 +331,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
 import AsyncContainer from '../components/AsyncContainer.vue'
+import { getCharacterStatusText } from '../composables/useCharacterStatus'
 import { client, queries, mutations } from '../graphql'
 import { useSimulationStore } from '../stores/simulation'
 import { useCharacterPanelStore } from '../stores/characterPanel'
@@ -377,7 +391,8 @@ const itemsWithActiveUsers = computed(() => {
     const activeUsers = simulationStore.getItemActiveUsers(item.id)
     return {
       ...item,
-      activeUsers
+      activeUsers,
+      isActiveItem: activeUsers.length > 0
     }
   })
 })
@@ -418,20 +433,18 @@ const idleCharacters = computed(() => {
     // Verify character is actually in this space (charactersInSpace already checks this, but be defensive)
     const charState = simulationStore.characterStates[char.id]
     return charState?.location?.spaceId === spaceId.value
+      && charState.currentAction === 'idle'
+      && !charState.currentTask
   })
 })
 
-// Get character's current activity in readable format
-const getCharacterActivity = (characterId) => {
+const getCharacterStatus = (characterId) => {
   const charState = simulationStore.characterStates[characterId]
-  if (charState?.currentAction) {
-    // Convert action name to readable format (e.g., "chat_friend" -> "Chat Friend")
-    return charState.currentAction
-      .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ')
-  }
-  return 'Idle'
+  return getCharacterStatusText(charState)
+}
+
+const getCharacterActivity = (characterId) => {
+  return getCharacterStatus(characterId)
 }
 
 const loadData = async () => {
@@ -439,9 +452,11 @@ const loadData = async () => {
     loading.value = true
     error.value = null
 
-    const [worldData, regionsData, lotData, spaceData] = await Promise.all([
+    const [worldData, regionsData, lotsData, regionData, lotData, spaceData] = await Promise.all([
       client.request(queries.getWorld, { id: worldId.value }),
       client.request(queries.getRegions, { worldId: worldId.value }),
+      client.request(queries.getLots, { regionId: regionId.value }),
+      client.request(queries.getRegion, { id: regionId.value }),
       client.request(queries.getLot, { id: lotId.value }),
       client.request(queries.getSpace, { id: spaceId.value })
     ])
@@ -451,6 +466,50 @@ const loadData = async () => {
     lot.value = lotData.lot
     space.value = spaceData.space
     items.value = spaceData.space?.items || []
+
+    const characters = regionData.region?.characters || []
+
+    const lotsWithSpacesData = []
+    for (const regionLot of lotsData.lots) {
+      try {
+        const spacesData = await client.request(queries.getSpacesWithItems, { lotId: regionLot.id })
+        lotsWithSpacesData.push({
+          ...spacesData.lot
+        })
+      } catch (loadError) {
+        console.error(`Failed to load spaces for lot ${regionLot.id}:`, loadError)
+      }
+    }
+
+    simulationStore.loadWorldData(lotsWithSpacesData, regionId.value)
+
+    for (const character of characters) {
+      simulationStore.initializeCharacter(character)
+
+      if (!character.location?.id) {
+        continue
+      }
+
+      const lotDataForCharacter = simulationStore.worldData.lots[character.location.id]
+      if (!lotDataForCharacter || lotDataForCharacter.spaceIds.length === 0) {
+        continue
+      }
+
+      const firstSpaceId = lotDataForCharacter.spaceIds[0]
+      const firstSpace = simulationStore.worldData.spaces[firstSpaceId]
+      if (!firstSpace) {
+        continue
+      }
+
+      simulationStore.updateCharacterLocation(
+        character.id,
+        regionId.value,
+        character.location.id,
+        character.location.name,
+        firstSpace.id,
+        firstSpace.name
+      )
+    }
   } catch (e) {
     error.value = e.message
   } finally {
@@ -624,5 +683,17 @@ function queueItemAction(item, action: string) {
     utility: item.affordances?.find((entry) => entry.action === action)?.weight || 1,
     source: 'manual'
   })
+}
+
+function getItemCardClass(item) {
+  if (editingItem.value?.id === item.id) {
+    return 'border-blue-400 bg-blue-50 dark:bg-blue-950'
+  }
+
+  if (item.activeUsers?.length) {
+    return 'border-blue-400 bg-blue-50 shadow-md ring-2 ring-blue-200 dark:border-blue-500 dark:bg-blue-950/40 dark:ring-blue-800'
+  }
+
+  return 'border-gray-200 bg-gray-50 hover:border-blue-300 dark:bg-gray-900'
 }
 </script>
