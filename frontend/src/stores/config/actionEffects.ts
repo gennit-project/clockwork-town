@@ -3,6 +3,7 @@
 // ============================================
 
 import type { ActionEffects, NeedWeights } from '../types'
+import { debugLog } from '../utils/simulationDebug'
 
 /**
  * Defines the effects and cooldowns for each action type
@@ -140,6 +141,5 @@ export const NEED_WEIGHTS: NeedWeights = {
   fulfillment: 1.0
 }
 
-// Log on module load for debugging
-console.log('📊 ACTION_EFFECTS loaded:', ACTION_EFFECTS)
-console.log('⚖️  NEED_WEIGHTS loaded:', NEED_WEIGHTS)
+debugLog('📊 ACTION_EFFECTS loaded:', ACTION_EFFECTS)
+debugLog('⚖️  NEED_WEIGHTS loaded:', NEED_WEIGHTS)

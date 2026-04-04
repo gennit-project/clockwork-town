@@ -13,6 +13,7 @@ import type {
 } from '../types'
 import { NEED_DECAY_RATES } from '../config/needs'
 import { selectBestIntent } from './decisionMaking'
+import { debugLog } from './simulationDebug'
 
 /**
  * Parameters for executeTick function
@@ -44,7 +45,7 @@ export async function executeTick({
 }: ExecuteTickParams): Promise<void> {
   currentTick.value++
 
-  console.log(`\n========== TICK ${currentTick.value} ==========`)
+  debugLog(`\n========== TICK ${currentTick.value} ==========`)
 
   // Phase 1: Decay all needs and cooldowns
   for (const characterId in characterStates.value) {
@@ -71,7 +72,7 @@ export async function executeTick({
   }
 
   // Phase 2: Decision Making
-  console.log('\n--- Phase 2: Decision Making ---')
+  debugLog('\n--- Phase 2: Decision Making ---')
   const intents: Record<string, Intent> = {}
   for (const characterId in characterStates.value) {
     const state = characterStates.value[characterId]
@@ -94,19 +95,19 @@ export async function executeTick({
 
     // Log the intent
     if (intent.action === 'idle') {
-      console.log(`  ${characterId}: intends to idle (no satisfying actions)`)
+      debugLog(`  ${characterId}: intends to idle (no satisfying actions)`)
     } else {
-      console.log(`  ${characterId}: intends to ${intent.action} at ${intent.itemName} (${intent.targetSpaceName}, ${intent.targetLotName}) - utility: ${intent.utility.toFixed(2)}`)
+      debugLog(`  ${characterId}: intends to ${intent.action} at ${intent.itemName} (${intent.targetSpaceName}, ${intent.targetLotName}) - utility: ${intent.utility.toFixed(2)}`)
     }
   }
 
   // Phase 3: Execution (sequential to avoid race conditions with item slots)
-  console.log('\n--- Phase 3: Execution ---')
+  debugLog('\n--- Phase 3: Execution ---')
   for (const characterId in intents) {
     await executeAction(characterId, intents[characterId])
   }
 
   // Log full state to console for debugging
-  console.log('Character States:', JSON.parse(JSON.stringify(characterStates.value)))
-  console.log('Activity Log:', activityLog.value.slice(-10))
+  debugLog('Character States:', JSON.parse(JSON.stringify(characterStates.value)))
+  debugLog('Activity Log:', activityLog.value.slice(-10))
 }

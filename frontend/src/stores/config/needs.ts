@@ -3,6 +3,7 @@
  */
 
 import type { NeedDecayRates, Needs, Cooldowns } from '../types'
+import { debugLog } from '../utils/simulationDebug'
 
 /**
  * Need decay rates per tick
@@ -57,4 +58,4 @@ export const INITIAL_COOLDOWNS: Cooldowns = {
   work: 0
 }
 
-console.log('📉 NEED_DECAY_RATES loaded:', NEED_DECAY_RATES)
+debugLog('📉 NEED_DECAY_RATES loaded:', NEED_DECAY_RATES)

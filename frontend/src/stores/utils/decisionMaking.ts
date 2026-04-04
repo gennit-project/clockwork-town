@@ -13,6 +13,7 @@ import type {
 } from '../types'
 import { ACTION_EFFECTS, NEED_WEIGHTS } from '../config/actionEffects'
 import { findItemsWithAffordance } from './pathfinding'
+import { debugLog } from './simulationDebug'
 
 /**
  * Calculate utility score for a character performing an action at a specific item
@@ -84,7 +85,7 @@ export function selectBestIntent(
   worldData: WorldData,
   itemOccupancy: ItemOccupancy = {}
 ): Intent {
-  console.log(`\n🎯 selectBestIntent for character ${characterId}`)
+  debugLog(`\n🎯 selectBestIntent for character ${characterId}`)
 
   // All possible actions (excluding idle and work for now)
   const possibleActions: ActionName[] = ['eat', 'sleep', 'use_toilet', 'shower', 'medicate', 'chat_friend', 'call_mom', 'date', 'read', 'write', 'view_art', 'volunteer']
@@ -95,7 +96,7 @@ export function selectBestIntent(
   for (const action of possibleActions) {
     // Check if action is on cooldown
     if (characterState.cooldowns[action] > 0) {
-      console.log(`  ❌ ${action}: on cooldown (${characterState.cooldowns[action]} ticks remaining)`)
+      debugLog(`  ❌ ${action}: on cooldown (${characterState.cooldowns[action]} ticks remaining)`)
       continue
     }
 
@@ -103,7 +104,7 @@ export function selectBestIntent(
     const items = findItemsWithAffordance(characterId, action, characterState.location, worldData, itemOccupancy)
 
     if (items.length === 0) {
-      console.log(`  ❌ ${action}: no accessible items`)
+      debugLog(`  ❌ ${action}: no accessible items`)
       continue
     }
 
@@ -113,7 +114,7 @@ export function selectBestIntent(
     // Calculate utility
     const utility = calculateUtility(characterId, action, characterState.needs, bestItem)
 
-    console.log(`  ✓ ${action}: utility ${utility.toFixed(2)} (${bestItem.itemName} in ${bestItem.spaceName}, cost ${bestItem.travelCost})`)
+    debugLog(`  ✓ ${action}: utility ${utility.toFixed(2)} (${bestItem.itemName} in ${bestItem.spaceName}, cost ${bestItem.travelCost})`)
 
     intents.push({
       action,
@@ -130,7 +131,7 @@ export function selectBestIntent(
 
   // If no valid intents, return idle
   if (intents.length === 0) {
-    console.log(`  ⚠️  No valid actions available - returning idle`)
+    debugLog(`  ⚠️  No valid actions available - returning idle`)
     return {
       action: 'idle',
       utility: 0
@@ -141,10 +142,10 @@ export function selectBestIntent(
   intents.sort((a, b) => b.utility - a.utility)
 
   const bestIntent = intents[0]
-  console.log(`\n  🏆 Best intent: ${bestIntent.action} (utility ${bestIntent.utility.toFixed(2)})`)
-  console.log(`     Item: ${bestIntent.itemName}`)
-  console.log(`     Location: ${bestIntent.targetSpaceName} (${bestIntent.targetLotName})`)
-  console.log(`     Travel cost: ${bestIntent.travelCost}`)
+  debugLog(`\n  🏆 Best intent: ${bestIntent.action} (utility ${bestIntent.utility.toFixed(2)})`)
+  debugLog(`     Item: ${bestIntent.itemName}`)
+  debugLog(`     Location: ${bestIntent.targetSpaceName} (${bestIntent.targetLotName})`)
+  debugLog(`     Travel cost: ${bestIntent.travelCost}`)
 
   return bestIntent
 }

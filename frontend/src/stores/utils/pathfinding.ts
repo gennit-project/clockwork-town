@@ -8,6 +8,7 @@ import type {
   ItemOption,
   ItemOccupancy
 } from '../types'
+import { debugLog } from './simulationDebug'
 
 /**
  * Find items with a specific affordance (action) accessible to a character
@@ -69,7 +70,7 @@ export function findItemsWithAffordance(
       // If item has a capacity limit, check if it's full
       if (maxUsers !== null && maxUsers !== undefined) {
         if (currentOccupants.length >= maxUsers) {
-          console.log(`  ⚠️  Item ${item.name} is at capacity (${currentOccupants.length}/${maxUsers})`)
+          debugLog(`  ⚠️  Item ${item.name} is at capacity (${currentOccupants.length}/${maxUsers})`)
           continue // Skip this item, it's full
         }
       }
@@ -90,9 +91,9 @@ export function findItemsWithAffordance(
   // Sort by travel cost (lower is better)
   results.sort((a, b) => a.travelCost - b.travelCost)
 
-  console.log(`🔍 findItemsWithAffordance('${characterId}', '${action}'):`)
-  console.log(`  Found ${results.length} items (cost 0: ${results.filter(r => r.travelCost === 0).length}, cost 1: ${results.filter(r => r.travelCost === 1).length}, cost 2: ${results.filter(r => r.travelCost === 2).length})`)
-  console.log('  Results:', results)
+  debugLog(`🔍 findItemsWithAffordance('${characterId}', '${action}'):`)
+  debugLog(`  Found ${results.length} items (cost 0: ${results.filter(r => r.travelCost === 0).length}, cost 1: ${results.filter(r => r.travelCost === 1).length}, cost 2: ${results.filter(r => r.travelCost === 2).length})`)
+  debugLog('  Results:', results)
   return results
 }
 
@@ -105,7 +106,7 @@ import type { InputLot } from '../types'
  * @returns World data structure { lots, spaces, items, itemsByAffordance }
  */
 export function buildWorldData(lots: InputLot[], regionId: string): WorldData {
-  console.log('🗺️  Loading world data for pathfinding...')
+  debugLog('🗺️  Loading world data for pathfinding...')
 
   const worldData = {
     lots: {},
@@ -173,12 +174,12 @@ export function buildWorldData(lots: InputLot[], regionId: string): WorldData {
     }
   }
 
-  console.log(`✅ World data loaded:`)
-  console.log(`  - ${Object.keys(worldData.lots).length} lots`)
-  console.log(`  - ${Object.keys(worldData.spaces).length} spaces`)
-  console.log(`  - ${Object.keys(worldData.items).length} items`)
-  console.log(`  - ${Object.keys(worldData.itemsByAffordance).length} action types with items`)
-  console.log('World data:', worldData)
+  debugLog(`✅ World data loaded:`)
+  debugLog(`  - ${Object.keys(worldData.lots).length} lots`)
+  debugLog(`  - ${Object.keys(worldData.spaces).length} spaces`)
+  debugLog(`  - ${Object.keys(worldData.items).length} items`)
+  debugLog(`  - ${Object.keys(worldData.itemsByAffordance).length} action types with items`)
+  debugLog('World data:', worldData)
 
   return worldData
 }
