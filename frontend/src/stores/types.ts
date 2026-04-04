@@ -182,6 +182,8 @@ export interface WorldData {
 
 export type ItemOccupancy = Record<string, string[]>
 
+export type AutoTickSpeed = 'slow' | 'normal' | 'fast'
+
 // ============================================
 // PATHFINDING TYPES
 // ============================================

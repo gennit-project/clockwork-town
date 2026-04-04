@@ -1,5 +1,6 @@
 import { batch, q } from "../kuzuHelpers";
 import { decodeAffordances, encodeAffordances } from "./itemAffordances";
+import { resolveItemAffordances } from "./itemAffordanceInference";
 
 // Helper functions to safely encode/decode template data with special characters
 const encodeTemplateData = (data: any): string => {
@@ -201,7 +202,13 @@ export const WorldResolvers = {
         description: space.spaceDescription,
         items: (space.items || []).map((item: any) => ({
           name: item.itemName,
-          description: item.itemDescription
+          description: item.itemDescription,
+          count: item.itemCount || 1,
+          affordances: resolveItemAffordances({
+            name: item.itemName,
+            description: item.itemDescription,
+            affordances: item.affordances
+          })
         }))
       }));
 
@@ -244,7 +251,13 @@ export const WorldResolvers = {
         description: space.spaceDescription,
         items: (space.items || []).map((item: any) => ({
           name: item.itemName,
-          description: item.itemDescription
+          description: item.itemDescription,
+          count: item.itemCount || 1,
+          affordances: resolveItemAffordances({
+            name: item.itemName,
+            description: item.itemDescription,
+            affordances: item.affordances
+          })
         }))
       }));
 
@@ -389,12 +402,12 @@ export const WorldResolvers = {
         indoorRooms?: Array<{
           spaceName: string;
           spaceDescription: string;
-          items?: Array<{ itemName: string; itemDescription: string }>;
+          items?: Array<{ itemName: string; itemDescription: string; affordances?: Array<{ action: string; weight: number }> }>;
         }>;
         outdoorSpaces?: Array<{
           spaceName: string;
           spaceDescription: string;
-          items?: Array<{ itemName: string; itemDescription: string }>;
+          items?: Array<{ itemName: string; itemDescription: string; affordances?: Array<{ action: string; weight: number }> }>;
         }>;
       }
     }) => {
@@ -441,6 +454,11 @@ export const WorldResolvers = {
           if (room.items && room.items.length > 0) {
             for (const item of room.items) {
               const itemId = crypto.randomUUID();
+              const encodedAffordances = encodeAffordances(resolveItemAffordances({
+                name: item.itemName,
+                description: item.itemDescription,
+                affordances: item.affordances
+              }));
 
               await q(`CREATE (:Item {
                 id: $id,
@@ -451,12 +469,14 @@ export const WorldResolvers = {
                 canStoreItems: false,
                 cost: 0,
                 count: 1,
-                satisfiesNeeds: [],
-                allowedActivities: []
+                satisfiesNeeds: $satisfiesNeeds,
+                allowedActivities: $allowedActivities
               })`, {
                 id: itemId,
                 name: item.itemName,
-                description: item.itemDescription
+                description: item.itemDescription,
+                satisfiesNeeds: encodedAffordances.satisfiesNeeds,
+                allowedActivities: encodedAffordances.allowedActivities
               });
 
               // Link item to space
@@ -494,6 +514,11 @@ export const WorldResolvers = {
           if (space.items && space.items.length > 0) {
             for (const item of space.items) {
               const itemId = crypto.randomUUID();
+              const encodedAffordances = encodeAffordances(resolveItemAffordances({
+                name: item.itemName,
+                description: item.itemDescription,
+                affordances: item.affordances
+              }));
 
               await q(`CREATE (:Item {
                 id: $id,
@@ -504,12 +529,14 @@ export const WorldResolvers = {
                 canStoreItems: false,
                 cost: 0,
                 count: 1,
-                satisfiesNeeds: [],
-                allowedActivities: []
+                satisfiesNeeds: $satisfiesNeeds,
+                allowedActivities: $allowedActivities
               })`, {
                 id: itemId,
                 name: item.itemName,
-                description: item.itemDescription
+                description: item.itemDescription,
+                satisfiesNeeds: encodedAffordances.satisfiesNeeds,
+                allowedActivities: encodedAffordances.allowedActivities
               });
 
               // Link item to space
@@ -645,13 +672,18 @@ export const WorldResolvers = {
 
     createManyItems: async (_: any, { spaceId, items }: {
       spaceId: string;
-      items: Array<{ itemName: string; itemDescription: string; itemCount: number }>;
+      items: Array<{ itemName: string; itemDescription: string; itemCount: number; affordances?: Array<{ action: string; weight: number }> }>;
     }) => {
       const createdItems: Array<{ id: string; name: string; description: string; count: number }> = [];
 
       await batch(async () => {
         for (const item of items) {
           const itemId = crypto.randomUUID();
+          const encodedAffordances = encodeAffordances(resolveItemAffordances({
+            name: item.itemName,
+            description: item.itemDescription,
+            affordances: item.affordances
+          }));
 
           // Create item with basic properties
           await q(`CREATE (:Item {
@@ -663,9 +695,16 @@ export const WorldResolvers = {
             canStoreItems: false,
             cost: 0,
             count: $count,
-            satisfiesNeeds: [],
-            allowedActivities: []
-          })`, { id: itemId, name: item.itemName, description: item.itemDescription, count: item.itemCount });
+            satisfiesNeeds: $satisfiesNeeds,
+            allowedActivities: $allowedActivities
+          })`, {
+            id: itemId,
+            name: item.itemName,
+            description: item.itemDescription,
+            count: item.itemCount,
+            satisfiesNeeds: encodedAffordances.satisfiesNeeds,
+            allowedActivities: encodedAffordances.allowedActivities
+          });
 
           // Link to space
           await q(`
@@ -771,12 +810,12 @@ export const WorldResolvers = {
         indoorRooms?: Array<{
           spaceName: string;
           spaceDescription: string;
-          items?: Array<{ itemName: string; itemDescription: string }>;
+          items?: Array<{ itemName: string; itemDescription: string; affordances?: Array<{ action: string; weight: number }> }>;
         }>;
         outdoorSpaces?: Array<{
           spaceName: string;
           spaceDescription: string;
-          items?: Array<{ itemName: string; itemDescription: string }>;
+          items?: Array<{ itemName: string; itemDescription: string; affordances?: Array<{ action: string; weight: number }> }>;
         }>;
       }
     }) => {
@@ -810,7 +849,13 @@ export const WorldResolvers = {
         description: space.spaceDescription,
         items: (space.items || []).map((item: any) => ({
           name: item.itemName,
-          description: item.itemDescription
+          description: item.itemDescription,
+          count: item.itemCount || 1,
+          affordances: resolveItemAffordances({
+            name: item.itemName,
+            description: item.itemDescription,
+            affordances: item.affordances
+          })
         }))
       }));
 
@@ -838,12 +883,12 @@ export const WorldResolvers = {
         indoorRooms?: Array<{
           spaceName: string;
           spaceDescription: string;
-          items?: Array<{ itemName: string; itemDescription: string }>;
+          items?: Array<{ itemName: string; itemDescription: string; affordances?: Array<{ action: string; weight: number }> }>;
         }>;
         outdoorSpaces?: Array<{
           spaceName: string;
           spaceDescription: string;
-          items?: Array<{ itemName: string; itemDescription: string }>;
+          items?: Array<{ itemName: string; itemDescription: string; affordances?: Array<{ action: string; weight: number }> }>;
         }>;
       }
     }) => {
@@ -876,7 +921,13 @@ export const WorldResolvers = {
         description: space.spaceDescription,
         items: (space.items || []).map((item: any) => ({
           name: item.itemName,
-          description: item.itemDescription
+          description: item.itemDescription,
+          count: item.itemCount || 1,
+          affordances: resolveItemAffordances({
+            name: item.itemName,
+            description: item.itemDescription,
+            affordances: item.affordances
+          })
         }))
       }));
 
@@ -1217,6 +1268,12 @@ export const WorldResolvers = {
           const newItemId = crypto.randomUUID();
           idMap.set(item.id, newItemId);
           const newSpaceId = idMap.get(item.spaceId);
+          const encodedAffordances = encodeAffordances(resolveItemAffordances({
+            name: item.name,
+            description: item.description,
+            allowedActivities: item.allowedActivities,
+            satisfiesNeeds: item.satisfiesNeeds
+          }));
 
           await q(`CREATE (:Item {
             id: $id,
@@ -1239,8 +1296,8 @@ export const WorldResolvers = {
             canBeUsedByAnimals: item.canBeUsedByAnimals || false,
             minimumAgeToUse: item.minimumAgeToUse || 0,
             maxSimultaneousUsers: item.maxSimultaneousUsers || 1,
-            allowedActivities: item.allowedActivities || [],
-            satisfiesNeeds: item.satisfiesNeeds || [],
+            allowedActivities: encodedAffordances.allowedActivities,
+            satisfiesNeeds: encodedAffordances.satisfiesNeeds,
             canStoreItems: item.canStoreItems || false,
             cost: item.cost || 0,
             count: item.count || 1

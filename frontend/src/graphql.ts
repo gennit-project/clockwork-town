@@ -1,8 +1,14 @@
 import { GraphQLClient } from 'graphql-request'
 
-const endpoint = import.meta.env.MODE === 'development'
-  ? 'http://localhost:4000/graphql'
-  : '/graphql'
+function getGraphQLEndpoint(): string {
+  if (typeof window !== 'undefined') {
+    return new URL('/graphql', window.location.origin).toString()
+  }
+
+  return 'http://localhost:4000/graphql'
+}
+
+const endpoint = getGraphQLEndpoint()
 
 export const client = new GraphQLClient(endpoint)
 

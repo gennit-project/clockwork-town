@@ -135,6 +135,13 @@ export function buildWorldData(lots: InputLot[], regionId: string): WorldData {
       for (const item of (space.items || [])) {
         itemIds.push(item.id)
 
+        const affordances = item.affordances?.length
+          ? item.affordances
+          : (item.allowedActivities || []).map((action) => ({ action, weight: 1 }))
+        const allowedActivities = item.allowedActivities?.length
+          ? item.allowedActivities
+          : affordances.map((entry) => entry.action)
+
         // Store item data
         worldData.items[item.id] = {
           id: item.id,
@@ -142,13 +149,13 @@ export function buildWorldData(lots: InputLot[], regionId: string): WorldData {
           spaceId: space.id,
           lotId: lot.id,
           regionId: regionId,
-          allowedActivities: item.allowedActivities || [],
-          affordances: item.affordances || (item.allowedActivities || []).map((action) => ({ action, weight: 1 })),
+          allowedActivities,
+          affordances,
           maxSimultaneousUsers: item.maxSimultaneousUsers || null
         }
 
         // Index by affordance
-        for (const action of (item.allowedActivities || [])) {
+        for (const action of allowedActivities) {
           if (!worldData.itemsByAffordance[action]) {
             worldData.itemsByAffordance[action] = []
           }

@@ -2,6 +2,7 @@ import type { Ref } from 'vue'
 import type {
   ActionName,
   ActivityLogEntry,
+  AutoTickSpeed,
   CharacterState,
   Intent,
   ItemOccupancy,
@@ -37,6 +38,7 @@ export interface SimulationRuntimeRefs {
   worldData: Ref<WorldData>
   itemOccupancy: Ref<ItemOccupancy>
   activeCharacterId: Ref<string | null>
+  autoTickSpeed: Ref<AutoTickSpeed>
 }
 
 export interface SimulationRuntimeDependencies {
@@ -49,6 +51,12 @@ export function createSimulationRuntime(
   refs: SimulationRuntimeRefs,
   dependencies: SimulationRuntimeDependencies
 ) {
+  const AUTO_TICK_INTERVALS: Record<AutoTickSpeed, number> = {
+    slow: 5000,
+    normal: 2000,
+    fast: 750
+  }
+
   const logger = createSimulationLogger({
     currentTick: refs.currentTick,
     activityLog: refs.activityLog
@@ -248,9 +256,18 @@ export function createSimulationRuntime(
     refs.isPaused.value = false
     refs.tickIntervalId.value = setInterval(() => {
       executeTick()
-    }, 5000)
+    }, AUTO_TICK_INTERVALS[refs.autoTickSpeed.value])
 
     logger.logAutoTickStarted()
+  }
+
+  function setAutoTickSpeed(speed: AutoTickSpeed) {
+    refs.autoTickSpeed.value = speed
+
+    if (!refs.isPaused.value) {
+      pauseAutoTick()
+      startAutoTick()
+    }
   }
 
   function resetSimulation() {
@@ -271,6 +288,7 @@ export function createSimulationRuntime(
     progressTask,
     startAutoTick,
     pauseAutoTick,
+    setAutoTickSpeed,
     resetSimulation,
     updateCharacterLocation,
     setItemOccupancy,

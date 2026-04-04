@@ -46,9 +46,9 @@
           </div>
 
           <!-- Affordances -->
-          <div v-if="item.allowedActivities && item.allowedActivities.length > 0" class="mt-2 flex flex-wrap gap-1">
+          <div v-if="getItemActions(item).length > 0" class="mt-2 flex flex-wrap gap-1">
             <span
-              v-for="activity in item.allowedActivities"
+              v-for="activity in getItemActions(item)"
               :key="activity"
               class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
             >
@@ -108,6 +108,14 @@ const props = defineProps({
 // Helper to get active users from Pinia store
 function getActiveUsersForItem(itemId) {
   return simulationStore.getItemActiveUsers(itemId)
+}
+
+function getItemActions(item) {
+  if (item.allowedActivities?.length) {
+    return item.allowedActivities
+  }
+
+  return (item.affordances || []).map((entry) => entry.action)
 }
 
 // Calculate idle characters (in space but not using any items)

@@ -276,6 +276,36 @@ describe('buildWorldData', () => {
     expect(worldData.spaces['room-1']).toBeDefined()
   })
 
+  it('indexes actions from affordances when allowedActivities is empty', () => {
+    const lots = [
+      {
+        id: 'lot-1',
+        name: 'Affordance House',
+        lotType: 'residential',
+        indoorRooms: [
+          {
+            id: 'space-1',
+            name: 'Bathroom',
+            items: [
+              {
+                id: 'item-1',
+                name: 'Shower Stall',
+                affordances: [{ action: 'shower', weight: 1.5 }],
+                allowedActivities: []
+              }
+            ]
+          }
+        ],
+        outdoorAreas: []
+      }
+    ]
+
+    const worldData = buildWorldData(lots, 'region-1')
+
+    expect(worldData.items['item-1'].allowedActivities).toEqual(['shower'])
+    expect(worldData.itemsByAffordance.shower).toEqual(['item-1'])
+  })
+
   it('should handle lots with only outdoor areas', () => {
     const lots = [
       {

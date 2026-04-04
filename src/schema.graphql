@@ -69,6 +69,7 @@ type ItemTemplate {
   name: String!
   description: String!
   count: Int!
+  affordances: [ItemAffordance!]!
 }
 
 type HouseholdTemplate {
@@ -468,6 +469,7 @@ input ItemInput {
   itemName: String!
   itemDescription: String!
   itemCount: Int!
+  affordances: [ItemAffordanceInput!]
 }
 
 input SpaceWithItemsInput {

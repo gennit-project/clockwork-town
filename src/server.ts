@@ -6,6 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { applyDDL } from "./db";
 import { resolvers } from "./resolvers";
+import { backfillMissingItemAffordances } from "./resolvers/itemAffordanceInference";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const schemaPath = path.join(process.cwd(), "src", "schema.graphql");
@@ -16,6 +17,7 @@ async function main() {
   }
 
   await applyDDL();
+  const repairedItems = await backfillMissingItemAffordances();
 
   const typeDefs = fs.readFileSync(schemaPath, "utf8");
   const schema = makeExecutableSchema({ typeDefs, resolvers });
@@ -71,6 +73,9 @@ async function main() {
   server.listen(port, () => {
     console.log(`🚀 Server running at http://localhost:${port}`);
     console.log(`   GraphQL endpoint: http://localhost:${port}/graphql`);
+    if (repairedItems > 0) {
+      console.log(`   Repaired affordances for ${repairedItems} existing items`);
+    }
     if (hasBuiltFrontend) {
       console.log(`   Frontend: http://localhost:${port}`);
     } else {

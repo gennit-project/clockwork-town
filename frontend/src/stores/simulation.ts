@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { Ref } from 'vue'
 import type {
+  AutoTickSpeed,
   CharacterState,
   WorldData,
   ItemOccupancy,
@@ -30,6 +31,7 @@ export const useSimulationStore = defineStore('simulation', () => {
   const currentTick = ref(0)
   const isPaused = ref(true)
   const tickIntervalId: Ref<NodeJS.Timeout | null> = ref(null)
+  const autoTickSpeed = ref<AutoTickSpeed>('slow')
 
   // Activity log (for UI display)
   const activityLog: Ref<ActivityLogEntry[]> = ref([])
@@ -112,7 +114,8 @@ export const useSimulationStore = defineStore('simulation', () => {
       characterStates,
       worldData,
       itemOccupancy,
-      activeCharacterId: ref<string | null>(null)
+      activeCharacterId: ref<string | null>(null),
+      autoTickSpeed
     },
     {
       recordShortTermMemory,
@@ -146,6 +149,7 @@ export const useSimulationStore = defineStore('simulation', () => {
     activityLog,
     characterStates,
     worldData,
+    autoTickSpeed,
 
     // Getters
     isRunning,
@@ -162,6 +166,7 @@ export const useSimulationStore = defineStore('simulation', () => {
     enqueueIntent,
     startAutoTick: runtime.startAutoTick,
     pauseAutoTick: runtime.pauseAutoTick,
+    setAutoTickSpeed: runtime.setAutoTickSpeed,
     resetSimulation: runtime.resetSimulation,
     updateCharacterLocation: runtime.updateCharacterLocation,
     loadWorldData

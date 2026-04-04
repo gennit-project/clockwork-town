@@ -91,6 +91,17 @@
                   ⚡
                 </button>
 
+                <select
+                  :value="simulationStore.autoTickSpeed"
+                  class="rounded bg-white px-2 py-1 text-xs font-medium text-gray-900 ring-1 ring-gray-300 dark:bg-gray-800 dark:text-gray-100 dark:ring-gray-600"
+                  title="Auto-tick speed"
+                  @change="changePlaySpeed"
+                >
+                  <option value="slow">1x</option>
+                  <option value="normal">2.5x</option>
+                  <option value="fast">6.5x</option>
+                </select>
+
                 <!-- Reset Button -->
                 <button
                   @click="resetSimulation"
@@ -314,6 +325,11 @@ const togglePlayPause = () => {
 
 const manualTick = () => {
   simulationStore.executeTick()
+}
+
+const changePlaySpeed = (event: Event) => {
+  const target = event.target as HTMLSelectElement
+  simulationStore.setAutoTickSpeed(target.value as 'slow' | 'normal' | 'fast')
 }
 
 const resetSimulation = () => {

@@ -266,9 +266,9 @@
               </div>
 
               <!-- Affordances -->
-              <div v-if="item.allowedActivities && item.allowedActivities.length > 0" class="flex flex-wrap gap-1 mt-2">
+              <div v-if="getItemActions(item).length > 0" class="flex flex-wrap gap-1 mt-2">
                 <span
-                  v-for="affordance in item.affordances || []"
+                  v-for="affordance in getItemAffordances(item)"
                   :key="affordance.action"
                   class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
                 >
@@ -280,9 +280,9 @@
                   no actions
                 </span>
               </div>
-              <div v-if="activeCharacter && item.allowedActivities?.length" class="mt-3 flex flex-wrap gap-1">
+              <div v-if="activeCharacter && getItemActions(item).length" class="mt-3 flex flex-wrap gap-1">
                 <button
-                  v-for="activity in item.allowedActivities"
+                  v-for="activity in getItemActions(item)"
                   :key="activity"
                   type="button"
                   class="rounded bg-blue-600 px-2 py-1 text-[10px] text-white"
@@ -590,6 +590,22 @@ function setAffordanceWeight(target, action: string, rawValue: string) {
   target.affordances = (target.affordances || []).map((entry) =>
     entry.action === action ? { ...entry, weight } : entry
   )
+}
+
+function getItemActions(item) {
+  if (item.allowedActivities?.length) {
+    return item.allowedActivities
+  }
+
+  return (item.affordances || []).map((entry) => entry.action)
+}
+
+function getItemAffordances(item) {
+  if (item.affordances?.length) {
+    return item.affordances
+  }
+
+  return (item.allowedActivities || []).map((action) => ({ action, weight: 1 }))
 }
 
 function queueItemAction(item, action: string) {
