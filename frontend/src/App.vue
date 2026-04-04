@@ -156,8 +156,19 @@
         </div>
       </div>
 
-      <!-- Main content area with right sidebar -->
+      <!-- Main content area with side panes -->
       <div class="flex flex-1 overflow-hidden">
+        <aside
+          v-if="showCharacterPane"
+          class="hidden lg:flex lg:w-80 lg:min-w-0 lg:flex-col lg:border-r lg:border-gray-200 lg:bg-white lg:dark:border-gray-700 lg:dark:bg-gray-800"
+        >
+          <CharacterDetailPanel
+            :character="selectedCharacterForPanel"
+            :available-romance-targets="regionCharacters"
+            @close="closeCharacterPanel"
+          />
+        </aside>
+
         <main class="flex-1 w-full mx-auto py-6 sm:px-6 lg:px-8 overflow-auto">
           <router-view />
         </main>
@@ -274,14 +285,6 @@
       </div>
     </div>
 
-    <!-- Character Detail Panel (Lower Left Corner) -->
-    <CharacterDetailPanel
-      v-if="selectedCharacterForPanel"
-      :character="selectedCharacterForPanel"
-      :available-romance-targets="regionCharacters"
-      @close="selectedCharacterForPanel = null"
-    />
-
     <AnimalDetailPanel
       v-if="selectedAnimalForPanel"
       :animal="selectedAnimalForPanel"
@@ -348,9 +351,18 @@ const showMobileNav = ref(false)
 const regionCharacters = ref<CharacterSummary[]>([])
 const regionAnimals = ref<AnimalSummary[]>([])
 const selectedCharacterForPanel = ref<CharacterSummary | null>(null)
+const selectedCharacterWorldId = ref<string | null>(null)
 const selectedAnimalForPanel = ref<AnimalSummary | null>(null)
 
+const currentWorldId = computed(() => normalizeRouteParam(route.params.worldId))
 const currentRegionId = computed(() => normalizeRouteParam(route.params.regionId))
+const showCharacterPane = computed(() =>
+  Boolean(
+    selectedCharacterForPanel.value &&
+    currentWorldId.value &&
+    selectedCharacterWorldId.value === currentWorldId.value
+  )
+)
 
 const togglePlayPause = () => {
   if (simulationStore.isPaused) {
@@ -400,6 +412,12 @@ watch(currentRegionId, () => {
   loadRegionData()
 }, { immediate: true })
 
+watch(currentWorldId, (newWorldId) => {
+  if (!newWorldId) {
+    closeCharacterPanel()
+  }
+})
+
 // Character/Animal selection - navigate to their location and show panel
 const selectCharacter = (character: CharacterSummary) => {
   // Set as active character
@@ -407,13 +425,14 @@ const selectCharacter = (character: CharacterSummary) => {
 
   // Show character detail panel
   selectedCharacterForPanel.value = character
+  selectedCharacterWorldId.value = currentWorldId.value ?? null
 
   // Get character's location from simulation store
   const charState = simulationStore.characterStates[character.id]
   if (charState?.location?.spaceId) {
     // Navigate to the space detail page
-    const worldId = normalizeRouteParam(route.params.worldId)
-    const regionId = normalizeRouteParam(route.params.regionId)
+    const worldId = currentWorldId.value
+    const regionId = currentRegionId.value
     const lotId = charState.location.lotId
     const spaceId = charState.location.spaceId
 
@@ -427,6 +446,12 @@ const selectCharacter = (character: CharacterSummary) => {
 
 const selectAnimal = (animal: AnimalSummary) => {
   selectedAnimalForPanel.value = animal
+}
+
+const closeCharacterPanel = () => {
+  selectedCharacterForPanel.value = null
+  selectedCharacterWorldId.value = null
+  characterPanelStore.resetPanel()
 }
 
 // Get character location from simulation store (or fallback to API data)

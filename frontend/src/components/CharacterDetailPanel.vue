@@ -1,5 +1,5 @@
 <template>
-  <div class="fixed bottom-4 left-4 w-80 h-[300px] bg-white dark:bg-gray-800 rounded-lg shadow-2xl border-2 border-gray-300 dark:border-gray-600 z-40 flex flex-col">
+  <div class="flex h-full min-h-0 w-full flex-col bg-white dark:bg-gray-800">
     <!-- Header -->
     <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
       <div class="min-w-0">
@@ -36,8 +36,7 @@
 
     <!-- Content -->
     <div class="p-4 overflow-y-auto flex-1">
-      <!-- Basics Tab -->
-      <div v-if="activeTab === 'Basics'" class="space-y-4">
+      <div v-if="activeTab === 'Needs'" class="space-y-5">
         <!-- Location & Status -->
         <div class="flex items-center justify-between text-xs mb-4 pb-3 border-b border-gray-200 dark:border-gray-700">
           <div class="flex items-center text-gray-700 dark:text-gray-300">
@@ -55,10 +54,16 @@
           </div>
         </div>
 
-        <!-- Basic Needs -->
-        <div class="space-y-2">
+        <div
+          v-for="section in needSections"
+          :key="section.label"
+          class="space-y-2"
+        >
+          <h4 class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+            {{ section.label }}
+          </h4>
           <NeedBar
-            v-for="need in basicNeeds"
+            v-for="need in section.needs"
             :key="need.key"
             :icon="need.icon"
             :label="need.label"
@@ -67,32 +72,6 @@
             @select="openNeedPicker(need.key)"
           />
         </div>
-      </div>
-
-      <!-- Emotions Tab -->
-      <div v-else-if="activeTab === 'Emotions'" class="space-y-2">
-        <NeedBar
-          v-for="need in emotionalNeeds"
-          :key="need.key"
-          :icon="need.icon"
-          :label="need.label"
-          :percentage="(characterState?.needs?.[need.key] || 0) * 100"
-          clickable
-          @select="openNeedPicker(need.key)"
-        />
-      </div>
-
-      <!-- Fulfillment Tab -->
-      <div v-else-if="activeTab === 'Fulfillment'" class="space-y-2">
-        <NeedBar
-          v-for="need in fulfillmentNeeds"
-          :key="need.key"
-          :icon="need.icon"
-          :label="need.label"
-          :percentage="(characterState?.needs?.[need.key] || 0) * 100"
-          clickable
-          @select="openNeedPicker(need.key)"
-        />
       </div>
 
       <CharacterBioTab
@@ -150,6 +129,11 @@ interface NeedDescriptor {
   label: string
 }
 
+interface NeedSection {
+  label: string
+  needs: NeedDescriptor[]
+}
+
 const props = defineProps<{
   character: CharacterPanelEntity
   availableRomanceTargets?: RomanceTarget[]
@@ -160,10 +144,10 @@ defineEmits<{
 }>()
 
 const simulationStore = useSimulationStore()
-const activeTab = ref('Basics')
+const activeTab = ref('Needs')
 const showNeedPicker = ref(false)
 
-const tabs = ['Basics', 'Emotions', 'Fulfillment', 'Bio', 'Memories'] as const
+const tabs = ['Needs', 'Bio', 'Memories'] as const
 
 const { characterState, selectedNeed, selectableOptions } = useCharacterIntentOptions(
   props.character,
@@ -197,6 +181,12 @@ const emotionalNeeds: NeedDescriptor[] = [
 
 const fulfillmentNeeds: NeedDescriptor[] = [
   { key: 'fulfillment', icon: '✨', label: 'Fulfillment' }
+]
+
+const needSections: NeedSection[] = [
+  { label: 'Basics', needs: basicNeeds },
+  { label: 'Emotions', needs: emotionalNeeds },
+  { label: 'Fulfillment', needs: fulfillmentNeeds }
 ]
 
 function openNeedPicker(needKey: NeedName) {
