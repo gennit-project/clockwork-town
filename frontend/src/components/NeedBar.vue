@@ -24,29 +24,18 @@
 </template>
 
 <script setup lang="ts">
-defineProps({
-  icon: {
-    type: String,
-    required: true
-  },
-  label: {
-    type: String,
-    required: true
-  },
-  percentage: {
-    type: Number,
-    required: true,
-    default: 0
-  },
-  clickable: {
-    type: Boolean,
-    default: false
-  }
-})
+defineProps<{
+  icon: string
+  label: string
+  percentage: number
+  clickable?: boolean
+}>()
 
-defineEmits(['select'])
+defineEmits<{
+  select: []
+}>()
 
-const getColorClass = (value) => {
+const getColorClass = (value: number): string => {
   if (value >= 0.7) return 'bg-green-500'
   if (value >= 0.4) return 'bg-yellow-500'
   if (value >= 0.2) return 'bg-orange-500'

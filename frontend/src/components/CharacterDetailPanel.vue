@@ -112,7 +112,7 @@
 
     <CharacterNeedPicker
       :visible="showNeedPicker"
-      :selected-need="selectedNeed"
+      :selected-need="selectedNeed ?? ''"
       :options="selectableOptions"
       @close="showNeedPicker = false"
       @select="queueIntent"
@@ -125,47 +125,63 @@ import { computed, ref } from 'vue'
 import { useSimulationStore } from '../stores/simulation'
 import { useCharacterIntentOptions } from '../composables/useCharacterIntentOptions'
 import { getCharacterStatusMeta } from '../composables/useCharacterStatus'
+import type { Intent, NeedName } from '../stores/types'
 import CharacterBioTab from './CharacterBioTab.vue'
 import CharacterMemoriesTab from './CharacterMemoriesTab.vue'
 import CharacterNeedPicker from './CharacterNeedPicker.vue'
 import NeedBar from './NeedBar.vue'
 
-const props = defineProps({
-  character: {
-    type: Object,
-    required: true
-  },
-  availableRomanceTargets: {
-    type: Array,
-    default: () => []
-  }
-})
+interface CharacterPanelEntity {
+  id: string
+  name: string
+  age: number
+  bio?: string | null
+  traits?: string[]
+}
 
-defineEmits(['close'])
+interface RomanceTarget {
+  id: string
+  name: string
+}
+
+interface NeedDescriptor {
+  key: NeedName
+  icon: string
+  label: string
+}
+
+const props = defineProps<{
+  character: CharacterPanelEntity
+  availableRomanceTargets?: RomanceTarget[]
+}>()
+
+defineEmits<{
+  close: []
+}>()
 
 const simulationStore = useSimulationStore()
 const activeTab = ref('Basics')
 const showNeedPicker = ref(false)
 
-const tabs = ['Basics', 'Emotions', 'Fulfillment', 'Bio', 'Memories']
+const tabs = ['Basics', 'Emotions', 'Fulfillment', 'Bio', 'Memories'] as const
 
 const { characterState, selectedNeed, selectableOptions } = useCharacterIntentOptions(
   props.character,
-  props.availableRomanceTargets
+  props.availableRomanceTargets ?? []
 )
 
 const statusMeta = computed(() => getCharacterStatusMeta(characterState.value))
 const statusSummary = computed(() => statusMeta.value.summary)
 const statusLocation = computed(() => statusMeta.value.location)
 
-const formatAction = (action) => {
+const formatAction = (action: string): string => {
   return action
     .split('_')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ')
 }
 
-const basicNeeds = [
+const basicNeeds: NeedDescriptor[] = [
   { key: 'food', icon: '🍎', label: 'Food' },
   { key: 'sleep', icon: '😴', label: 'Sleep' },
   { key: 'bladder', icon: '🚽', label: 'Bladder' },
@@ -173,22 +189,22 @@ const basicNeeds = [
   { key: 'health', icon: '💊', label: 'Health' }
 ]
 
-const emotionalNeeds = [
+const emotionalNeeds: NeedDescriptor[] = [
   { key: 'friends', icon: '💬', label: 'Friends' },
   { key: 'family', icon: '👨‍👩‍👧', label: 'Family' },
   { key: 'romance', icon: '💕', label: 'Romance' }
 ]
 
-const fulfillmentNeeds = [
+const fulfillmentNeeds: NeedDescriptor[] = [
   { key: 'fulfillment', icon: '✨', label: 'Fulfillment' }
 ]
 
-function openNeedPicker(needKey: string) {
+function openNeedPicker(needKey: NeedName) {
   selectedNeed.value = needKey
   showNeedPicker.value = true
 }
 
-function queueIntent(intent: any) {
+function queueIntent(intent: Intent) {
   simulationStore.enqueueIntent(props.character.id, intent)
   showNeedPicker.value = false
 }

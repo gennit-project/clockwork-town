@@ -31,16 +31,18 @@ async function main() {
   const hasBuiltFrontend = fs.existsSync(distPath);
 
   const server = createServer(async (req, res) => {
+    const requestUrl = req.url ?? "/";
+
     // Handle GraphQL requests
-    if (req.url?.startsWith("/graphql")) {
+    if (requestUrl.startsWith("/graphql")) {
       return yoga(req, res);
     }
 
     // Serve frontend if built
     if (hasBuiltFrontend) {
-      const filePath = req.url === "/" || req.url === ""
+      const filePath = requestUrl === "/" || requestUrl === ""
         ? path.join(distPath, "index.html")
-        : path.join(distPath, req.url);
+        : path.join(distPath, requestUrl);
 
       if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
         const ext = path.extname(filePath);

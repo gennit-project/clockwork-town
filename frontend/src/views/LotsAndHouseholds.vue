@@ -145,22 +145,65 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
 import { client, queries, mutations } from '../graphql'
+import { useRouteParams } from '../composables/useRouteParams'
 
-const route = useRoute()
+interface WorldSummary {
+  id: string
+  name: string
+}
+
+interface RegionSummary {
+  id: string
+  name: string
+}
+
+interface LotSummary {
+  id: string
+  name: string
+}
+
+interface HouseholdCharacterSummary {
+  id: string
+  name: string
+  age: number
+}
+
+interface HouseholdSummary {
+  id: string
+  name: string
+  lotName: string
+  characters: HouseholdCharacterSummary[]
+}
+
+interface GetWorldResult {
+  world: WorldSummary | null
+}
+
+interface GetRegionsResult {
+  regions: RegionSummary[]
+}
+
+interface GetLotsResult {
+  lots: LotSummary[]
+}
+
+interface GetHouseholdsResult {
+  households: HouseholdSummary[]
+}
+
 const router = useRouter()
-const worldId = computed(() => route.params.worldId)
-const regionId = computed(() => route.params.regionId)
+const { worldId, regionId } = useRouteParams()
 
-const region = ref(null)
-const world = ref(null)
-const lots = ref([])
-const households = ref([])
+const region = ref<RegionSummary | null>(null)
+const world = ref<WorldSummary | null>(null)
+const lots = ref<LotSummary[]>([])
+const households = ref<HouseholdSummary[]>([])
 const loading = ref(true)
-const error = ref(null)
-const deletingHousehold = ref(null)
+const error = ref<string | null>(null)
+const deletingHousehold = ref<HouseholdSummary | null>(null)
 const saving = ref(false)
 
 const breadcrumbs = computed(() => [
@@ -172,49 +215,60 @@ const breadcrumbs = computed(() => [
 
 const loadData = async () => {
   try {
+    if (!worldId.value || !regionId.value) {
+      error.value = 'Missing route parameters'
+      return
+    }
+
     loading.value = true
     error.value = null
     const [worldData, regionsData, lotsData, householdsData] = await Promise.all([
-      client.request(queries.getWorld, { id: worldId.value }),
-      client.request(queries.getRegions, { worldId: worldId.value }),
-      client.request(queries.getLots, { regionId: regionId.value }),
-      client.request(queries.getHouseholds, { regionId: regionId.value })
+      client.request<GetWorldResult>(queries.getWorld, { id: worldId.value }),
+      client.request<GetRegionsResult>(queries.getRegions, { worldId: worldId.value }),
+      client.request<GetLotsResult>(queries.getLots, { regionId: regionId.value }),
+      client.request<GetHouseholdsResult>(queries.getHouseholds, { regionId: regionId.value })
     ])
     world.value = worldData.world
-    region.value = regionsData.regions.find(r => r.id === regionId.value)
+    region.value = regionsData.regions.find((entry) => entry.id === regionId.value) || null
     lots.value = lotsData.lots || []
     households.value = householdsData.households || []
-  } catch (e) {
-    error.value = e.message
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : 'Failed to load lots and households'
   } finally {
     loading.value = false
   }
 }
 
-const confirmDeleteHousehold = (household) => {
+const confirmDeleteHousehold = (household: HouseholdSummary) => {
   deletingHousehold.value = household
 }
 
 const deleteHousehold = async () => {
   try {
+    if (!deletingHousehold.value) {
+      return
+    }
+
     saving.value = true
     await client.request(mutations.deleteHousehold, { id: deletingHousehold.value.id })
     deletingHousehold.value = null
     await loadData()
-  } catch (e) {
-    error.value = e.message
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : 'Failed to delete household'
   } finally {
     saving.value = false
   }
 }
 
-const viewLot = (lotId) => {
+const viewLot = (lotId: string) => {
   router.push(`/world/${worldId.value}/region/${regionId.value}/lot/${lotId}`)
 }
 
-const viewHousehold = (householdId) => {
+const viewHousehold = (householdId: string) => {
   router.push(`/world/${worldId.value}/region/${regionId.value}/household/${householdId}`)
 }
 
-onMounted(loadData)
+onMounted(() => {
+  void loadData()
+})
 </script>

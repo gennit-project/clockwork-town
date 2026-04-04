@@ -27,20 +27,21 @@
 </template>
 
 <script setup lang="ts">
-defineProps({
-  visible: {
-    type: Boolean,
-    default: false
-  },
-  selectedNeed: {
-    type: String,
-    default: ''
-  },
-  options: {
-    type: Array,
-    default: () => []
-  }
-})
+import type { Intent, NeedName } from '../stores/types'
 
-defineEmits(['close', 'select'])
+interface NeedPickerOption {
+  label: string
+  intent: Intent
+}
+
+defineProps<{
+  visible?: boolean
+  selectedNeed?: NeedName | ''
+  options: NeedPickerOption[]
+}>()
+
+defineEmits<{
+  close: []
+  select: [intent: Intent]
+}>()
 </script>

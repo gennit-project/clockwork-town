@@ -66,7 +66,7 @@
           <SpaceCard
             v-for="(room, index) in template.indoorRooms"
             :key="index"
-            :space="room"
+            :space="normalizeSpace(room)"
           />
         </div>
       </div>
@@ -78,7 +78,7 @@
           <SpaceCard
             v-for="(area, index) in template.outdoorAreas"
             :key="index"
-            :space="area"
+            :space="normalizeSpace(area)"
           />
         </div>
       </div>
@@ -158,19 +158,80 @@ import { gql } from 'graphql-request'
 import { client, queries } from '../graphql'
 import SpaceCard from '../components/SpaceCard.vue'
 
+interface TemplateItem {
+  name: string
+  description?: string | null
+}
+
+interface TemplateSpace {
+  name: string
+  description?: string | null
+  items?: TemplateItem[]
+}
+
+interface TemplateCardSpace {
+  name: string
+  description?: string
+  items?: Array<{
+    name: string
+    description?: string
+  }>
+}
+
+interface LotTemplateDetail {
+  id: string
+  name: string
+  lotType: string
+  description?: string | null
+  tags?: string[]
+  indoorRooms?: TemplateSpace[]
+  outdoorAreas?: TemplateSpace[]
+}
+
+interface WorldSummary {
+  id: string
+  name: string
+}
+
+interface RegionSummary {
+  id: string
+  name: string
+}
+
+interface GetLotTemplateResult {
+  lotTemplate: LotTemplateDetail | null
+}
+
+interface GetWorldsResult {
+  worlds: WorldSummary[]
+}
+
+interface GetRegionsResult {
+  regions: RegionSummary[]
+}
+
 const route = useRoute()
 const router = useRouter()
-const template = ref(null)
+const template = ref<LotTemplateDetail | null>(null)
 const loading = ref(true)
-const error = ref(null)
+const error = ref<Error | null>(null)
 
 // Clone modal state
 const showCloneModal = ref(false)
-const worlds = ref([])
-const regions = ref([])
+const worlds = ref<WorldSummary[]>([])
+const regions = ref<RegionSummary[]>([])
 const selectedWorldId = ref('')
 const selectedRegionId = ref('')
 const cloning = ref(false)
+
+const normalizeSpace = (space: TemplateSpace): TemplateCardSpace => ({
+  name: space.name,
+  description: space.description ?? undefined,
+  items: space.items?.map((item) => ({
+    name: item.name,
+    description: item.description ?? undefined
+  }))
+})
 
 const QUERY_LOT_TEMPLATE = gql`
   query GetLotTemplate($id: ID!) {
@@ -212,9 +273,9 @@ const MUTATION_CREATE_LOT = gql`
 
 const loadWorlds = async () => {
   try {
-    const data = await client.request(queries.getWorlds)
+    const data = await client.request<GetWorldsResult>(queries.getWorlds)
     worlds.value = data.worlds || []
-  } catch (e) {
+  } catch (e: unknown) {
     console.error('Error loading worlds:', e)
   }
 }
@@ -226,11 +287,11 @@ const onWorldChange = async () => {
   if (!selectedWorldId.value) return
 
   try {
-    const data = await client.request(queries.getRegions, {
+    const data = await client.request<GetRegionsResult>(queries.getRegions, {
       worldId: selectedWorldId.value
     })
     regions.value = data.regions || []
-  } catch (e) {
+  } catch (e: unknown) {
     console.error('Error loading regions:', e)
   }
 }
@@ -244,6 +305,9 @@ const closeCloneModal = () => {
 
 const cloneTemplate = async () => {
   try {
+    if (!template.value) {
+      return
+    }
     cloning.value = true
 
     // Transform template data to match CreateLotWithSpacesInput
@@ -251,19 +315,19 @@ const cloneTemplate = async () => {
       lotName: template.value.name,
       lotType: template.value.lotType,
       lotDescription: template.value.description || '',
-      indoorRooms: (template.value.indoorRooms || []).map(room => ({
+      indoorRooms: (template.value.indoorRooms || []).map((room) => ({
         spaceName: room.name,
         spaceDescription: room.description,
-        items: (room.items || []).map(item => ({
+        items: (room.items || []).map((item) => ({
           itemName: item.name,
           itemDescription: item.description,
           itemCount: 1
         }))
       })),
-      outdoorSpaces: (template.value.outdoorAreas || []).map(area => ({
+      outdoorSpaces: (template.value.outdoorAreas || []).map((area) => ({
         spaceName: area.name,
         spaceDescription: area.description,
-        items: (area.items || []).map(item => ({
+        items: (area.items || []).map((item) => ({
           itemName: item.name,
           itemDescription: item.description,
           itemCount: 1
@@ -278,9 +342,10 @@ const cloneTemplate = async () => {
 
     // Navigate to the region's lots page
     router.push(`/world/${selectedWorldId.value}/region/${selectedRegionId.value}/lots`)
-  } catch (e) {
-    error.value = e
-    alert('Error cloning template: ' + e.message)
+  } catch (e: unknown) {
+    const err = e instanceof Error ? e : new Error('Failed to clone lot template')
+    error.value = err
+    alert('Error cloning template: ' + err.message)
   } finally {
     cloning.value = false
   }
@@ -288,15 +353,15 @@ const cloneTemplate = async () => {
 
 onMounted(async () => {
   try {
-    const data = await client.request(QUERY_LOT_TEMPLATE, {
+    const data = await client.request<GetLotTemplateResult>(QUERY_LOT_TEMPLATE, {
       id: route.params.templateId
     })
     template.value = data.lotTemplate
 
     // Load worlds for the clone modal
     await loadWorlds()
-  } catch (e) {
-    error.value = e
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e : new Error('Failed to load lot template')
   } finally {
     loading.value = false
   }

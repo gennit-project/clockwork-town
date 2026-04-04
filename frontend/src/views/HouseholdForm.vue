@@ -253,26 +253,92 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
 import { client, queries, mutations } from '../graphql'
+import { useRouteParams } from '../composables/useRouteParams'
 
-const route = useRoute()
+interface WorldSummary {
+  id: string
+  name: string
+}
+
+interface RegionSummary {
+  id: string
+  name: string
+}
+
+interface LotSummary {
+  id: string
+  name: string
+  lotType: string
+}
+
+interface HouseholdSummary {
+  id: string
+  name: string
+  lotId: string
+}
+
+interface CharacterFormEntry {
+  id: string
+  name: string
+  age: number
+  bio: string
+}
+
+interface AnimalFormEntry {
+  id: string
+  name: string
+  age: number
+  ownerId: string
+  traitsString: string
+  bio: string
+}
+
+interface GetWorldResult {
+  world: WorldSummary | null
+}
+
+interface GetRegionsResult {
+  regions: RegionSummary[]
+}
+
+interface GetLotsResult {
+  lots: LotSummary[]
+}
+
+interface GetHouseholdsResult {
+  households: HouseholdSummary[]
+}
+
+interface GetHouseholdResult {
+  household: {
+    name: string
+    lotId: string
+    characters: Array<{ id: string; name: string; age: number; bio?: string | null }>
+    animals: Array<{ id: string; name: string; age: number; ownerId?: string | null; traits?: string[]; bio?: string | null }>
+  } | null
+}
+
 const router = useRouter()
-const worldId = computed(() => route.params.worldId)
-const regionId = computed(() => route.params.regionId)
-const householdId = computed(() => route.params.householdId)
+const { worldId, regionId, householdId } = useRouteParams()
 const isEditing = computed(() => !!householdId.value)
 
-const world = ref(null)
-const region = ref(null)
-const lots = ref([])
-const households = ref([])
+const world = ref<WorldSummary | null>(null)
+const region = ref<RegionSummary | null>(null)
+const lots = ref<LotSummary[]>([])
+const households = ref<HouseholdSummary[]>([])
 const loading = ref(true)
-const error = ref(null)
+const error = ref<string | null>(null)
 const saving = ref(false)
 
-const formData = ref({
+const formData = ref<{
+  name: string
+  lotId: string
+  characters: CharacterFormEntry[]
+  animals: AnimalFormEntry[]
+}>({
   name: '',
   lotId: '',
   characters: [],
@@ -287,53 +353,56 @@ const breadcrumbs = computed(() => [
 ])
 
 const availableLots = computed(() => {
-  const occupiedLotIds = new Set(households.value.map(h => h.lotId))
-  return lots.value.filter(lot =>
-    !occupiedLotIds.has(lot.id) || lot.id === formData.value.lotId
-  )
+  const occupiedLotIds = new Set(households.value.map((household) => household.lotId))
+  return lots.value.filter((lot) => !occupiedLotIds.has(lot.id) || lot.id === formData.value.lotId)
 })
 
 const loadData = async () => {
   try {
+    if (!worldId.value || !regionId.value) {
+      error.value = 'Missing route parameters'
+      return
+    }
+
     loading.value = true
     error.value = null
     const [worldData, regionsData, lotsData, householdsData] = await Promise.all([
-      client.request(queries.getWorld, { id: worldId.value }),
-      client.request(queries.getRegions, { worldId: worldId.value }),
-      client.request(queries.getLots, { regionId: regionId.value }),
-      client.request(queries.getHouseholds, { regionId: regionId.value })
+      client.request<GetWorldResult>(queries.getWorld, { id: worldId.value }),
+      client.request<GetRegionsResult>(queries.getRegions, { worldId: worldId.value }),
+      client.request<GetLotsResult>(queries.getLots, { regionId: regionId.value }),
+      client.request<GetHouseholdsResult>(queries.getHouseholds, { regionId: regionId.value })
     ])
     world.value = worldData.world
-    region.value = regionsData.regions.find(r => r.id === regionId.value)
+    region.value = regionsData.regions.find((entry) => entry.id === regionId.value) || null
     lots.value = lotsData.lots || []
     households.value = householdsData.households || []
 
-    if (isEditing.value) {
-      const householdData = await client.request(queries.getHousehold, { id: householdId.value })
+    if (isEditing.value && householdId.value) {
+      const householdData = await client.request<GetHouseholdResult>(queries.getHousehold, { id: householdId.value })
       const household = householdData.household
       if (household) {
         formData.value = {
           name: household.name,
           lotId: household.lotId,
-          characters: household.characters.map(c => ({
-            id: c.id,
-            name: c.name,
-            age: c.age,
-            bio: c.bio || ''
+          characters: household.characters.map((character) => ({
+            id: character.id,
+            name: character.name,
+            age: character.age,
+            bio: character.bio || ''
           })),
-          animals: household.animals.map(a => ({
-            id: a.id,
-            name: a.name,
-            age: a.age,
-            ownerId: a.ownerId || '',
-            traitsString: (a.traits || []).join(', '),
-            bio: a.bio || ''
+          animals: household.animals.map((animal) => ({
+            id: animal.id,
+            name: animal.name,
+            age: animal.age,
+            ownerId: animal.ownerId || '',
+            traitsString: (animal.traits || []).join(', '),
+            bio: animal.bio || ''
           }))
         }
       }
     }
-  } catch (e) {
-    error.value = e.message
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : 'Failed to load household form'
   } finally {
     loading.value = false
   }
@@ -348,7 +417,7 @@ const addCharacter = () => {
   })
 }
 
-const removeCharacter = (index) => {
+const removeCharacter = (index: number) => {
   formData.value.characters.splice(index, 1)
 }
 
@@ -358,37 +427,43 @@ const addAnimal = () => {
     name: '',
     age: 0,
     ownerId: '',
-    traitsString: ''
+    traitsString: '',
+    bio: ''
   })
 }
 
-const removeAnimal = (index) => {
+const removeAnimal = (index: number) => {
   formData.value.animals.splice(index, 1)
 }
 
 const saveHousehold = async () => {
   try {
+    if (!regionId.value) {
+      error.value = 'Missing region id'
+      return
+    }
+
     saving.value = true
     error.value = null
 
-    if (isEditing.value) {
+    if (isEditing.value && householdId.value) {
       await client.request(mutations.updateHousehold, {
         id: householdId.value,
         name: formData.value.name,
         lotId: formData.value.lotId,
-        characters: formData.value.characters.map(c => ({
-          id: c.id,
-          name: c.name,
-          age: c.age,
-          bio: c.bio || null
+        characters: formData.value.characters.map((character) => ({
+          id: character.id,
+          name: character.name,
+          age: character.age,
+          bio: character.bio || null
         })),
-        animals: formData.value.animals.map(a => ({
-          id: a.id,
-          name: a.name,
-          age: a.age,
-          ownerId: a.ownerId,
-          traits: a.traitsString ? a.traitsString.split(',').map(t => t.trim()).filter(t => t) : [],
-          bio: a.bio || null
+        animals: formData.value.animals.map((animal) => ({
+          id: animal.id,
+          name: animal.name,
+          age: animal.age,
+          ownerId: animal.ownerId,
+          traits: animal.traitsString ? animal.traitsString.split(',').map((trait) => trait.trim()).filter(Boolean) : [],
+          bio: animal.bio || null
         }))
       })
     } else {
@@ -399,26 +474,26 @@ const saveHousehold = async () => {
           regionId: regionId.value,
           lotId: formData.value.lotId
         },
-        characters: formData.value.characters.map(c => ({
-          id: c.id,
-          name: c.name,
-          age: c.age,
-          bio: c.bio || null
+        characters: formData.value.characters.map((character) => ({
+          id: character.id,
+          name: character.name,
+          age: character.age,
+          bio: character.bio || null
         })),
-        animals: formData.value.animals.map(a => ({
-          id: a.id,
-          name: a.name,
-          age: a.age,
-          ownerId: a.ownerId,
-          traits: a.traitsString ? a.traitsString.split(',').map(t => t.trim()).filter(t => t) : [],
-          bio: a.bio || null
+        animals: formData.value.animals.map((animal) => ({
+          id: animal.id,
+          name: animal.name,
+          age: animal.age,
+          ownerId: animal.ownerId,
+          traits: animal.traitsString ? animal.traitsString.split(',').map((trait) => trait.trim()).filter(Boolean) : [],
+          bio: animal.bio || null
         }))
       })
     }
 
     goBack()
-  } catch (e) {
-    error.value = e.message
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : 'Failed to save household'
   } finally {
     saving.value = false
   }
@@ -428,5 +503,7 @@ const goBack = () => {
   router.push(`/world/${worldId.value}/region/${regionId.value}`)
 }
 
-onMounted(loadData)
+onMounted(() => {
+  void loadData()
+})
 </script>

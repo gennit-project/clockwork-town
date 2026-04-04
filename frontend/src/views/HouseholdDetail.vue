@@ -149,21 +149,64 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
 import MarkdownRenderer from '../components/MarkdownRenderer.vue'
 import { client, queries, mutations } from '../graphql'
+import { useRouteParams } from '../composables/useRouteParams'
 
-const route = useRoute()
-const worldId = computed(() => route.params.worldId)
-const regionId = computed(() => route.params.regionId)
-const householdId = computed(() => route.params.householdId)
+interface WorldSummary {
+  id: string
+  name: string
+}
 
-const household = ref(null)
-const world = ref(null)
-const region = ref(null)
+interface RegionSummary {
+  id: string
+  name: string
+}
+
+interface CharacterSummary {
+  id: string
+  name: string
+  age: number
+  bio?: string | null
+}
+
+interface AnimalSummary {
+  id: string
+  name: string
+  age: number
+  traits?: string[]
+  bio?: string | null
+}
+
+interface HouseholdSummary {
+  id: string
+  name: string
+  lotId: string
+  lotName: string
+  characters: CharacterSummary[]
+  animals?: AnimalSummary[]
+}
+
+interface GetWorldResult {
+  world: WorldSummary | null
+}
+
+interface GetRegionsResult {
+  regions: RegionSummary[]
+}
+
+interface GetHouseholdResult {
+  household: HouseholdSummary | null
+}
+
+const { worldId, regionId, householdId } = useRouteParams()
+
+const household = ref<HouseholdSummary | null>(null)
+const world = ref<WorldSummary | null>(null)
+const region = ref<RegionSummary | null>(null)
 const loading = ref(true)
-const error = ref(null)
+const error = ref<string | null>(null)
 const showSaveTemplateModal = ref(false)
 const saving = ref(false)
 const templateData = ref({ description: '', tagsInput: '' })
@@ -177,18 +220,23 @@ const breadcrumbs = computed(() => [
 
 const loadData = async () => {
   try {
+    if (!worldId.value || !regionId.value || !householdId.value) {
+      error.value = 'Missing route parameters'
+      return
+    }
+
     loading.value = true
     error.value = null
     const [worldData, regionsData, householdData] = await Promise.all([
-      client.request(queries.getWorld, { id: worldId.value }),
-      client.request(queries.getRegions, { worldId: worldId.value }),
-      client.request(queries.getHousehold, { id: householdId.value })
+      client.request<GetWorldResult>(queries.getWorld, { id: worldId.value }),
+      client.request<GetRegionsResult>(queries.getRegions, { worldId: worldId.value }),
+      client.request<GetHouseholdResult>(queries.getHousehold, { id: householdId.value })
     ])
     world.value = worldData.world
-    region.value = regionsData.regions.find(r => r.id === regionId.value)
+    region.value = regionsData.regions.find((entry) => entry.id === regionId.value) || null
     household.value = householdData.household
-  } catch (e) {
-    error.value = e.message
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : 'Failed to load household'
   } finally {
     loading.value = false
   }
@@ -201,26 +249,30 @@ const closeSaveTemplateModal = () => {
 
 const saveAsTemplate = async () => {
   try {
+    if (!household.value) {
+      return
+    }
+
     saving.value = true
     error.value = null
 
     const tags = templateData.value.tagsInput
       .split(',')
-      .map(tag => tag.trim())
-      .filter(tag => tag.length > 0)
+      .map((tag) => tag.trim())
+      .filter((tag) => tag.length > 0)
 
     const input = {
       householdName: household.value.name,
       householdDescription: templateData.value.description || '',
-      characters: household.value.characters.map(c => ({
-        characterName: c.name,
-        characterAge: c.age,
-        characterBio: c.bio || ''
+      characters: household.value.characters.map((character) => ({
+        characterName: character.name,
+        characterAge: character.age,
+        characterBio: character.bio || ''
       })),
-      animals: (household.value.animals || []).map(a => ({
-        animalName: a.name,
-        animalAge: a.age,
-        animalTraits: a.traits || []
+      animals: (household.value.animals || []).map((animal) => ({
+        animalName: animal.name,
+        animalAge: animal.age,
+        animalTraits: animal.traits || []
       }))
     }
 
@@ -228,13 +280,16 @@ const saveAsTemplate = async () => {
 
     alert('Template saved successfully!')
     closeSaveTemplateModal()
-  } catch (e) {
-    error.value = e.message
-    alert('Error saving template: ' + e.message)
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : 'Failed to save template'
+    error.value = message
+    alert('Error saving template: ' + message)
   } finally {
     saving.value = false
   }
 }
 
-onMounted(loadData)
+onMounted(() => {
+  void loadData()
+})
 </script>

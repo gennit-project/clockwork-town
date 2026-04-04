@@ -44,8 +44,8 @@
             
             <div v-if="getHouseholdForLot(lot.id)" class="mt-2">
               <p class="text-xs font-medium text-gray-700 dark:text-gray-300">Household:</p>
-              <p class="text-xs text-gray-600 dark:text-gray-300">{{ getHouseholdForLot(lot.id).name }}</p>
-              <p class="text-xs text-gray-500">{{ getHouseholdForLot(lot.id).characters.length }} member(s)</p>
+              <p class="text-xs text-gray-600 dark:text-gray-300">{{ getHouseholdForLot(lot.id)?.name }}</p>
+              <p class="text-xs text-gray-500">{{ getHouseholdForLot(lot.id)?.characters.length ?? 0 }} member(s)</p>
             </div>
           </div>
           <div class="flex space-x-2">
@@ -160,23 +160,66 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
 import { client, queries, mutations } from '../graphql'
+import { useRouteParams } from '../composables/useRouteParams'
 
-const route = useRoute()
-const worldId = computed(() => route.params.worldId)
-const regionId = computed(() => route.params.regionId)
+interface WorldSummary {
+  id: string
+  name: string
+}
 
-const lots = ref([])
-const households = ref([])
-const world = ref(null)
-const region = ref(null)
+interface RegionSummary {
+  id: string
+  name: string
+}
+
+interface LotSummary {
+  id: string
+  name: string
+  lotType: string
+}
+
+interface HouseholdCharacterSummary {
+  id: string
+  name: string
+  age: number
+}
+
+interface HouseholdSummary {
+  id: string
+  name: string
+  lotId: string
+  characters: HouseholdCharacterSummary[]
+}
+
+interface GetWorldResult {
+  world: WorldSummary | null
+}
+
+interface GetRegionsResult {
+  regions: RegionSummary[]
+}
+
+interface GetLotsResult {
+  lots: LotSummary[]
+}
+
+interface GetHouseholdsResult {
+  households: HouseholdSummary[]
+}
+
+const { worldId, regionId } = useRouteParams()
+
+const lots = ref<LotSummary[]>([])
+const households = ref<HouseholdSummary[]>([])
+const world = ref<WorldSummary | null>(null)
+const region = ref<RegionSummary | null>(null)
 const loading = ref(true)
-const error = ref(null)
+const error = ref<string | null>(null)
 const showCreateModal = ref(false)
-const editingLot = ref(null)
-const deletingLot = ref(null)
+const editingLot = ref<LotSummary | null>(null)
+const deletingLot = ref<LotSummary | null>(null)
 const saving = ref(false)
 const formData = ref({ name: '', lotType: '' })
 
@@ -187,37 +230,42 @@ const breadcrumbs = computed(() => [
   { label: 'Lots', to: '#' }
 ])
 
-const getHouseholdForLot = (lotId) => {
-  return households.value.find(h => h.lotId === lotId)
+const getHouseholdForLot = (lotId: string): HouseholdSummary | undefined => {
+  return households.value.find((household) => household.lotId === lotId)
 }
 
 const loadData = async () => {
   try {
+    if (!worldId.value || !regionId.value) {
+      error.value = 'Missing route parameters'
+      return
+    }
+
     loading.value = true
     error.value = null
     const [worldData, regionsData, lotsData, householdsData] = await Promise.all([
-      client.request(queries.getWorld, { id: worldId.value }),
-      client.request(queries.getRegions, { worldId: worldId.value }),
-      client.request(queries.getLots, { regionId: regionId.value }),
-      client.request(queries.getHouseholds, { regionId: regionId.value })
+      client.request<GetWorldResult>(queries.getWorld, { id: worldId.value }),
+      client.request<GetRegionsResult>(queries.getRegions, { worldId: worldId.value }),
+      client.request<GetLotsResult>(queries.getLots, { regionId: regionId.value }),
+      client.request<GetHouseholdsResult>(queries.getHouseholds, { regionId: regionId.value })
     ])
     world.value = worldData.world
-    region.value = regionsData.regions.find(r => r.id === regionId.value)
+    region.value = regionsData.regions.find((entry) => entry.id === regionId.value) || null
     lots.value = lotsData.lots || []
     households.value = householdsData.households || []
-  } catch (e) {
-    error.value = e.message
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : 'Failed to load lots'
   } finally {
     loading.value = false
   }
 }
 
-const editLot = (lot) => {
+const editLot = (lot: LotSummary) => {
   editingLot.value = lot
   formData.value = { name: lot.name, lotType: lot.lotType }
 }
 
-const confirmDelete = (lot) => {
+const confirmDelete = (lot: LotSummary) => {
   deletingLot.value = lot
 }
 
@@ -229,6 +277,11 @@ const closeModal = () => {
 
 const saveLot = async () => {
   try {
+    if (!regionId.value) {
+      error.value = 'Missing region id'
+      return
+    }
+
     saving.value = true
     if (editingLot.value) {
       await client.request(mutations.updateLot, {
@@ -248,8 +301,8 @@ const saveLot = async () => {
     }
     closeModal()
     await loadData()
-  } catch (e) {
-    error.value = e.message
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : 'Failed to save lot'
   } finally {
     saving.value = false
   }
@@ -257,16 +310,22 @@ const saveLot = async () => {
 
 const deleteLot = async () => {
   try {
+    if (!deletingLot.value) {
+      return
+    }
+
     saving.value = true
     await client.request(mutations.deleteLot, { id: deletingLot.value.id })
     deletingLot.value = null
     await loadData()
-  } catch (e) {
-    error.value = e.message
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : 'Failed to delete lot'
   } finally {
     saving.value = false
   }
 }
 
-onMounted(loadData)
+onMounted(() => {
+  void loadData()
+})
 </script>

@@ -2,7 +2,9 @@ import { ACTION_DURATIONS } from '../config/actionEffects'
 import type { ActionName, ActiveTask, Intent } from '../types'
 
 export function getActionDuration(action: ActionName): number {
-  return ACTION_DURATIONS[action] || 1
+  return action in ACTION_DURATIONS
+    ? ACTION_DURATIONS[action as keyof typeof ACTION_DURATIONS]
+    : 1
 }
 
 export function createTaskFromIntent(intent: Intent): ActiveTask {

@@ -47,14 +47,14 @@
 
     <AsyncContainer
       :loading="loading"
-      :error="error"
+      :error="error ?? undefined"
       :is-empty="lotsWithSpaces.length === 0"
       empty-message="No lots in this region yet."
     >
       <template #empty>
         <p class="text-gray-500 dark:text-gray-300 mb-4">No lots in this region yet.</p>
         <router-link
-          :to="`/world/${worldId.value}/region/${regionId.value}`"
+          :to="`/world/${worldId}/region/${regionId}`"
           class="text-blue-600 hover:text-blue-800 font-medium"
         >
           Go to Region to create lots
@@ -67,8 +67,8 @@
       <LotColumn
         title="Residential"
         :lots="residentialLots"
-        :world-id="worldId"
-        :region-id="regionId"
+        :world-id="worldId || ''"
+        :region-id="regionId || ''"
         :expanded-lots="expandedLots"
         :characters-by-lot="charactersByLot"
         :characters-by-space="charactersBySpace"
@@ -81,8 +81,8 @@
       <LotColumn
         title="Community"
         :lots="communityLots"
-        :world-id="worldId"
-        :region-id="regionId"
+        :world-id="worldId || ''"
+        :region-id="regionId || ''"
         :expanded-lots="expandedLots"
         :characters-by-lot="charactersByLot"
         :characters-by-space="charactersBySpace"
@@ -154,19 +154,72 @@ import { client, queries } from '../graphql'
 import { useSimulationStore } from '../stores/simulation'
 import { useRouteParams } from '../composables/useRouteParams'
 import { useBreadcrumbs } from '../composables/useBreadcrumbs'
+import type { InputLot } from '../stores/types'
 
 const simulationStore = useSimulationStore()
 const { worldId, regionId } = useRouteParams()
 const { buildBreadcrumbs } = useBreadcrumbs()
 
-const lotsWithSpaces = ref([])
-const world = ref(null)
-const region = ref(null)
-const characters = ref([])
-const animals = ref([])
-const expandedLots = ref({})
+interface WorldSummary {
+  id: string
+  name: string
+}
+
+interface RegionSummary {
+  id: string
+  name: string
+  worldId: string
+  kind: string
+}
+
+interface CharacterLocationSummary {
+  id: string
+  name: string
+}
+
+interface CharacterSummary {
+  id: string
+  name: string
+  age: number
+  bio?: string | null
+  location?: CharacterLocationSummary | null
+}
+
+interface AnimalSummary {
+  id: string
+  name: string
+  age: number
+  traits?: string[]
+  bio?: string | null
+}
+
+interface GetWorldResult {
+  world: WorldSummary | null
+}
+
+interface GetRegionsResult {
+  regions: RegionSummary[]
+}
+
+interface GetLotsResult {
+  lots: InputLot[]
+}
+
+interface GetRegionResult {
+  region?: {
+    characters?: CharacterSummary[]
+    animals?: AnimalSummary[]
+  } | null
+}
+
+const lotsWithSpaces = ref<InputLot[]>([])
+const world = ref<WorldSummary | null>(null)
+const region = ref<RegionSummary | null>(null)
+const characters = ref<CharacterSummary[]>([])
+const animals = ref<AnimalSummary[]>([])
+const expandedLots = ref<Record<string, boolean>>({})
 const loading = ref(true)
-const error = ref(null)
+const error = ref<string | null>(null)
 const showEditModal = ref(false)
 const showDebugPanel = ref(false)
 const formData = ref({ name: '', kind: '' })
@@ -175,8 +228,8 @@ const saving = ref(false)
 const breadcrumbs = computed(() => buildBreadcrumbs({
   worldId: worldId.value,
   regionId: regionId.value,
-  world: world.value,
-  region: region.value,
+  world: world.value ?? undefined,
+  region: region.value ?? undefined,
   current: 'Overview'
 }))
 
@@ -188,25 +241,24 @@ const communityLots = computed(() =>
   lotsWithSpaces.value.filter(lot => lot.lotType === 'COMMUNITY')
 )
 
-const charactersByLot = computed(() => {
-  const byLot = {}
+const charactersByLot = computed<Record<string, CharacterSummary[]>>(() => {
+  const byLot: Record<string, CharacterSummary[]> = {}
   characters.value.forEach(char => {
-    // Use simulation store for current location (reactive to movement)
     const charState = simulationStore.characterStates[char.id]
-    const lotId = charState?.location?.lotId || char.location?.id
+    const currentLotId = charState?.location?.lotId || char.location?.id
 
-    if (lotId) {
-      if (!byLot[lotId]) {
-        byLot[lotId] = []
+    if (currentLotId) {
+      if (!byLot[currentLotId]) {
+        byLot[currentLotId] = []
       }
-      byLot[lotId].push(char)
+      byLot[currentLotId].push(char)
     }
   })
   return byLot
 })
 
-const charactersBySpace = computed(() => {
-  const bySpace = {}
+const charactersBySpace = computed<Record<string, CharacterSummary[]>>(() => {
+  const bySpace: Record<string, CharacterSummary[]> = {}
   characters.value.forEach(char => {
     const charState = simulationStore.characterStates[char.id]
     if (charState?.location?.spaceId) {
@@ -224,13 +276,13 @@ const allLotsExpanded = computed(() => {
   return lotIds.length > 0 && lotIds.every(id => expandedLots.value[id])
 })
 
-const toggleLotRooms = (lotId) => {
+const toggleLotRooms = (lotId: string) => {
   expandedLots.value[lotId] = !expandedLots.value[lotId]
 }
 
 const toggleAllLots = () => {
   const shouldExpand = !allLotsExpanded.value
-  const newExpandedState = {}
+  const newExpandedState: Record<string, boolean> = {}
   lotsWithSpaces.value.forEach(lot => {
     newExpandedState[lot.id] = shouldExpand
   })
@@ -254,6 +306,11 @@ const closeEditModal = () => {
 
 const saveRegion = async () => {
   try {
+    if (!regionId.value) {
+      error.value = 'Missing region id'
+      return
+    }
+
     saving.value = true
     await client.request(MUTATION_UPDATE_REGION, {
       id: regionId.value,
@@ -262,9 +319,10 @@ const saveRegion = async () => {
     })
     closeEditModal()
     await loadData()
-  } catch (e) {
-    error.value = e.message
-    alert('Error updating region: ' + e.message)
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : 'Failed to update region'
+    error.value = message
+    alert('Error updating region: ' + message)
   } finally {
     saving.value = false
   }
@@ -272,19 +330,23 @@ const saveRegion = async () => {
 
 const loadData = async () => {
   try {
+    if (!worldId.value || !regionId.value) {
+      error.value = 'Missing route parameters'
+      return
+    }
+
     loading.value = true
     error.value = null
 
     const [worldData, regionsData, lotsData] = await Promise.all([
-      client.request(queries.getWorld, { id: worldId.value }),
-      client.request(queries.getRegions, { worldId: worldId.value }),
-      client.request(queries.getLots, { regionId: regionId.value })
+      client.request<GetWorldResult>(queries.getWorld, { id: worldId.value }),
+      client.request<GetRegionsResult>(queries.getRegions, { worldId: worldId.value }),
+      client.request<GetLotsResult>(queries.getLots, { regionId: regionId.value })
     ])
 
     world.value = worldData.world
-    region.value = regionsData.regions.find(r => r.id === regionId.value)
+    region.value = regionsData.regions.find(r => r.id === regionId.value) || null
 
-    // Populate form data for editing
     if (region.value) {
       formData.value = {
         name: region.value.name,
@@ -292,18 +354,17 @@ const loadData = async () => {
       }
     }
 
-    // Fetch spaces and items for each lot
     const lots = lotsData.lots || []
     const lotsWithSpacesData = await Promise.all(
-      lots.map(async (lot) => {
+      lots.map(async (lot): Promise<InputLot> => {
         try {
-          const spacesData = await client.request(queries.getSpacesWithItems, { lotId: lot.id })
+          const spacesData = await client.request<{ lot: InputLot | null }>(queries.getSpacesWithItems, { lotId: lot.id })
           return {
             ...lot,
             indoorRooms: spacesData.lot?.indoorRooms || [],
             outdoorAreas: spacesData.lot?.outdoorAreas || []
           }
-        } catch (e) {
+        } catch (e: unknown) {
           console.error(`Error loading spaces for lot ${lot.id}:`, e)
           return {
             ...lot,
@@ -316,70 +377,61 @@ const loadData = async () => {
 
     lotsWithSpaces.value = lotsWithSpacesData
 
-    // Expand all lots by default to show rooms
-    const expandedState = {}
+    const expandedState: Record<string, boolean> = {}
     lotsWithSpacesData.forEach(lot => {
       expandedState[lot.id] = true
     })
     expandedLots.value = expandedState
 
-    // Load world data into simulation store for pathfinding
     simulationStore.loadWorldData(lotsWithSpacesData, regionId.value)
 
-    // Fetch characters and animals in the region
     try {
-      const regionData = await client.request(queries.getRegion, { id: regionId.value })
+      const regionData = await client.request<GetRegionResult>(queries.getRegion, { id: regionId.value })
       characters.value = regionData.region?.characters || []
       animals.value = regionData.region?.animals || []
-    } catch (e) {
+    } catch (e: unknown) {
       console.error('Error loading characters and animals:', e)
       characters.value = []
       animals.value = []
     }
-  } catch (e) {
-    error.value = e.message
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : 'Failed to load region overview'
   } finally {
     loading.value = false
   }
 }
 
-// Initialize characters when they load (after world data is loaded)
-watch(characters, (newCharacters) => {
+watch(characters, (newCharacters: CharacterSummary[]) => {
   for (const character of newCharacters) {
-    // Initialize character in simulation store
     simulationStore.initializeCharacter(character)
 
-    // Update character location if available
-    if (character.location) {
-      // Find the first space in this lot from the loaded world data
-      const lot = simulationStore.worldData.lots[character.location.id]
-
-      if (lot && lot.spaceIds.length > 0) {
-        // Get the first space
-        const firstSpaceId = lot.spaceIds[0]
-        const firstSpace = simulationStore.worldData.spaces[firstSpaceId]
-
-        if (firstSpace) {
-          simulationStore.updateCharacterLocation(
-            character.id,
-            regionId.value,
-            character.location.id,
-            character.location.name,
-            firstSpace.id,
-            firstSpace.name
-          )
-          console.log(`✅ Initialized ${character.name} at ${firstSpace.name} (${character.location.name})`)
-        } else {
-          console.error(`❌ Could not find space ${firstSpaceId} for ${character.name}`)
-        }
-      } else {
-        console.error(`❌ Could not find lot ${character.location.id} for ${character.name} - world data may not be loaded yet`)
-      }
+    if (!character.location?.id || !regionId.value) {
+      continue
     }
+
+    const lot = simulationStore.worldData.lots[character.location.id]
+    if (!lot || lot.spaceIds.length === 0) {
+      continue
+    }
+
+    const firstSpaceId = lot.spaceIds[0]
+    const firstSpace = simulationStore.worldData.spaces[firstSpaceId]
+    if (!firstSpace) {
+      continue
+    }
+
+    simulationStore.updateCharacterLocation(
+      character.id,
+      regionId.value,
+      character.location.id,
+      character.location.name,
+      firstSpace.id,
+      firstSpace.name
+    )
   }
 })
 
 onMounted(() => {
-  loadData()
+  void loadData()
 })
 </script>

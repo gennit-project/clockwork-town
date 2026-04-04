@@ -8,8 +8,7 @@ import type {
   WorldData,
   ItemOccupancy,
   Intent,
-  ActivityLogEntry,
-  ActionName
+  ActivityLogEntry
 } from '../types'
 import { NEED_DECAY_RATES } from '../config/needs'
 import { selectBestIntent } from './decisionMaking'
@@ -64,7 +63,7 @@ export async function executeTick({
 
     // Decrement cooldowns
     for (const action in state.cooldowns) {
-      const actionKey = action as ActionName
+      const actionKey = action as keyof typeof state.cooldowns
       if (state.cooldowns[actionKey] > 0) {
         state.cooldowns[actionKey]--
       }

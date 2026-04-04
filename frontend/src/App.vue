@@ -301,6 +301,42 @@ import { client, queries } from './graphql'
 import CharacterDetailPanel from './components/CharacterDetailPanel.vue'
 import AnimalDetailPanel from './components/AnimalDetailPanel.vue'
 
+interface CharacterSummary {
+  id: string
+  name: string
+  age: number
+  bio?: string
+  traits?: string[]
+  location?: {
+    id: string
+    name: string
+    lotType?: string
+  }
+}
+
+interface AnimalSummary {
+  id: string
+  name: string
+  age: number
+  traits?: string[]
+  bio?: string
+}
+
+interface GetRegionResult {
+  region?: {
+    characters?: CharacterSummary[]
+    animals?: AnimalSummary[]
+  } | null
+}
+
+function normalizeRouteParam(value: string | string[] | undefined): string | undefined {
+  if (Array.isArray(value)) {
+    return value[0]
+  }
+
+  return value
+}
+
 const route = useRoute()
 const router = useRouter()
 const { isDark, toggle: toggleDarkMode } = useDarkMode()
@@ -309,12 +345,12 @@ const characterPanelStore = useCharacterPanelStore()
 
 const showActivityLog = ref(false)
 const showMobileNav = ref(false)
-const regionCharacters = ref([])
-const regionAnimals = ref([])
-const selectedCharacterForPanel = ref(null)
-const selectedAnimalForPanel = ref(null)
+const regionCharacters = ref<CharacterSummary[]>([])
+const regionAnimals = ref<AnimalSummary[]>([])
+const selectedCharacterForPanel = ref<CharacterSummary | null>(null)
+const selectedAnimalForPanel = ref<AnimalSummary | null>(null)
 
-const currentRegionId = computed(() => route.params.regionId)
+const currentRegionId = computed(() => normalizeRouteParam(route.params.regionId))
 
 const togglePlayPause = () => {
   if (simulationStore.isPaused) {
@@ -349,7 +385,7 @@ const loadRegionData = async () => {
   }
 
   try {
-    const regionData = await client.request(queries.getRegion, { id: currentRegionId.value })
+    const regionData = await client.request<GetRegionResult>(queries.getRegion, { id: currentRegionId.value })
     regionCharacters.value = regionData.region?.characters || []
     regionAnimals.value = regionData.region?.animals || []
   } catch (e) {
@@ -365,7 +401,7 @@ watch(currentRegionId, () => {
 }, { immediate: true })
 
 // Character/Animal selection - navigate to their location and show panel
-const selectCharacter = (character) => {
+const selectCharacter = (character: CharacterSummary) => {
   // Set as active character
   characterPanelStore.setActiveCharacter(character.id)
 
@@ -376,23 +412,25 @@ const selectCharacter = (character) => {
   const charState = simulationStore.characterStates[character.id]
   if (charState?.location?.spaceId) {
     // Navigate to the space detail page
-    const worldId = route.params.worldId
-    const regionId = route.params.regionId
+    const worldId = normalizeRouteParam(route.params.worldId)
+    const regionId = normalizeRouteParam(route.params.regionId)
     const lotId = charState.location.lotId
     const spaceId = charState.location.spaceId
 
-    router.push(`/world/${worldId}/region/${regionId}/lot/${lotId}/space/${spaceId}`)
+    if (worldId && regionId && lotId && spaceId) {
+      router.push(`/world/${worldId}/region/${regionId}/lot/${lotId}/space/${spaceId}`)
+    }
   } else {
     console.warn('Character location not found in simulation state')
   }
 }
 
-const selectAnimal = (animal) => {
+const selectAnimal = (animal: AnimalSummary) => {
   selectedAnimalForPanel.value = animal
 }
 
 // Get character location from simulation store (or fallback to API data)
-const getCharacterLocation = (characterId) => {
+const getCharacterLocation = (characterId: string) => {
   // First check simulation store (for reactive updates during simulation)
   const charState = simulationStore.characterStates[characterId]
   if (charState?.location?.lotName) {
@@ -413,7 +451,7 @@ const getCharacterLocation = (characterId) => {
 }
 
 // Get character status/activity from simulation store
-const getCharacterStatus = (characterId) => {
+const getCharacterStatus = (characterId: string) => {
   const charState = simulationStore.characterStates[characterId]
   return getCharacterStatusText(charState)
 }

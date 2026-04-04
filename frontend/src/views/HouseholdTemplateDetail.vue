@@ -411,11 +411,67 @@ import { gql } from 'graphql-request'
 import MarkdownRenderer from '../components/MarkdownRenderer.vue'
 import { client, queries, mutations } from '../graphql'
 
+interface TemplateCharacter {
+  name: string
+  age: number
+  bio?: string | null
+}
+
+interface TemplateAnimal {
+  name: string
+  age: number
+  traits?: string[]
+}
+
+interface HouseholdTemplateDetail {
+  id: string
+  name: string
+  description?: string | null
+  tags?: string[]
+  characters?: TemplateCharacter[]
+  animals?: TemplateAnimal[]
+}
+
+interface WorldSummary {
+  id: string
+  name: string
+}
+
+interface RegionSummary {
+  id: string
+  name: string
+}
+
+interface LotSummary {
+  id: string
+  name: string
+}
+
+interface GetHouseholdTemplateResult {
+  householdTemplate: HouseholdTemplateDetail | null
+}
+
+interface GetWorldsResult {
+  worlds: WorldSummary[]
+}
+
+interface GetRegionsResult {
+  regions: RegionSummary[]
+}
+
+interface GetLotsResult {
+  lots: LotSummary[]
+}
+
+interface UpdateHouseholdTemplateResult {
+  updateHouseholdTemplate: HouseholdTemplateDetail
+}
+
 const route = useRoute()
 const router = useRouter()
-const template = ref(null)
+const template = ref<HouseholdTemplateDetail | null>(null)
 const loading = ref(true)
-const error = ref(null)
+const error = ref<Error | null>(null)
 
 // Edit modal state
 const showEditModal = ref(false)
@@ -424,15 +480,15 @@ const editForm = ref({
   name: '',
   description: '',
   tagsInput: '',
-  characters: [],
-  animals: []
+  characters: [] as Array<{ name: string; age: number; bio: string }>,
+  animals: [] as Array<{ name: string; age: number; traitsString: string }>
 })
 
 // Clone modal state
 const showCloneModal = ref(false)
-const worlds = ref([])
-const regions = ref([])
-const lots = ref([])
+const worlds = ref<WorldSummary[]>([])
+const regions = ref<RegionSummary[]>([])
+const lots = ref<LotSummary[]>([])
 const selectedWorldId = ref('')
 const selectedRegionId = ref('')
 const selectedLotId = ref('')
@@ -461,19 +517,22 @@ const QUERY_HOUSEHOLD_TEMPLATE = gql`
 
 // Edit functions
 const openEditModal = () => {
+  if (!template.value) {
+    return
+  }
   editForm.value = {
     name: template.value.name,
     description: template.value.description || '',
     tagsInput: (template.value.tags || []).join(', '),
-    characters: (template.value.characters || []).map(c => ({
-      name: c.name,
-      age: c.age,
-      bio: c.bio || ''
+    characters: (template.value.characters || []).map((character) => ({
+      name: character.name,
+      age: character.age,
+      bio: character.bio || ''
     })),
-    animals: (template.value.animals || []).map(a => ({
-      name: a.name,
-      age: a.age,
-      traitsString: (a.traits || []).join(', ')
+    animals: (template.value.animals || []).map((animal) => ({
+      name: animal.name,
+      age: animal.age,
+      traitsString: (animal.traits || []).join(', ')
     }))
   }
   showEditModal.value = true
@@ -498,7 +557,7 @@ const addCharacter = () => {
   })
 }
 
-const removeCharacter = (index) => {
+const removeCharacter = (index: number) => {
   editForm.value.characters.splice(index, 1)
 }
 
@@ -510,36 +569,39 @@ const addAnimal = () => {
   })
 }
 
-const removeAnimal = (index) => {
+const removeAnimal = (index: number) => {
   editForm.value.animals.splice(index, 1)
 }
 
 const saveTemplate = async () => {
   try {
+    if (!template.value) {
+      return
+    }
     saving.value = true
     error.value = null
 
     const tags = editForm.value.tagsInput
       .split(',')
-      .map(tag => tag.trim())
-      .filter(tag => tag.length > 0)
+      .map((tag) => tag.trim())
+      .filter((tag) => tag.length > 0)
 
     const input = {
       householdName: editForm.value.name,
       householdDescription: editForm.value.description || '',
-      characters: editForm.value.characters.map(c => ({
-        characterName: c.name,
-        characterAge: c.age,
-        characterBio: c.bio || ''
+      characters: editForm.value.characters.map((character) => ({
+        characterName: character.name,
+        characterAge: character.age,
+        characterBio: character.bio || ''
       })),
-      animals: editForm.value.animals.map(a => ({
-        animalName: a.name,
-        animalAge: a.age,
-        animalTraits: a.traitsString ? a.traitsString.split(',').map(t => t.trim()).filter(t => t) : []
+      animals: editForm.value.animals.map((animal) => ({
+        animalName: animal.name,
+        animalAge: animal.age,
+        animalTraits: animal.traitsString ? animal.traitsString.split(',').map((trait) => trait.trim()).filter(Boolean) : []
       }))
     }
 
-    const result = await client.request(mutations.updateHouseholdTemplate, {
+    const result = await client.request<UpdateHouseholdTemplateResult>(mutations.updateHouseholdTemplate, {
       id: route.params.templateId,
       input,
       tags
@@ -547,9 +609,10 @@ const saveTemplate = async () => {
 
     template.value = result.updateHouseholdTemplate
     closeEditModal()
-  } catch (e) {
-    error.value = e
-    alert('Error saving template: ' + e.message)
+  } catch (e: unknown) {
+    const err = e instanceof Error ? e : new Error('Failed to save household template')
+    error.value = err
+    alert('Error saving template: ' + err.message)
   } finally {
     saving.value = false
   }
@@ -558,9 +621,9 @@ const saveTemplate = async () => {
 // Clone functions
 const loadWorlds = async () => {
   try {
-    const data = await client.request(queries.getWorlds)
+    const data = await client.request<GetWorldsResult>(queries.getWorlds)
     worlds.value = data.worlds || []
-  } catch (e) {
+  } catch (e: unknown) {
     console.error('Error loading worlds:', e)
   }
 }
@@ -574,11 +637,11 @@ const onWorldChange = async () => {
   if (!selectedWorldId.value) return
 
   try {
-    const data = await client.request(queries.getRegions, {
+    const data = await client.request<GetRegionsResult>(queries.getRegions, {
       worldId: selectedWorldId.value
     })
     regions.value = data.regions || []
-  } catch (e) {
+  } catch (e: unknown) {
     console.error('Error loading regions:', e)
   }
 }
@@ -590,11 +653,11 @@ const onRegionChange = async () => {
   if (!selectedRegionId.value) return
 
   try {
-    const data = await client.request(queries.getLots, {
+    const data = await client.request<GetLotsResult>(queries.getLots, {
       regionId: selectedRegionId.value
     })
     lots.value = data.lots || []
-  } catch (e) {
+  } catch (e: unknown) {
     console.error('Error loading lots:', e)
   }
 }
@@ -610,6 +673,9 @@ const closeCloneModal = () => {
 
 const cloneTemplate = async () => {
   try {
+    if (!template.value) {
+      return
+    }
     cloning.value = true
 
     // Create household from template
@@ -621,18 +687,18 @@ const cloneTemplate = async () => {
       lotId: selectedLotId.value
     }
 
-    const characters = template.value.characters.map(c => ({
+    const characters = (template.value.characters || []).map((character) => ({
       id: crypto.randomUUID(),
-      name: c.name,
-      age: c.age,
-      bio: c.bio || ''
+      name: character.name,
+      age: character.age,
+      bio: character.bio || ''
     }))
 
-    const animals = (template.value.animals || []).map(a => ({
+    const animals = (template.value.animals || []).map((animal) => ({
       id: crypto.randomUUID(),
-      name: a.name,
-      age: a.age,
-      traits: a.traits || [],
+      name: animal.name,
+      age: animal.age,
+      traits: animal.traits || [],
       ownerId: characters[0]?.id || '' // Assign to first character
     }))
 
@@ -644,9 +710,10 @@ const cloneTemplate = async () => {
 
     // Navigate to the household detail page
     router.push(`/world/${selectedWorldId.value}/region/${selectedRegionId.value}/household/${householdId}`)
-  } catch (e) {
-    error.value = e
-    alert('Error placing household: ' + e.message)
+  } catch (e: unknown) {
+    const err = e instanceof Error ? e : new Error('Failed to place household')
+    error.value = err
+    alert('Error placing household: ' + err.message)
   } finally {
     cloning.value = false
   }
@@ -654,15 +721,15 @@ const cloneTemplate = async () => {
 
 onMounted(async () => {
   try {
-    const data = await client.request(QUERY_HOUSEHOLD_TEMPLATE, {
+    const data = await client.request<GetHouseholdTemplateResult>(QUERY_HOUSEHOLD_TEMPLATE, {
       id: route.params.templateId
     })
     template.value = data.householdTemplate
 
     // Load worlds for the clone modal
     await loadWorlds()
-  } catch (e) {
-    error.value = e
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e : new Error('Failed to load household template')
   } finally {
     loading.value = false
   }

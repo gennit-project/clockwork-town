@@ -182,10 +182,15 @@ describe('selectBestIntent', () => {
     characterState.cooldowns = {
       eat: 5,
       sleep: 5,
+      use_toilet: 5,
+      shower: 5,
       medicate: 5,
       chat_friend: 5,
       call_mom: 5,
       date: 5,
+      text_romance: 5,
+      call_romance: 5,
+      invite_over: 5,
       read: 5,
       write: 5,
       view_art: 5,
@@ -271,6 +276,8 @@ describe('selectBestIntent', () => {
     characterState.needs = {
       food: 0.3,
       sleep: 0.4,
+      bladder: 0.8,
+      hygiene: 0.8,
       health: 0.9,
       friends: 0.5,
       family: 0.7,
@@ -288,6 +295,8 @@ describe('selectBestIntent', () => {
     characterState.needs = {
       food: 1.0,
       sleep: 1.0,
+      bladder: 1.0,
+      hygiene: 1.0,
       health: 1.0,
       friends: 1.0,
       family: 1.0,
@@ -306,6 +315,8 @@ describe('selectBestIntent', () => {
     characterState.needs = {
       food: 0.05, // Critical
       sleep: 0.8, // Satisfied
+      bladder: 0.8,
+      hygiene: 0.8,
       health: 0.9,
       friends: 0.7,
       family: 0.7,

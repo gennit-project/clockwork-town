@@ -160,41 +160,56 @@ import { useRouter } from 'vue-router'
 import { client, queries, mutations } from '../graphql'
 import WorldBackupModal from '../components/WorldBackupModal.vue'
 
+interface WorldSummary {
+  id: string
+  name: string
+  createdAt: string
+}
+
+interface GetWorldsResult {
+  worlds?: WorldSummary[]
+}
+
+interface WorldMutationResult {
+  createWorld?: WorldSummary
+  updateWorld?: WorldSummary
+}
+
 const router = useRouter()
-const worlds = ref([])
+const worlds = ref<WorldSummary[]>([])
 const loading = ref(true)
-const error = ref(null)
+const error = ref<string | null>(null)
 const showCreateModal = ref(false)
-const editingWorld = ref(null)
-const deletingWorld = ref(null)
+const editingWorld = ref<WorldSummary | null>(null)
+const deletingWorld = ref<WorldSummary | null>(null)
 const saving = ref(false)
 const formData = ref({ name: '' })
 const worldNameInput = ref<HTMLInputElement | null>(null)
 
 // Backup/Restore state
 const showBackupModal = ref(false)
-const backupMode = ref('backup')
-const selectedWorld = ref(null)
+const backupMode = ref<'backup' | 'restore'>('backup')
+const selectedWorld = ref<WorldSummary | null>(null)
 
 const loadWorlds = async () => {
   try {
     loading.value = true
     error.value = null
-    const data = await client.request(queries.getWorlds)
+    const data = await client.request<GetWorldsResult>(queries.getWorlds)
     worlds.value = data.worlds || []
-  } catch (e) {
-    error.value = e.message
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : String(e)
   } finally {
     loading.value = false
   }
 }
 
-const editWorld = (world) => {
+const editWorld = (world: WorldSummary) => {
   editingWorld.value = world
   formData.value = { name: world.name }
 }
 
-const confirmDelete = (world) => {
+const confirmDelete = (world: WorldSummary) => {
   deletingWorld.value = world
 }
 
@@ -208,12 +223,12 @@ const saveWorld = async () => {
   try {
     saving.value = true
     if (editingWorld.value) {
-      await client.request(mutations.updateWorld, {
+      await client.request<WorldMutationResult>(mutations.updateWorld, {
         id: editingWorld.value.id,
         name: formData.value.name
       })
     } else {
-      await client.request(mutations.createWorld, {
+      await client.request<WorldMutationResult>(mutations.createWorld, {
         input: {
           id: crypto.randomUUID(),
           name: formData.value.name
@@ -222,8 +237,8 @@ const saveWorld = async () => {
     }
     closeModal()
     await loadWorlds()
-  } catch (e) {
-    error.value = e.message
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : String(e)
   } finally {
     saving.value = false
   }
@@ -232,22 +247,26 @@ const saveWorld = async () => {
 const deleteWorld = async () => {
   try {
     saving.value = true
+    if (!deletingWorld.value) {
+      return
+    }
+
     await client.request(mutations.deleteWorld, { id: deletingWorld.value.id })
     deletingWorld.value = null
     await loadWorlds()
-  } catch (e) {
-    error.value = e.message
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : String(e)
   } finally {
     saving.value = false
   }
 }
 
-const viewWorld = (worldId) => {
+const viewWorld = (worldId: string) => {
   router.push(`/world/${worldId}`)
 }
 
 // Backup/Restore functions
-const openBackupModal = (world) => {
+const openBackupModal = (world: WorldSummary) => {
   selectedWorld.value = world
   backupMode.value = 'backup'
   showBackupModal.value = true
@@ -264,7 +283,7 @@ const closeBackupModal = () => {
   selectedWorld.value = null
 }
 
-const handleBackupSuccess = async ({ mode }) => {
+const handleBackupSuccess = async ({ mode }: { mode: 'backup' | 'restore' }) => {
   console.log(`${mode} completed successfully`)
   // Reload worlds after restore to show the new world
   if (mode === 'restore') {

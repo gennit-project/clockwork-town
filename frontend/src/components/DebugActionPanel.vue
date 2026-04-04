@@ -188,20 +188,27 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useSimulationStore } from '../stores/simulation'
+import { findItemsWithAffordance } from '../stores/utils/pathfinding'
+import { calculateUtility, selectBestIntent } from '../stores/utils/decisionMaking'
+import type { ActionName } from '../stores/types'
 
-const props = defineProps({
-  characters: {
-    type: Array,
-    required: true
-  }
-})
+interface CharacterSummary {
+  id: string
+  name: string
+}
 
-defineEmits(['close'])
+const props = defineProps<{
+  characters: CharacterSummary[]
+}>()
+
+defineEmits<{
+  close: []
+}>()
 
 const simulationStore = useSimulationStore()
 const selectedCharacterId = ref('')
 
-const testAction = (action) => {
+const testAction = (action: ActionName) => {
   if (!selectedCharacterId.value) {
     alert('Please select a character first')
     return
@@ -210,13 +217,18 @@ const testAction = (action) => {
   simulationStore.applyActionEffects(selectedCharacterId.value, action, `Debug test: ${action}`)
 }
 
-const testFindItems = (action) => {
+const testFindItems = (action: ActionName) => {
   if (!selectedCharacterId.value) {
     alert('Please select a character first')
     return
   }
 
-  const items = simulationStore.findItemsWithAffordance(selectedCharacterId.value, action)
+  const charState = simulationStore.characterStates[selectedCharacterId.value]
+  if (!charState) {
+    return
+  }
+
+  const items = findItemsWithAffordance(selectedCharacterId.value, action, charState.location, simulationStore.worldData, {})
   const cost0 = items.filter(i => i.travelCost === 0)
   const cost1 = items.filter(i => i.travelCost === 1)
   const cost2 = items.filter(i => i.travelCost === 2)
@@ -226,21 +238,21 @@ const testFindItems = (action) => {
 
   if (cost0.length > 0) {
     console.log(`  Same space (cost 0):`)
-    cost0.forEach(item => {
+    cost0.forEach((item) => {
       console.log(`    - ${item.itemName} in ${item.spaceName}`)
     })
   }
 
   if (cost1.length > 0) {
     console.log(`  Same lot (cost 1):`)
-    cost1.forEach(item => {
+    cost1.forEach((item) => {
       console.log(`    - ${item.itemName} in ${item.spaceName} (${item.lotName})`)
     })
   }
 
   if (cost2.length > 0) {
     console.log(`  Same region (cost 2):`)
-    cost2.forEach(item => {
+    cost2.forEach((item) => {
       console.log(`    - ${item.itemName} in ${item.spaceName} (${item.lotName})`)
     })
   }
@@ -270,16 +282,16 @@ const testUtilityCalculation = () => {
   })
   console.log('')
 
-  const actions = ['eat', 'sleep', 'medicate', 'chat_friend', 'call_mom', 'date', 'read', 'write', 'view_art', 'volunteer']
-  const utilities = []
+  const actions: ActionName[] = ['eat', 'sleep', 'medicate', 'chat_friend', 'call_mom', 'date', 'read', 'write', 'view_art', 'volunteer']
+  const utilities: Array<{ action: ActionName; utility: string; item: string; space: string; travelCost: number }> = []
 
   for (const action of actions) {
-    const items = simulationStore.findItemsWithAffordance(selectedCharacterId.value, action)
+    const items = findItemsWithAffordance(selectedCharacterId.value, action, charState.location, simulationStore.worldData, {})
 
     if (items.length > 0) {
       // Calculate utility for the best (closest) item
       const bestItem = items[0] // Already sorted by travel cost
-      const utility = simulationStore.calculateUtility(selectedCharacterId.value, action, bestItem)
+      const utility = calculateUtility(selectedCharacterId.value, action, charState.needs, bestItem)
 
       utilities.push({
         action,
@@ -334,7 +346,7 @@ const testSelectBestIntent = () => {
   console.log('')
 
   // Call selectBestIntent
-  const intent = simulationStore.selectBestIntent(selectedCharacterId.value)
+  const intent = selectBestIntent(selectedCharacterId.value, charState, simulationStore.worldData, {})
 
   console.log('\n🏆 Selected Intent:')
   console.log(intent)

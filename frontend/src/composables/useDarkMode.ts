@@ -4,7 +4,7 @@ const isDark = ref(false)
 let isInitialized = false
 
 // Apply dark mode class to document
-function applyDarkMode(value) {
+function applyDarkMode(value: boolean) {
   if (typeof window !== 'undefined') {
     if (value) {
       document.documentElement.classList.add('dark')

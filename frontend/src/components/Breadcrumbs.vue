@@ -21,10 +21,12 @@
 </template>
 
 <script setup lang="ts">
-defineProps({
-  crumbs: {
-    type: Array,
-    required: true
-  }
-})
+interface Breadcrumb {
+  label: string
+  to: string
+}
+
+defineProps<{
+  crumbs: Breadcrumb[]
+}>()
 </script>

@@ -10,7 +10,7 @@
     "outDir": "dist",
     "jsx": "preserve",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "types": ["node"],
+    "types": ["node", "vitest/globals"],
     "paths": {
       "@/*": ["./frontend/src/*"]
     }

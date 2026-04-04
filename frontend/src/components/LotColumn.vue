@@ -5,13 +5,13 @@
     </h2>
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <LotCard
-        v-for="lot in lots"
+        v-for="lot in normalizedLots"
         :key="lot.id"
         :lot="lot"
         :world-id="worldId"
         :region-id="regionId"
         :is-expanded="expandedLots[lot.id]"
-        :characters-at-lot="charactersByLot[lot.id] || []"
+        :characters-at-lot="charactersByLot?.[lot.id] || []"
         :characters-by-space="charactersBySpace"
         :variant="variant"
         @toggle-expanded="$emit('toggle-expanded', $event)"
@@ -24,46 +24,46 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import LotCard from './LotCard.vue'
+import type { InputLot, InputSpace } from '../stores/types'
 
-defineProps({
-  title: {
-    type: String,
-    required: true
-  },
-  lots: {
-    type: Array,
-    required: true
-  },
-  worldId: {
-    type: String,
-    required: true
-  },
-  regionId: {
-    type: String,
-    required: true
-  },
-  expandedLots: {
-    type: Object,
-    required: true
-  },
-  charactersByLot: {
-    type: Object,
-    default: () => ({})
-  },
-  charactersBySpace: {
-    type: Object,
-    default: () => ({})
-  },
-  variant: {
-    type: String,
-    default: 'blue'
-  },
-  emptyMessage: {
-    type: String,
-    default: 'No lots yet'
-  }
-})
+interface CharacterSummary {
+  id: string
+  name: string
+}
 
-defineEmits(['toggle-expanded'])
+interface LotCardLot {
+  id: string
+  name: string
+  lotType: string
+  indoorRooms: InputSpace[]
+  outdoorAreas: InputSpace[]
+}
+
+const props = defineProps<{
+  title: string
+  lots: InputLot[]
+  worldId: string
+  regionId: string
+  expandedLots: Record<string, boolean>
+  charactersByLot?: Record<string, CharacterSummary[]>
+  charactersBySpace?: Record<string, CharacterSummary[]>
+  variant?: 'blue' | 'green'
+  emptyMessage?: string
+}>()
+
+const normalizedLots = computed<LotCardLot[]>(() =>
+  props.lots.map((lot) => ({
+    id: lot.id,
+    name: lot.name,
+    lotType: lot.lotType,
+    indoorRooms: lot.indoorRooms || [],
+    outdoorAreas: lot.outdoorAreas || []
+  }))
+)
+
+defineEmits<{
+  'toggle-expanded': [lotId: string]
+}>()
 </script>

@@ -129,56 +129,61 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useSimulationStore } from '../stores/simulation'
+import type { ItemAffordance, InputLot } from '../stores/types'
 
 const simulationStore = useSimulationStore()
 
-const props = defineProps({
-  lot: {
-    type: Object,
-    required: true
-  },
-  worldId: {
-    type: String,
-    required: true
-  },
-  regionId: {
-    type: String,
-    required: true
-  },
-  isExpanded: {
-    type: Boolean,
-    default: false
-  },
-  charactersAtLot: {
-    type: Array,
-    default: () => []
-  },
-  charactersBySpace: {
-    type: Object,
-    default: () => ({})
-  },
-  variant: {
-    type: String,
-    default: 'blue', // 'blue' or 'green'
-    validator: (value) => ['blue', 'green'].includes(value)
-  }
-})
+interface SpaceItem {
+  id: string
+  name: string
+  allowedActivities?: string[]
+  affordances?: ItemAffordance[]
+}
 
-const emit = defineEmits(['toggle-expanded'])
+interface LotSpace {
+  id: string
+  name: string
+  description?: string
+  items?: SpaceItem[]
+}
+
+interface LotCardData extends InputLot {
+  indoorRooms: LotSpace[]
+  outdoorAreas: LotSpace[]
+}
+
+interface CharacterSummary {
+  id: string
+  name: string
+}
+
+const props = defineProps<{
+  lot: LotCardData
+  worldId: string
+  regionId: string
+  isExpanded?: boolean
+  charactersAtLot?: CharacterSummary[]
+  charactersBySpace?: Record<string, CharacterSummary[]>
+  variant?: 'blue' | 'green'
+}>()
+
+const emit = defineEmits<{
+  'toggle-expanded': [lotId: string]
+}>()
 
 const toggleExpanded = () => {
   emit('toggle-expanded', props.lot.id)
 }
 
-const getCharactersInSpace = (spaceId) => {
-  return props.charactersBySpace[spaceId] || []
+const getCharactersInSpace = (spaceId: string): CharacterSummary[] => {
+  return props.charactersBySpace?.[spaceId] || []
 }
 
-const getCharacterActivity = (char, space) => {
+const getCharacterActivity = (char: CharacterSummary, space: LotSpace): string => {
   const charState = simulationStore.characterStates[char.id]
   if (charState?.currentActivity?.itemId) {
     // Find the item in this space
-    const item = space.items?.find(i => i.id === charState.currentActivity.itemId)
+    const item = space.items?.find((i: SpaceItem) => i.id === charState.currentActivity?.itemId)
     if (item) {
       return `${char.name} is using ${item.name}`
     }
@@ -186,11 +191,11 @@ const getCharacterActivity = (char, space) => {
   return `${char.name} is in ${space.name}`
 }
 
-const getCharacterItemText = (char, space) => {
+const getCharacterItemText = (char: CharacterSummary, space: LotSpace): string => {
   const charState = simulationStore.characterStates[char.id]
   if (charState?.currentActivity?.itemId) {
     // Find the item in this space
-    const item = space.items?.find(i => i.id === charState.currentActivity.itemId)
+    const item = space.items?.find((i: SpaceItem) => i.id === charState.currentActivity?.itemId)
     if (item) {
       return ` → ${item.name}`
     }
@@ -199,7 +204,7 @@ const getCharacterItemText = (char, space) => {
 }
 
 const headerBgClass = computed(() => {
-  return props.variant === 'blue' ? 'bg-blue-600 dark:bg-blue-800' : 'bg-green-600 dark:bg-green-800'
+  return (props.variant ?? 'blue') === 'blue' ? 'bg-blue-600 dark:bg-blue-800' : 'bg-green-600 dark:bg-green-800'
 })
 
 const subtitleClass = computed(() => {

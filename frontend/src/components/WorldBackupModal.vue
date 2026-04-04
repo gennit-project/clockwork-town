@@ -119,31 +119,21 @@
 import { ref } from 'vue'
 import { useCloudBackup } from '../composables/useCloudBackup'
 
-const props = defineProps({
-  isOpen: {
-    type: Boolean,
-    required: true
-  },
-  mode: {
-    type: String,
-    required: true,
-    validator: (value) => ['backup', 'restore'].includes(value)
-  },
-  worldId: {
-    type: String,
-    default: null
-  },
-  worldName: {
-    type: String,
-    default: ''
-  }
-})
+const props = defineProps<{
+  isOpen: boolean
+  mode: 'backup' | 'restore'
+  worldId?: string | null
+  worldName?: string
+}>()
 
-const emit = defineEmits(['close', 'success'])
+const emit = defineEmits<{
+  close: []
+  success: [payload: { mode: 'backup' | 'restore'; fileName?: string }]
+}>()
 
 const password = ref('')
 const fileName = ref('')
-const error = ref(null)
+const error = ref<string | null>(null)
 const success = ref(false)
 
 const { backupWorld, restoreWorld, isBackingUp, isRestoring } = useCloudBackup()
@@ -163,8 +153,8 @@ async function handleBackup() {
       emit('success', { mode: 'backup', fileName: backupFileName })
       close()
     }, 1500)
-  } catch (err) {
-    error.value = err.message || 'Backup failed. Please try again.'
+  } catch (err: unknown) {
+    error.value = err instanceof Error ? err.message : 'Backup failed. Please try again.'
     console.error('Backup error:', err)
   }
 }
@@ -184,8 +174,8 @@ async function handleRestore() {
       emit('success', { mode: 'restore' })
       close()
     }, 1500)
-  } catch (err) {
-    error.value = err.message || 'Restore failed. Please check your password and filename.'
+  } catch (err: unknown) {
+    error.value = err instanceof Error ? err.message : 'Restore failed. Please check your password and filename.'
     console.error('Restore error:', err)
   }
 }

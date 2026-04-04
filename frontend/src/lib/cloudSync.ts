@@ -1,11 +1,36 @@
 import { Encryption } from './encryption'
 
+interface DriveFile {
+  id: string
+  name: string
+  createdTime?: string
+}
+
+interface GoogleTokenClient {
+  requestAccessToken(options?: { prompt?: string }): void
+}
+
+interface CloudProvider {
+  name: string
+  accessToken: string | null
+  authenticate(): Promise<void>
+  upload(fileName: string, data: string): Promise<void>
+  download(fileName: string): Promise<string | null>
+  isAuthenticated(): boolean
+}
+
 /**
  * Google Drive cloud provider implementation
  * Uses Google Identity Services (GIS) - new recommended approach
  */
 export class GoogleDriveProvider {
-  constructor(clientId, _apiKey) {
+  name: string
+  accessToken: string | null
+  CLIENT_ID: string
+  SCOPES: string
+  tokenClient: GoogleTokenClient | null
+
+  constructor(clientId: string, _apiKey = '') {
     this.name = 'Google Drive'
     this.accessToken = null
     this.CLIENT_ID = clientId
@@ -13,8 +38,8 @@ export class GoogleDriveProvider {
     this.tokenClient = null
   }
 
-  async authenticate() {
-    return new Promise((resolve, reject) => {
+  async authenticate(): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
       // Load Google Identity Services library
       const script = document.createElement('script')
       script.src = 'https://accounts.google.com/gsi/client'
@@ -24,14 +49,14 @@ export class GoogleDriveProvider {
           this.tokenClient = window.google.accounts.oauth2.initTokenClient({
             client_id: this.CLIENT_ID,
             scope: this.SCOPES,
-            callback: (response) => {
+            callback: (response: { access_token?: string; error?: string }) => {
               if (response.error) {
                 console.error('Auth error:', response)
                 reject(new Error(response.error))
                 return
               }
 
-              this.accessToken = response.access_token
+              this.accessToken = response.access_token ?? null
               console.log('✅ Google Drive authenticated successfully')
               resolve()
             },
@@ -39,9 +64,9 @@ export class GoogleDriveProvider {
 
           // Request access token
           this.tokenClient.requestAccessToken({ prompt: 'consent' })
-        } catch (error) {
+        } catch (error: unknown) {
           console.error('Authentication error:', error)
-          reject(error)
+          reject(error instanceof Error ? error : new Error('Authentication failed'))
         }
       }
       script.onerror = () => reject(new Error('Failed to load Google Identity Services'))
@@ -49,7 +74,7 @@ export class GoogleDriveProvider {
     })
   }
 
-  async upload(fileName, data) {
+  async upload(fileName: string, data: string): Promise<void> {
     if (!this.accessToken) {
       throw new Error('Not authenticated')
     }
@@ -87,7 +112,7 @@ export class GoogleDriveProvider {
     console.log('File uploaded to Google Drive successfully')
   }
 
-  async download(fileName) {
+  async download(fileName: string): Promise<string | null> {
     if (!this.accessToken) {
       throw new Error('Not authenticated')
     }
@@ -113,7 +138,7 @@ export class GoogleDriveProvider {
     return await response.text()
   }
 
-  async findFile(fileName) {
+  async findFile(fileName: string): Promise<string | null> {
     if (!this.accessToken) {
       throw new Error('Not authenticated')
     }
@@ -131,11 +156,11 @@ export class GoogleDriveProvider {
       throw new Error(`Search failed: ${response.statusText}`)
     }
 
-    const data = await response.json()
+    const data = await response.json() as { files?: DriveFile[] }
     return data.files?.[0]?.id || null
   }
 
-  isAuthenticated() {
+  isAuthenticated(): boolean {
     return this.accessToken !== null
   }
 }
@@ -145,7 +170,15 @@ export class GoogleDriveProvider {
  * Adapted for Clockwork Town (uses GraphQL instead of direct database)
  */
 export class CloudSync {
-  constructor(provider, exportFn, importFn) {
+  provider: CloudProvider
+  exportFn: (worldId: string) => Promise<unknown>
+  importFn: (worldData: unknown) => Promise<string>
+
+  constructor(
+    provider: CloudProvider,
+    exportFn: (worldId: string) => Promise<unknown>,
+    importFn: (worldData: unknown) => Promise<string>
+  ) {
     this.provider = provider
     this.exportFn = exportFn // Function to export world data
     this.importFn = importFn // Function to import world data
@@ -157,7 +190,7 @@ export class CloudSync {
    * @param {string} password - Encryption password
    * @param {string} [customFileName] - Optional custom filename
    */
-  async backup(worldId, password, customFileName) {
+  async backup(worldId: string, password: string, customFileName?: string): Promise<string> {
     if (!this.provider.isAuthenticated()) {
       await this.provider.authenticate()
     }
@@ -185,7 +218,7 @@ export class CloudSync {
    * @param {string} password - Decryption password
    * @returns {Promise<boolean>} True if successful
    */
-  async restore(fileName, password) {
+  async restore(fileName: string, password: string): Promise<boolean> {
     if (!this.provider.isAuthenticated()) {
       await this.provider.authenticate()
     }
@@ -209,7 +242,7 @@ export class CloudSync {
 
       console.log('✅ World restored successfully!')
       return true
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to decrypt - wrong password?', error)
       return false
     }
@@ -220,8 +253,8 @@ export class CloudSync {
    * @param {string} worldId - World ID to search for
    * @returns {Promise<Array<{name: string, id: string}>>}
    */
-  async listBackups(worldId) {
-    if (!this.accessToken) {
+  async listBackups(worldId: string): Promise<DriveFile[]> {
+    if (!this.provider.accessToken) {
       throw new Error('Not authenticated')
     }
 
@@ -238,7 +271,7 @@ export class CloudSync {
       throw new Error(`Search failed: ${response.statusText}`)
     }
 
-    const data = await response.json()
+    const data = await response.json() as { files?: DriveFile[] }
     return data.files || []
   }
 }

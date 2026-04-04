@@ -22,7 +22,7 @@
         rows="5"
         class="w-full rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 text-sm"
       />
-      <p v-else class="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{{ character.bio || 'No bio yet.' }}</p>
+      <p v-else class="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{{ bioDraft || 'No bio yet.' }}</p>
       <button
         v-if="editingBio"
         type="button"
@@ -64,21 +64,20 @@
 import { computed, ref, watch } from 'vue'
 import { getCharacterStatusText } from '../composables/useCharacterStatus'
 import { useCharacterPanelStore } from '../stores/characterPanel'
+import type { CharacterState } from '../stores/types'
 
-const props = defineProps({
-  character: {
-    type: Object,
-    required: true
-  },
-  characterState: {
-    type: Object,
-    default: null
-  },
-  formatAction: {
-    type: Function,
-    required: true
-  }
-})
+interface CharacterBioEntity {
+  id: string
+  age: number
+  bio?: string | null
+  traits?: string[]
+}
+
+const props = defineProps<{
+  character: CharacterBioEntity
+  characterState: CharacterState | null
+  formatAction: (action: string) => string
+}>()
 
 const characterPanelStore = useCharacterPanelStore()
 const editingBio = ref(false)
@@ -95,7 +94,6 @@ watch(
 
 async function saveBio() {
   await characterPanelStore.updateCharacterBio(props.character.id, bioDraft.value)
-  props.character.bio = bioDraft.value
   editingBio.value = false
 }
 </script>

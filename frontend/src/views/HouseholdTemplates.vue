@@ -103,47 +103,78 @@
 import { ref, onMounted } from 'vue'
 import { client, queries, mutations } from '../graphql'
 
-const templates = ref([])
+interface TemplateCharacter {
+  name: string
+  age: number
+  bio?: string | null
+}
+
+interface TemplateAnimal {
+  name: string
+  age: number
+  traits?: string[]
+}
+
+interface HouseholdTemplateSummary {
+  id: string
+  name: string
+  description?: string | null
+  tags?: string[]
+  characters?: TemplateCharacter[]
+  animals?: TemplateAnimal[]
+}
+
+interface GetHouseholdTemplatesResult {
+  householdTemplates: HouseholdTemplateSummary[]
+}
+
+const templates = ref<HouseholdTemplateSummary[]>([])
 const loading = ref(true)
-const error = ref(null)
-const deletingTemplate = ref(null)
+const error = ref<Error | null>(null)
+const deletingTemplate = ref<HouseholdTemplateSummary | null>(null)
 const deleting = ref(false)
 
 const loadTemplates = async () => {
   try {
     loading.value = true
-    const data = await client.request(queries.getHouseholdTemplates)
+    const data = await client.request<GetHouseholdTemplatesResult>(queries.getHouseholdTemplates)
     templates.value = data.householdTemplates
-  } catch (e) {
-    error.value = e
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e : new Error('Failed to load household templates')
   } finally {
     loading.value = false
   }
 }
 
-const confirmDelete = (template) => {
+const confirmDelete = (template: HouseholdTemplateSummary) => {
   deletingTemplate.value = template
 }
 
 const deleteTemplate = async () => {
   try {
+    if (!deletingTemplate.value) {
+      return
+    }
     deleting.value = true
     await client.request(mutations.deleteHouseholdTemplate, {
       id: deletingTemplate.value.id
     })
 
     // Remove from local array
-    templates.value = templates.value.filter(t => t.id !== deletingTemplate.value.id)
+    templates.value = templates.value.filter((template) => template.id !== deletingTemplate.value?.id)
 
     // Close modal
     deletingTemplate.value = null
-  } catch (e) {
-    error.value = e
-    alert('Error deleting template: ' + e.message)
+  } catch (e: unknown) {
+    const err = e instanceof Error ? e : new Error('Failed to delete household template')
+    error.value = err
+    alert('Error deleting template: ' + err.message)
   } finally {
     deleting.value = false
   }
 }
 
-onMounted(loadTemplates)
+onMounted(() => {
+  void loadTemplates()
+})
 </script>

@@ -353,14 +353,65 @@ import { useRoute, useRouter } from 'vue-router'
 import { gql } from 'graphql-request'
 import { client, mutations } from '../graphql'
 
+interface TemplateItem {
+  name: string
+  description?: string | null
+}
+
+interface TemplateSpace {
+  name: string
+  description?: string | null
+  items?: TemplateItem[]
+}
+
+interface LotTemplateDetail {
+  id: string
+  name: string
+  lotType: string
+  description?: string | null
+  tags?: string[]
+  indoorRooms?: TemplateSpace[]
+  outdoorAreas?: TemplateSpace[]
+}
+
+interface GetLotTemplateResult {
+  lotTemplate: LotTemplateDetail | null
+}
+
+interface EditItem {
+  itemName: string
+  itemDescription: string
+}
+
+interface EditSpace {
+  spaceName: string
+  spaceDescription: string
+  items: EditItem[]
+}
+
+interface EditFormState {
+  name: string
+  lotType: string
+  description: string
+  tagsInput: string
+  indoorRooms: EditSpace[]
+  outdoorSpaces: EditSpace[]
+}
+
 const route = useRoute()
 const router = useRouter()
-const template = ref(null)
+const template = ref<LotTemplateDetail | null>(null)
 const loading = ref(true)
-const error = ref(null)
+const error = ref<Error | null>(null)
 const saving = ref(false)
 
-const editForm = ref({
+const createEmptySpace = (): EditSpace => ({
+  spaceName: '',
+  spaceDescription: '',
+  items: []
+})
+
+const editForm = ref<EditFormState>({
   name: '',
   lotType: '',
   description: '',
@@ -398,43 +449,36 @@ const QUERY_LOT_TEMPLATE = gql`
 `
 
 const addIndoorRoom = () => {
-  editForm.value.indoorRooms.push({
-    spaceName: '',
-    spaceDescription: '',
-    items: []
-  })
+  editForm.value.indoorRooms.push(createEmptySpace())
 }
 
-const removeIndoorRoom = (index) => {
+const removeIndoorRoom = (index: number) => {
   editForm.value.indoorRooms.splice(index, 1)
 }
 
 const addOutdoorSpace = () => {
-  editForm.value.outdoorSpaces.push({
-    spaceName: '',
-    spaceDescription: '',
-    items: []
-  })
+  editForm.value.outdoorSpaces.push(createEmptySpace())
 }
 
-const removeOutdoorSpace = (index) => {
+const removeOutdoorSpace = (index: number) => {
   editForm.value.outdoorSpaces.splice(index, 1)
 }
 
-const addItemToRoom = (spaceIndex, isIndoor) => {
+const addItemToRoom = (spaceIndex: number, isIndoor: boolean) => {
   const spaces = isIndoor ? editForm.value.indoorRooms : editForm.value.outdoorSpaces
-  if (!spaces[spaceIndex].items) {
-    spaces[spaceIndex].items = []
+  const targetSpace = spaces[spaceIndex]
+  if (!targetSpace) {
+    return
   }
-  spaces[spaceIndex].items.push({
+  targetSpace.items.push({
     itemName: '',
     itemDescription: ''
   })
 }
 
-const removeItemFromRoom = (spaceIndex, itemIndex, isIndoor) => {
+const removeItemFromRoom = (spaceIndex: number, itemIndex: number, isIndoor: boolean) => {
   const spaces = isIndoor ? editForm.value.indoorRooms : editForm.value.outdoorSpaces
-  spaces[spaceIndex].items.splice(itemIndex, 1)
+  spaces[spaceIndex]?.items.splice(itemIndex, 1)
 }
 
 const saveTemplate = async () => {
@@ -443,26 +487,26 @@ const saveTemplate = async () => {
 
     const tags = editForm.value.tagsInput
       .split(',')
-      .map(tag => tag.trim())
-      .filter(tag => tag.length > 0)
+      .map((tag) => tag.trim())
+      .filter((tag) => tag.length > 0)
 
     const input = {
       lotName: editForm.value.name,
       lotType: editForm.value.lotType,
       lotDescription: editForm.value.description || '',
-      indoorRooms: editForm.value.indoorRooms.map(room => ({
+      indoorRooms: editForm.value.indoorRooms.map((room) => ({
         spaceName: room.spaceName,
         spaceDescription: room.spaceDescription || '',
-        items: (room.items || []).map(item => ({
+        items: room.items.map((item) => ({
           itemName: item.itemName,
           itemDescription: item.itemDescription || '',
           itemCount: 1
         }))
       })),
-      outdoorSpaces: editForm.value.outdoorSpaces.map(space => ({
+      outdoorSpaces: editForm.value.outdoorSpaces.map((space) => ({
         spaceName: space.spaceName,
         spaceDescription: space.spaceDescription || '',
-        items: (space.items || []).map(item => ({
+        items: space.items.map((item) => ({
           itemName: item.itemName,
           itemDescription: item.itemDescription || '',
           itemCount: 1
@@ -478,9 +522,10 @@ const saveTemplate = async () => {
 
     // Navigate back to detail page
     router.push(`/library/lots/${route.params.templateId}`)
-  } catch (e) {
-    error.value = e
-    alert('Error saving template: ' + e.message)
+  } catch (e: unknown) {
+    const err = e instanceof Error ? e : new Error('Failed to save lot template')
+    error.value = err
+    alert('Error saving template: ' + err.message)
   } finally {
     saving.value = false
   }
@@ -488,10 +533,13 @@ const saveTemplate = async () => {
 
 onMounted(async () => {
   try {
-    const data = await client.request(QUERY_LOT_TEMPLATE, {
+    const data = await client.request<GetLotTemplateResult>(QUERY_LOT_TEMPLATE, {
       id: route.params.templateId
     })
     template.value = data.lotTemplate
+    if (!template.value) {
+      throw new Error('Lot template not found')
+    }
 
     // Populate edit form
     editForm.value = {
@@ -499,25 +547,25 @@ onMounted(async () => {
       lotType: template.value.lotType,
       description: template.value.description || '',
       tagsInput: (template.value.tags || []).join(', '),
-      indoorRooms: (template.value.indoorRooms || []).map(room => ({
+      indoorRooms: (template.value.indoorRooms || []).map((room) => ({
         spaceName: room.name,
         spaceDescription: room.description || '',
-        items: (room.items || []).map(item => ({
+        items: (room.items || []).map((item) => ({
           itemName: item.name,
           itemDescription: item.description || ''
         }))
       })),
-      outdoorSpaces: (template.value.outdoorAreas || []).map(area => ({
+      outdoorSpaces: (template.value.outdoorAreas || []).map((area) => ({
         spaceName: area.name,
         spaceDescription: area.description || '',
-        items: (area.items || []).map(item => ({
+        items: (area.items || []).map((item) => ({
           itemName: item.name,
           itemDescription: item.description || ''
         }))
       }))
     }
-  } catch (e) {
-    error.value = e
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e : new Error('Failed to load lot template')
   } finally {
     loading.value = false
   }

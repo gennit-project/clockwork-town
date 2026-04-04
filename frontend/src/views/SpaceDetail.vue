@@ -2,7 +2,7 @@
   <div>
     <Breadcrumbs :crumbs="breadcrumbs" />
 
-    <AsyncContainer :loading="loading" :error="error">
+    <AsyncContainer :loading="loading" :error="error ?? undefined">
       <div class="max-w-4xl mx-auto">
       <!-- Space Header -->
       <div class="mb-6">
@@ -80,7 +80,7 @@
                       <input
                         type="checkbox"
                         :checked="newItem.affordances.some((entry) => entry.action === option.action)"
-                        @change="toggleAffordance(newItem, option.action, $event.target.checked)"
+                        @change="handleAffordanceToggle(newItem, option.action, $event)"
                       />
                       {{ option.label }}
                     </span>
@@ -91,7 +91,7 @@
                       min="0.1"
                       step="0.1"
                       class="w-20 rounded border border-gray-300 px-2 py-1 text-xs"
-                      @input="setAffordanceWeight(newItem, option.action, $event.target.value)"
+                      @input="handleAffordanceWeightInput(newItem, option.action, $event)"
                     />
                   </div>
                 </label>
@@ -189,7 +189,7 @@
                       <input
                         type="checkbox"
                         :checked="editingItem.affordances.some((entry) => entry.action === option.action)"
-                        @change="toggleAffordance(editingItem, option.action, $event.target.checked)"
+                        @change="editingItem && handleAffordanceToggle(editingItem, option.action, $event)"
                       />
                       {{ option.label }}
                     </span>
@@ -200,7 +200,7 @@
                       min="0.1"
                       step="0.1"
                       class="w-20 rounded border border-gray-300 px-2 py-1 text-xs dark:text-white"
-                      @input="setAffordanceWeight(editingItem, option.action, $event.target.value)"
+                      @input="editingItem && handleAffordanceWeightInput(editingItem, option.action, $event)"
                     />
                   </label>
                 </div>
@@ -337,23 +337,113 @@ import { useSimulationStore } from '../stores/simulation'
 import { useCharacterPanelStore } from '../stores/characterPanel'
 import { useRouteParams } from '../composables/useRouteParams'
 import { useBreadcrumbs } from '../composables/useBreadcrumbs'
+import type { ActionName, InputLot, ItemAffordance } from '../stores/types'
 
 const simulationStore = useSimulationStore()
 const characterPanelStore = useCharacterPanelStore()
 const { worldId, regionId, lotId, spaceId } = useRouteParams()
 const { buildBreadcrumbs } = useBreadcrumbs()
 
-const space = ref(null)
-const items = ref([])
-const world = ref(null)
-const region = ref(null)
-const lot = ref(null)
+interface WorldSummary {
+  id: string
+  name: string
+}
+
+interface RegionSummary {
+  id: string
+  name: string
+  worldId: string
+  kind: string
+}
+
+interface LotSummary {
+  id: string
+  name: string
+  lotType: string
+}
+
+interface ActiveUserSummary {
+  id: string
+  name: string
+}
+
+interface SpaceItem {
+  id: string
+  name: string
+  description: string
+  allowedActivities: ActionName[]
+  affordances: ItemAffordance[]
+  maxSimultaneousUsers: number | null
+  activeUsers?: ActiveUserSummary[]
+}
+
+interface SpaceSummary {
+  id: string
+  name: string
+  description: string
+  isIndoor?: boolean
+  items?: SpaceItem[]
+}
+
+interface CharacterLocationSummary {
+  id: string
+  name: string
+}
+
+interface CharacterSummary {
+  id: string
+  name: string
+  location?: CharacterLocationSummary | null
+}
+
+interface EditableItem extends SpaceItem {}
+
+interface ItemCard extends SpaceItem {
+  activeUsers: ActiveUserSummary[]
+  isActiveItem: boolean
+}
+
+interface AffordanceTarget {
+  affordances: ItemAffordance[]
+}
+
+interface GetWorldResult {
+  world: WorldSummary | null
+}
+
+interface GetRegionsResult {
+  regions: RegionSummary[]
+}
+
+interface GetLotsResult {
+  lots: InputLot[]
+}
+
+interface GetRegionResult {
+  region?: {
+    characters?: CharacterSummary[]
+  } | null
+}
+
+interface GetLotResult {
+  lot: LotSummary | null
+}
+
+interface GetSpaceResult {
+  space: SpaceSummary | null
+}
+
+const space = ref<SpaceSummary | null>(null)
+const items = ref<SpaceItem[]>([])
+const world = ref<WorldSummary | null>(null)
+const region = ref<RegionSummary | null>(null)
+const lot = ref<LotSummary | null>(null)
 const loading = ref(true)
-const error = ref(null)
+const error = ref<string | null>(null)
 const showAddItemForm = ref(false)
 const saving = ref(false)
-const editingItem = ref(null)
-const affordanceOptions = [
+const editingItem = ref<EditableItem | null>(null)
+const affordanceOptions: Array<{ action: ActionName; label: string }> = [
   { action: 'eat', label: 'Eat' },
   { action: 'sleep', label: 'Sleep' },
   { action: 'use_toilet', label: 'Use Toilet' },
@@ -367,11 +457,16 @@ const affordanceOptions = [
   { action: 'volunteer', label: 'Volunteer' }
 ]
 
-const newItem = ref({
+const newItem = ref<{
+  name: string
+  description: string
+  maxSimultaneousUsers: number | null
+  affordances: ItemAffordance[]
+}>({
   name: '',
   description: '',
   maxSimultaneousUsers: null,
-  affordances: [] as Array<{ action: string; weight: number }>
+  affordances: []
 })
 
 const breadcrumbs = computed(() => buildBreadcrumbs({
@@ -379,14 +474,13 @@ const breadcrumbs = computed(() => buildBreadcrumbs({
   regionId: regionId.value,
   lotId: lotId.value,
   spaceId: spaceId.value,
-  world: world.value,
-  region: region.value,
-  lot: lot.value,
-  space: space.value
+  world: world.value ?? undefined,
+  region: region.value ?? undefined,
+  lot: lot.value ?? undefined,
+  space: space.value ?? undefined
 }))
 
-// Enrich items with active users from simulation store
-const itemsWithActiveUsers = computed(() => {
+const itemsWithActiveUsers = computed<ItemCard[]>(() => {
   return items.value.map(item => {
     const activeUsers = simulationStore.getItemActiveUsers(item.id)
     return {
@@ -397,9 +491,8 @@ const itemsWithActiveUsers = computed(() => {
   })
 })
 
-// Get all characters in this space
-const charactersInSpace = computed(() => {
-  const chars = []
+const charactersInSpace = computed<Array<{ id: string; name: string }>>(() => {
+  const chars: Array<{ id: string; name: string }> = []
   for (const [charId, charState] of Object.entries(simulationStore.characterStates)) {
     if (charState.location?.spaceId === spaceId.value) {
       chars.push({
@@ -411,26 +504,19 @@ const charactersInSpace = computed(() => {
   return chars
 })
 
-// Calculate idle characters (in space but not using any items)
 const idleCharacters = computed(() => {
-  // Get all character IDs currently using items
-  const charactersUsingItems = new Set()
+  const charactersUsingItems = new Set<string>()
 
   items.value.forEach(item => {
     const activeUsers = simulationStore.getItemActiveUsers(item.id)
     activeUsers.forEach(user => charactersUsingItems.add(user.id))
   })
 
-  // Filter characters who are:
-  // 1. Not using items
-  // 2. Actually in this space according to simulation store (double-check)
   return charactersInSpace.value.filter(char => {
-    // Skip if using an item
     if (charactersUsingItems.has(char.id)) {
       return false
     }
 
-    // Verify character is actually in this space (charactersInSpace already checks this, but be defensive)
     const charState = simulationStore.characterStates[char.id]
     return charState?.location?.spaceId === spaceId.value
       && charState.currentAction === 'idle'
@@ -438,45 +524,49 @@ const idleCharacters = computed(() => {
   })
 })
 
-const getCharacterStatus = (characterId) => {
+const getCharacterStatus = (characterId: string): string => {
   const charState = simulationStore.characterStates[characterId]
   return getCharacterStatusText(charState)
 }
 
-const getCharacterActivity = (characterId) => {
+const getCharacterActivity = (characterId: string): string => {
   return getCharacterStatus(characterId)
 }
 
 const loadData = async () => {
   try {
+    if (!worldId.value || !regionId.value || !lotId.value || !spaceId.value) {
+      error.value = 'Missing route parameters'
+      return
+    }
+
     loading.value = true
     error.value = null
 
     const [worldData, regionsData, lotsData, regionData, lotData, spaceData] = await Promise.all([
-      client.request(queries.getWorld, { id: worldId.value }),
-      client.request(queries.getRegions, { worldId: worldId.value }),
-      client.request(queries.getLots, { regionId: regionId.value }),
-      client.request(queries.getRegion, { id: regionId.value }),
-      client.request(queries.getLot, { id: lotId.value }),
-      client.request(queries.getSpace, { id: spaceId.value })
+      client.request<GetWorldResult>(queries.getWorld, { id: worldId.value }),
+      client.request<GetRegionsResult>(queries.getRegions, { worldId: worldId.value }),
+      client.request<GetLotsResult>(queries.getLots, { regionId: regionId.value }),
+      client.request<GetRegionResult>(queries.getRegion, { id: regionId.value }),
+      client.request<GetLotResult>(queries.getLot, { id: lotId.value }),
+      client.request<GetSpaceResult>(queries.getSpace, { id: spaceId.value })
     ])
 
     world.value = worldData.world
-    region.value = regionsData.regions.find(r => r.id === regionId.value)
+    region.value = regionsData.regions.find(entry => entry.id === regionId.value) || null
     lot.value = lotData.lot
     space.value = spaceData.space
     items.value = spaceData.space?.items || []
 
     const characters = regionData.region?.characters || []
-
-    const lotsWithSpacesData = []
+    const lotsWithSpacesData: InputLot[] = []
     for (const regionLot of lotsData.lots) {
       try {
-        const spacesData = await client.request(queries.getSpacesWithItems, { lotId: regionLot.id })
-        lotsWithSpacesData.push({
-          ...spacesData.lot
-        })
-      } catch (loadError) {
+        const spacesData = await client.request<{ lot: InputLot | null }>(queries.getSpacesWithItems, { lotId: regionLot.id })
+        if (spacesData.lot) {
+          lotsWithSpacesData.push(spacesData.lot)
+        }
+      } catch (loadError: unknown) {
         console.error(`Failed to load spaces for lot ${regionLot.id}:`, loadError)
       }
     }
@@ -510,8 +600,8 @@ const loadData = async () => {
         firstSpace.name
       )
     }
-  } catch (e) {
-    error.value = e.message
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : 'Failed to load space data'
   } finally {
     loading.value = false
   }
@@ -519,6 +609,11 @@ const loadData = async () => {
 
 const addItem = async () => {
   try {
+    if (!spaceId.value) {
+      error.value = 'Missing space id'
+      return
+    }
+
     saving.value = true
     error.value = null
 
@@ -535,30 +630,30 @@ const addItem = async () => {
       }
     })
 
-    // Add to local array
     items.value.push({
       id: itemId,
       name: newItem.value.name,
       description: newItem.value.description,
       maxSimultaneousUsers: newItem.value.maxSimultaneousUsers || null,
-      affordances: newItem.value.affordances,
-      allowedActivities: newItem.value.affordances.map((entry) => entry.action)
+      affordances: [...newItem.value.affordances],
+      allowedActivities: newItem.value.affordances.map(entry => entry.action as ActionName)
     })
 
-    // Reset form
     newItem.value = { name: '', description: '', maxSimultaneousUsers: null, affordances: [] }
     showAddItemForm.value = false
-  } catch (e) {
-    error.value = e.message
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : 'Failed to add item'
   } finally {
     saving.value = false
   }
 }
 
-const startEditItem = (item) => {
+const startEditItem = (item: SpaceItem) => {
   editingItem.value = {
     ...item,
-    affordances: item.affordances || (item.allowedActivities || []).map((action) => ({ action, weight: 1 }))
+    affordances: item.affordances?.length
+      ? [...item.affordances]
+      : (item.allowedActivities || []).map((action) => ({ action, weight: 1 }))
   }
   showAddItemForm.value = false
 }
@@ -569,6 +664,10 @@ const cancelEdit = () => {
 
 const saveEdit = async () => {
   try {
+    if (!editingItem.value) {
+      return
+    }
+
     saving.value = true
     error.value = null
 
@@ -582,41 +681,38 @@ const saveEdit = async () => {
       }
     })
 
-    // Update local array
-    const index = items.value.findIndex(i => i.id === editingItem.value.id)
+    const index = items.value.findIndex(item => item.id === editingItem.value?.id)
     if (index !== -1) {
       items.value[index] = { ...editingItem.value }
     }
 
     editingItem.value = null
-  } catch (e) {
-    error.value = e.message
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : 'Failed to update item'
   } finally {
     saving.value = false
   }
 }
 
-const removeItem = async (itemId) => {
+const removeItem = async (itemId: string) => {
   if (!confirm('Are you sure you want to remove this item?')) return
 
   try {
     error.value = null
-
     await client.request(mutations.deleteItem, { id: itemId })
-
-    // Remove from local array
-    items.value = items.value.filter(i => i.id !== itemId)
-  } catch (e) {
-    error.value = e.message
+    items.value = items.value.filter(item => item.id !== itemId)
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : 'Failed to remove item'
   }
 }
 
-onMounted(loadData)
+onMounted(() => {
+  void loadData()
+})
 
-// Watch for space ID changes in the route and reload data
 watch(spaceId, (newSpaceId, oldSpaceId) => {
   if (newSpaceId && newSpaceId !== oldSpaceId) {
-    loadData()
+    void loadData()
   }
 })
 
@@ -629,37 +725,49 @@ const activeCharacter = computed(() => {
   return charState ? { id: activeId, ...charState } : null
 })
 
-function toggleAffordance(target, action: string, checked: boolean) {
-  const affordances = target.affordances || []
+function toggleAffordance(target: AffordanceTarget, action: ActionName, checked: boolean) {
+  const affordances = [...(target.affordances || [])]
   if (checked) {
     if (!affordances.find((entry) => entry.action === action)) {
       affordances.push({ action, weight: 1 })
     }
-  } else {
-    target.affordances = affordances.filter((entry) => entry.action !== action)
+    target.affordances = affordances
+    return
   }
+
+  target.affordances = affordances.filter((entry) => entry.action !== action)
 }
 
-function getAffordanceWeight(target, action: string) {
+function getAffordanceWeight(target: AffordanceTarget, action: ActionName): number {
   return target.affordances?.find((entry) => entry.action === action)?.weight ?? 1
 }
 
-function setAffordanceWeight(target, action: string, rawValue: string) {
+function setAffordanceWeight(target: AffordanceTarget, action: ActionName, rawValue: string) {
   const weight = Number(rawValue) || 1
   target.affordances = (target.affordances || []).map((entry) =>
     entry.action === action ? { ...entry, weight } : entry
   )
 }
 
-function getItemActions(item) {
+function handleAffordanceToggle(target: AffordanceTarget, action: ActionName, event: Event) {
+  const checkbox = event.target as HTMLInputElement | null
+  toggleAffordance(target, action, checkbox?.checked ?? false)
+}
+
+function handleAffordanceWeightInput(target: AffordanceTarget, action: ActionName, event: Event) {
+  const input = event.target as HTMLInputElement | null
+  setAffordanceWeight(target, action, input?.value ?? '1')
+}
+
+function getItemActions(item: SpaceItem): ActionName[] {
   if (item.allowedActivities?.length) {
     return item.allowedActivities
   }
 
-  return (item.affordances || []).map((entry) => entry.action)
+  return (item.affordances || []).map((entry) => entry.action as ActionName)
 }
 
-function getItemAffordances(item) {
+function getItemAffordances(item: SpaceItem): ItemAffordance[] {
   if (item.affordances?.length) {
     return item.affordances
   }
@@ -667,8 +775,8 @@ function getItemAffordances(item) {
   return (item.allowedActivities || []).map((action) => ({ action, weight: 1 }))
 }
 
-function queueItemAction(item, action: string) {
-  if (!activeCharacter.value) {
+function queueItemAction(item: SpaceItem, action: ActionName) {
+  if (!activeCharacter.value || !spaceId.value || !lotId.value) {
     return
   }
 
@@ -685,7 +793,7 @@ function queueItemAction(item, action: string) {
   })
 }
 
-function getItemCardClass(item) {
+function getItemCardClass(item: ItemCard): string {
   if (editingItem.value?.id === item.id) {
     return 'border-blue-400 bg-blue-50 dark:bg-blue-950'
   }

@@ -1,4 +1,15 @@
 import { client, mutations, queries } from '../graphql'
+import type { LongTermMemory } from './types'
+
+interface FetchCharacterDetailsResult {
+  character?: {
+    id: string
+    name: string
+    age: number
+    bio?: string | null
+    longTermMemories?: LongTermMemory[]
+  } | null
+}
 
 export async function moveCharacterToLot(characterId: string, lotId: string): Promise<void> {
   await client.request(mutations.moveCharacter, {
@@ -18,8 +29,8 @@ export async function startCharacterActivity(characterId: string, actionName: st
   })
 }
 
-export async function fetchCharacterDetails(characterId: string) {
-  return client.request(queries.getCharacter, { id: characterId })
+export async function fetchCharacterDetails(characterId: string): Promise<FetchCharacterDetailsResult> {
+  return client.request<FetchCharacterDetailsResult>(queries.getCharacter, { id: characterId })
 }
 
 export async function persistCharacterBio(characterId: string, bio: string): Promise<void> {

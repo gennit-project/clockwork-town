@@ -3,11 +3,12 @@ import { createPinia, setActivePinia } from 'pinia'
 import { useSimulationStore } from '../simulation'
 import { useCharacterPanelStore } from '../characterPanel'
 import { createMockWorldData, mockConsole } from './mockData'
+import type { LongTermMemory } from '../types'
 
 const persistenceMocks = vi.hoisted(() => ({
   moveCharacterToLot: vi.fn(async () => {}),
   startCharacterActivity: vi.fn(async () => {}),
-  fetchCharacterDetails: vi.fn(async () => ({ character: { longTermMemories: [] } })),
+  fetchCharacterDetails: vi.fn<(characterId: string) => Promise<{ character: { longTermMemories: LongTermMemory[] } }>>(async () => ({ character: { longTermMemories: [] } })),
   persistCharacterBio: vi.fn(async () => {}),
   createCharacterLongTermMemory: vi.fn(async () => {}),
   updateCharacterLongTermMemory: vi.fn(async () => {}),

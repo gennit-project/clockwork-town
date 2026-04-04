@@ -189,24 +189,49 @@ import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
 import { client, queries, mutations } from '../graphql'
+import { useRouteParams } from '../composables/useRouteParams'
+
+interface WorldSummary {
+  id: string
+  name: string
+}
+
+interface RegionSummary {
+  id: string
+  name: string
+  kind: string
+  worldId: string
+}
+
+interface HouseholdSummary {
+  id: string
+  name: string
+  lotId: string
+  lotName: string
+}
+
+interface GetWorldResult {
+  world: WorldSummary | null
+}
+
+interface GetRegionsResult {
+  regions: RegionSummary[]
+}
 
 const route = useRoute()
 const router = useRouter()
-const worldId = computed(() => route.params.worldId)
-const regionId = computed(() => route.params.regionId)
+const { worldId, regionId } = useRouteParams()
 const isRegionDetailView = computed(() => !!regionId.value)
 
-const region = ref(null)
-const regions = ref([])
-const world = ref(null)
-const lots = ref([])
-const households = ref([])
+const region = ref<RegionSummary | null>(null)
+const regions = ref<RegionSummary[]>([])
+const world = ref<WorldSummary | null>(null)
 const loading = ref(true)
-const error = ref(null)
+const error = ref<string | null>(null)
 const showCreateModal = ref(false)
-const editingRegion = ref(null)
-const deletingRegion = ref(null)
-const deletingHousehold = ref(null)
+const editingRegion = ref<RegionSummary | null>(null)
+const deletingRegion = ref<RegionSummary | null>(null)
+const deletingHousehold = ref<HouseholdSummary | null>(null)
 const saving = ref(false)
 const formData = ref({ name: '', kind: '' })
 const regionNameInput = ref<HTMLInputElement | null>(null)
@@ -218,62 +243,58 @@ const breadcrumbs = computed(() => {
       { label: world.value?.name || 'Loading...', to: `/world/${worldId.value}` },
       { label: region.value?.name || 'Loading...', to: '#' }
     ]
-  } else {
-    return [
-      { label: 'Worlds', to: '/' },
-      { label: world.value?.name || 'Loading...', to: '#' }
-    ]
   }
+
+  return [
+    { label: 'Worlds', to: '/' },
+    { label: world.value?.name || 'Loading...', to: '#' }
+  ]
 })
 
 const loadData = async () => {
   try {
+    if (!worldId.value) {
+      error.value = 'Missing world id'
+      return
+    }
+
     loading.value = true
     error.value = null
 
-    if (isRegionDetailView.value) {
-      const [worldData, regionsData] = await Promise.all([
-        client.request(queries.getWorld, { id: worldId.value }),
-        client.request(queries.getRegions, { worldId: worldId.value })
-      ])
-      world.value = worldData.world
-      regions.value = regionsData.regions || []
-      region.value = regionsData.regions.find(r => r.id === regionId.value)
+    const [worldData, regionsData] = await Promise.all([
+      client.request<GetWorldResult>(queries.getWorld, { id: worldId.value }),
+      client.request<GetRegionsResult>(queries.getRegions, { worldId: worldId.value })
+    ])
 
+    world.value = worldData.world
+    regions.value = regionsData.regions || []
+
+    if (isRegionDetailView.value) {
+      region.value = regionsData.regions.find((entry) => entry.id === regionId.value) || null
       if (region.value) {
         formData.value = { name: region.value.name, kind: region.value.kind }
       }
 
-      // Redirect to overview if on the base region detail page
-      if (route.path === `/world/${worldId.value}/region/${regionId.value}`) {
+      if (regionId.value && route.path === `/world/${worldId.value}/region/${regionId.value}`) {
         router.replace(`/world/${worldId.value}/region/${regionId.value}/overview`)
       }
     } else {
-      const [worldData, regionsData] = await Promise.all([
-        client.request(queries.getWorld, { id: worldId.value }),
-        client.request(queries.getRegions, { worldId: worldId.value })
-      ])
-      world.value = worldData.world
-      regions.value = regionsData.regions || []
+      region.value = null
     }
-  } catch (e) {
-    error.value = e.message
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : 'Failed to load regions'
   } finally {
     loading.value = false
   }
 }
 
-const editRegion = (reg) => {
+const editRegion = (reg: RegionSummary) => {
   editingRegion.value = reg
   formData.value = { name: reg.name, kind: reg.kind }
 }
 
-const confirmDelete = (region) => {
-  deletingRegion.value = region
-}
-
-const confirmDeleteHousehold = (household) => {
-  deletingHousehold.value = household
+const confirmDelete = (selectedRegion: RegionSummary) => {
+  deletingRegion.value = selectedRegion
 }
 
 const closeModal = () => {
@@ -286,23 +307,25 @@ const closeModal = () => {
 
 const saveRegion = async () => {
   try {
+    if (!worldId.value) {
+      error.value = 'Missing world id'
+      return
+    }
+
     saving.value = true
-    if (isRegionDetailView.value) {
-      // In region detail view, always update the current region
+    if (isRegionDetailView.value && regionId.value) {
       await client.request(mutations.updateRegion, {
         id: regionId.value,
         name: formData.value.name,
         kind: formData.value.kind
       })
     } else if (editingRegion.value) {
-      // In region list view, update the selected region
       await client.request(mutations.updateRegion, {
         id: editingRegion.value.id,
         name: formData.value.name,
         kind: formData.value.kind
       })
     } else {
-      // In region list view, create a new region
       await client.request(mutations.createRegion, {
         input: {
           id: crypto.randomUUID(),
@@ -314,8 +337,8 @@ const saveRegion = async () => {
     }
     closeModal()
     await loadData()
-  } catch (e) {
-    error.value = e.message
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : 'Failed to save region'
   } finally {
     saving.value = false
   }
@@ -323,12 +346,16 @@ const saveRegion = async () => {
 
 const deleteRegion = async () => {
   try {
+    if (!deletingRegion.value) {
+      return
+    }
+
     saving.value = true
     await client.request(mutations.deleteRegion, { id: deletingRegion.value.id })
     deletingRegion.value = null
     await loadData()
-  } catch (e) {
-    error.value = e.message
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : 'Failed to delete region'
   } finally {
     saving.value = false
   }
@@ -336,38 +363,40 @@ const deleteRegion = async () => {
 
 const deleteHousehold = async () => {
   try {
+    if (!deletingHousehold.value) {
+      return
+    }
+
     saving.value = true
     await client.request(mutations.deleteHousehold, { id: deletingHousehold.value.id })
     deletingHousehold.value = null
     await loadData()
-  } catch (e) {
-    error.value = e.message
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : 'Failed to delete household'
   } finally {
     saving.value = false
   }
 }
 
-const viewRegion = (regId) => {
+const viewRegion = (regId: string) => {
   router.push(`/world/${worldId.value}/region/${regId}`)
 }
 
-const viewLot = (lotId) => {
-  router.push(`/world/${worldId.value}/region/${regionId.value}/lot/${lotId}`)
-}
-
-const viewHousehold = (householdId) => {
-  router.push(`/world/${worldId.value}/region/${regionId.value}/household/${householdId}`)
-}
-
-// Watch for route changes to reload data and handle redirects
-watch(() => route.path, (newPath, oldPath) => {
-  // Only reload if we're still in the RegionList component context
-  if (newPath.includes('/world/') && newPath.includes('/region/') &&
-      !newPath.includes('/overview') && !newPath.includes('/lots') &&
-      !newPath.includes('/lot/') && !newPath.includes('/household')) {
-    loadData()
+watch(
+  () => route.path,
+  (newPath) => {
+    if (
+      newPath.includes('/world/') &&
+      newPath.includes('/region/') &&
+      !newPath.includes('/overview') &&
+      !newPath.includes('/lots') &&
+      !newPath.includes('/lot/') &&
+      !newPath.includes('/household')
+    ) {
+      void loadData()
+    }
   }
-})
+)
 
 watch(
   () => showCreateModal.value || !!editingRegion.value,
@@ -379,5 +408,7 @@ watch(
   }
 )
 
-onMounted(loadData)
+onMounted(() => {
+  void loadData()
+})
 </script>

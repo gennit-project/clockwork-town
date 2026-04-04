@@ -108,7 +108,7 @@ import type { InputLot } from '../types'
 export function buildWorldData(lots: InputLot[], regionId: string): WorldData {
   debugLog('🗺️  Loading world data for pathfinding...')
 
-  const worldData = {
+  const worldData: WorldData = {
     lots: {},
     spaces: {},
     items: {},
@@ -117,7 +117,7 @@ export function buildWorldData(lots: InputLot[], regionId: string): WorldData {
 
   // Process each lot
   for (const lot of lots) {
-    const spaceIds = []
+    const spaceIds: string[] = []
 
     // Combine indoor rooms and outdoor areas
     const allSpaces = [
@@ -129,7 +129,7 @@ export function buildWorldData(lots: InputLot[], regionId: string): WorldData {
     for (const space of allSpaces) {
       spaceIds.push(space.id)
 
-      const itemIds = []
+      const itemIds: string[] = []
 
       // Process each item in the space
       for (const item of (space.items || [])) {

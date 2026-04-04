@@ -1,6 +1,6 @@
-import type { CharacterState } from '../stores/types'
+import type { ActionName, CharacterState } from '../stores/types'
 
-const ACTION_VERBS: Record<string, string> = {
+const ACTION_VERBS: Record<ActionName, string> = {
   eat: 'eating',
   sleep: 'sleeping',
   use_toilet: 'using the toilet',

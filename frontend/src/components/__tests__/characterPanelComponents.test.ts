@@ -5,11 +5,12 @@ import CharacterBioTab from '../CharacterBioTab.vue'
 import CharacterMemoriesTab from '../CharacterMemoriesTab.vue'
 import CharacterNeedPicker from '../CharacterNeedPicker.vue'
 import { useSimulationStore } from '../../stores/simulation'
+import type { LongTermMemory } from '../../stores/types'
 
 const persistenceMocks = vi.hoisted(() => ({
   moveCharacterToLot: vi.fn(async () => {}),
   startCharacterActivity: vi.fn(async () => {}),
-  fetchCharacterDetails: vi.fn(async () => ({ character: { longTermMemories: [] } })),
+  fetchCharacterDetails: vi.fn<(characterId: string) => Promise<{ character: { longTermMemories: LongTermMemory[] } }>>(async () => ({ character: { longTermMemories: [] } })),
   persistCharacterBio: vi.fn(async () => {}),
   createCharacterLongTermMemory: vi.fn(async () => {}),
   updateCharacterLongTermMemory: vi.fn(async () => {}),

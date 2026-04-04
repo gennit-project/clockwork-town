@@ -4,6 +4,7 @@
 
 import type {
   ActionName,
+  Cooldowns,
   Needs,
   CharacterState,
   WorldData,
@@ -88,7 +89,8 @@ export function selectBestIntent(
   debugLog(`\n🎯 selectBestIntent for character ${characterId}`)
 
   // All possible actions (excluding idle and work for now)
-  const possibleActions: ActionName[] = ['eat', 'sleep', 'use_toilet', 'shower', 'medicate', 'chat_friend', 'call_mom', 'date', 'read', 'write', 'view_art', 'volunteer']
+  type CooldownAction = keyof Cooldowns
+  const possibleActions: CooldownAction[] = ['eat', 'sleep', 'use_toilet', 'shower', 'medicate', 'chat_friend', 'call_mom', 'date', 'read', 'write', 'view_art', 'volunteer']
 
   const intents: Intent[] = []
 

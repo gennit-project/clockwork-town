@@ -4,7 +4,7 @@ export class Encryption {
   /**
    * Encrypt data using AES encryption with user's password
    */
-  static encrypt(data, password) {
+  static encrypt(data: Uint8Array, password: string): string {
     // Convert Uint8Array to UTF-8 string (it's JSON, so it's text)
     const textData = new TextDecoder().decode(data)
 
@@ -16,7 +16,7 @@ export class Encryption {
   /**
    * Decrypt data using AES decryption with user's password
    */
-  static decrypt(encryptedData, password) {
+  static decrypt(encryptedData: string, password: string): Uint8Array {
     // Decrypt with AES
     const decrypted = CryptoJS.AES.decrypt(encryptedData, password)
 
@@ -34,7 +34,7 @@ export class Encryption {
   /**
    * Generate a secure encryption key from a password using PBKDF2
    */
-  static deriveKey(password, salt = 'clockwork-town-salt') {
+  static deriveKey(password: string, salt = 'clockwork-town-salt'): string {
     return CryptoJS.PBKDF2(password, salt, {
       keySize: 256 / 32,
       iterations: 1000

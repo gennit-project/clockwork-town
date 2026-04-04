@@ -101,7 +101,7 @@ export const ACTION_EFFECTS: ActionEffects = {
     cooldownTicks: 18  // 90 minutes
   },
   work: {
-    primaryNeed: 'money',  // Note: money not tracked in v0
+    primaryNeed: null,
     primaryEffect: 0,
     secondaryEffects: { sleep: -0.15 },
     cooldownTicks: 48  // 240 minutes

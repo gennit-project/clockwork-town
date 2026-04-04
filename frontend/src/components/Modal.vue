@@ -28,40 +28,28 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-const props = defineProps({
-  isOpen: {
-    type: Boolean,
-    default: false
-  },
-  title: {
-    type: String,
-    required: true
-  },
-  size: {
-    type: String,
-    default: 'md',
-    validator: (value) => ['sm', 'md', 'lg', 'xl'].includes(value)
-  },
-  showClose: {
-    type: Boolean,
-    default: true
-  },
-  closeOnBackdrop: {
-    type: Boolean,
-    default: true
-  }
-})
+type ModalSize = 'sm' | 'md' | 'lg' | 'xl'
 
-const emit = defineEmits(['close'])
+const props = defineProps<{
+  isOpen?: boolean
+  title: string
+  size?: ModalSize
+  showClose?: boolean
+  closeOnBackdrop?: boolean
+}>()
+
+const emit = defineEmits<{
+  close: []
+}>()
 
 const sizeClass = computed(() => {
-  const sizes = {
+  const sizes: Record<ModalSize, string> = {
     sm: 'max-w-sm w-full',
     md: 'max-w-md w-full',
     lg: 'max-w-lg w-full',
     xl: 'max-w-xl w-full'
   }
-  return sizes[props.size]
+  return sizes[props.size ?? 'md']
 })
 
 const close = () => emit('close')

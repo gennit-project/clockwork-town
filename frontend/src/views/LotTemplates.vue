@@ -107,10 +107,35 @@ import { ref, onMounted } from 'vue'
 import { gql } from 'graphql-request'
 import { client } from '../graphql'
 
-const templates = ref([])
+interface TemplateItem {
+  name: string
+  description?: string | null
+}
+
+interface TemplateSpace {
+  name: string
+  description?: string | null
+  items?: TemplateItem[]
+}
+
+interface LotTemplateSummary {
+  id: string
+  name: string
+  lotType: string
+  description?: string | null
+  tags?: string[]
+  indoorRooms?: TemplateSpace[]
+  outdoorAreas?: TemplateSpace[]
+}
+
+interface GetLotTemplatesResult {
+  lotTemplates: LotTemplateSummary[]
+}
+
+const templates = ref<LotTemplateSummary[]>([])
 const loading = ref(true)
-const error = ref(null)
-const deletingTemplate = ref(null)
+const error = ref<Error | null>(null)
+const deletingTemplate = ref<LotTemplateSummary | null>(null)
 const deleting = ref(false)
 
 const QUERY_LOT_TEMPLATES = gql`
@@ -150,38 +175,44 @@ const MUTATION_DELETE_LOT_TEMPLATE = gql`
 const loadTemplates = async () => {
   try {
     loading.value = true
-    const data = await client.request(QUERY_LOT_TEMPLATES)
+    const data = await client.request<GetLotTemplatesResult>(QUERY_LOT_TEMPLATES)
     templates.value = data.lotTemplates
-  } catch (e) {
-    error.value = e
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e : new Error('Failed to load lot templates')
   } finally {
     loading.value = false
   }
 }
 
-const confirmDelete = (template) => {
+const confirmDelete = (template: LotTemplateSummary) => {
   deletingTemplate.value = template
 }
 
 const deleteTemplate = async () => {
   try {
+    if (!deletingTemplate.value) {
+      return
+    }
     deleting.value = true
     await client.request(MUTATION_DELETE_LOT_TEMPLATE, {
       id: deletingTemplate.value.id
     })
 
     // Remove from local array
-    templates.value = templates.value.filter(t => t.id !== deletingTemplate.value.id)
+    templates.value = templates.value.filter((template) => template.id !== deletingTemplate.value?.id)
 
     // Close modal
     deletingTemplate.value = null
-  } catch (e) {
-    error.value = e
-    alert('Error deleting template: ' + e.message)
+  } catch (e: unknown) {
+    const err = e instanceof Error ? e : new Error('Failed to delete lot template')
+    error.value = err
+    alert('Error deleting template: ' + err.message)
   } finally {
     deleting.value = false
   }
 }
 
-onMounted(loadTemplates)
+onMounted(() => {
+  void loadTemplates()
+})
 </script>

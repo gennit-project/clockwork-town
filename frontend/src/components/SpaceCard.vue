@@ -17,7 +17,7 @@
           :class="getItemCardClass(item)"
         >
           <div
-            v-if="getActiveUsersForItem(item.id).length"
+            v-if="item.id && getActiveUsersForItem(item.id).length"
             class="mb-2 rounded-lg border border-blue-200 bg-blue-100/80 px-2.5 py-2 dark:border-blue-700 dark:bg-blue-900/40"
           >
             <p class="text-[11px] font-semibold uppercase tracking-wide text-blue-800 dark:text-blue-200">
@@ -62,12 +62,12 @@
                 v-for="slotIndex in item.maxSimultaneousUsers"
                 :key="slotIndex"
                 class="border-2 rounded p-1 min-h-[28px] flex items-center justify-center"
-                :class="getActiveUsersForItem(item.id)[slotIndex - 1]
+                :class="item.id && getActiveUsersForItem(item.id)[slotIndex - 1]
                   ? 'border-blue-400 bg-blue-50 dark:bg-blue-950 dark:border-blue-600'
                   : 'border-gray-300 bg-gray-100 dark:bg-gray-700 dark:border-gray-600'"
               >
                 <span
-                  v-if="getActiveUsersForItem(item.id)[slotIndex - 1]"
+                  v-if="item.id && getActiveUsersForItem(item.id)[slotIndex - 1]"
                   class="text-[10px] font-medium text-blue-800 dark:text-blue-200 truncate"
                 >
                   👤 {{ getActiveUsersForItem(item.id)[slotIndex - 1].name }}
@@ -106,43 +106,57 @@
 import { computed } from 'vue'
 import { getCharacterStatusText } from '../composables/useCharacterStatus'
 import { useSimulationStore } from '../stores/simulation'
+import type { ActionName, ItemAffordance } from '../stores/types'
 
 const simulationStore = useSimulationStore()
 
-const props = defineProps({
-  space: {
-    type: Object,
-    required: true
-  },
-  characters: {
-    type: Array,
-    default: () => []
-  },
-  showEmptyState: {
-    type: Boolean,
-    default: false
-  }
-})
+interface SpaceCardItem {
+  id?: string
+  name: string
+  description?: string
+  count?: number
+  allowedActivities?: string[]
+  affordances?: ItemAffordance[]
+  maxSimultaneousUsers?: number | null
+}
+
+interface SpaceCardData {
+  id?: string
+  name: string
+  description?: string
+  items?: SpaceCardItem[]
+}
+
+interface CharacterSummary {
+  id: string
+  name: string
+}
+
+const props = defineProps<{
+  space: SpaceCardData
+  characters?: CharacterSummary[]
+  showEmptyState?: boolean
+}>()
 
 // Helper to get active users from Pinia store
-function getActiveUsersForItem(itemId) {
+function getActiveUsersForItem(itemId: string) {
   return simulationStore.getItemActiveUsers(itemId)
 }
 
-function getItemActions(item) {
+function getItemActions(item: SpaceCardItem): ActionName[] {
   if (item.allowedActivities?.length) {
-    return item.allowedActivities
+    return item.allowedActivities as ActionName[]
   }
 
-  return (item.affordances || []).map((entry) => entry.action)
+  return (item.affordances || []).map((entry) => entry.action as ActionName)
 }
 
-function getCharacterStatus(characterId) {
+function getCharacterStatus(characterId: string): string {
   return getCharacterStatusText(simulationStore.characterStates[characterId])
 }
 
-function getItemCardClass(item) {
-  if (getActiveUsersForItem(item.id).length) {
+function getItemCardClass(item: SpaceCardItem): string {
+  if (item.id && getActiveUsersForItem(item.id).length) {
     return 'border-blue-400 bg-blue-50 shadow-md ring-2 ring-blue-200 dark:border-blue-500 dark:bg-blue-950/40 dark:ring-blue-800'
   }
 
@@ -152,11 +166,11 @@ function getItemCardClass(item) {
 // Calculate idle characters (in space but not using any items)
 const idleCharacters = computed(() => {
   // Get all character IDs currently using items in this space
-  const charactersUsingItems = new Set()
+  const charactersUsingItems = new Set<string>()
 
   if (props.space.items) {
     props.space.items.forEach(item => {
-      const activeUsers = getActiveUsersForItem(item.id)
+      const activeUsers = item.id ? getActiveUsersForItem(item.id) : []
       activeUsers.forEach(user => charactersUsingItems.add(user.id))
     })
   }
@@ -164,7 +178,7 @@ const idleCharacters = computed(() => {
   // Filter characters who are:
   // 1. Not using items
   // 2. Actually in this space according to simulation store
-  return props.characters.filter(char => {
+  return (props.characters || []).filter(char => {
     // Skip if using an item
     if (charactersUsingItems.has(char.id)) {
       return false
@@ -172,7 +186,7 @@ const idleCharacters = computed(() => {
 
     // Verify character is actually in this space
     const charState = simulationStore.characterStates[char.id]
-    return charState?.location?.spaceId === props.space.id
+    return !!props.space.id && charState?.location?.spaceId === props.space.id
   })
 })
 </script>

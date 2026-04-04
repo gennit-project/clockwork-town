@@ -71,32 +71,29 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useSimulationStore } from '../stores/simulation'
+import type { ActionName, NeedName } from '../stores/types'
 
 const simulationStore = useSimulationStore()
 
-const props = defineProps({
-  entity: {
-    type: Object,
-    required: true
-  },
-  type: {
-    type: String,
-    required: true,
-    validator: (value) => ['character', 'animal'].includes(value)
-  },
-  isActive: {
-    type: Boolean,
-    default: false
-  },
-  showTraits: {
-    type: Boolean,
-    default: false
-  },
-  showNeeds: {
-    type: Boolean,
-    default: true
-  }
-})
+interface ListEntity {
+  id: string
+  name: string
+  age: number
+  traits?: string[]
+}
+
+interface NeedDescriptor {
+  key: NeedName
+  icon: string
+}
+
+const props = defineProps<{
+  entity: ListEntity
+  type: 'character' | 'animal'
+  isActive?: boolean
+  showTraits?: boolean
+  showNeeds?: boolean
+}>()
 
 defineEmits(['select'])
 
@@ -120,10 +117,14 @@ const statusBadgeClass = computed(() => {
   const action = simulationState.value?.currentAction
   if (!action) return 'bg-gray-200 text-gray-700'
 
-  const statusColors = {
+  const statusColors: Partial<Record<ActionName, string>> = {
     idle: 'bg-gray-200 text-gray-700',
     eat: 'bg-green-200 text-green-800',
     sleep: 'bg-blue-200 text-blue-800',
+    use_toilet: 'bg-cyan-200 text-cyan-800',
+    shower: 'bg-sky-200 text-sky-800',
+    medicate: 'bg-red-200 text-red-800',
+    date: 'bg-rose-200 text-rose-800',
     read: 'bg-purple-200 text-purple-800',
     write: 'bg-purple-200 text-purple-800',
     chat_friend: 'bg-pink-200 text-pink-800',
@@ -133,7 +134,7 @@ const statusBadgeClass = computed(() => {
   return statusColors[action] || 'bg-gray-200 text-gray-700'
 })
 
-const getNeedColorClass = (value) => {
+const getNeedColorClass = (value: number): string => {
   if (value >= 0.7) return 'bg-green-500'
   if (value >= 0.4) return 'bg-yellow-500'
   if (value >= 0.2) return 'bg-orange-500'
@@ -141,9 +142,11 @@ const getNeedColorClass = (value) => {
 }
 
 // All needs with their icons (for active character)
-const allNeeds = [
+const allNeeds: NeedDescriptor[] = [
   { key: 'food', icon: '🍎' },
   { key: 'sleep', icon: '😴' },
+  { key: 'bladder', icon: '🚽' },
+  { key: 'hygiene', icon: '🫧' },
   { key: 'health', icon: '💊' },
   { key: 'friends', icon: '💬' },
   { key: 'family', icon: '👨‍👩‍👧' },
@@ -152,7 +155,7 @@ const allNeeds = [
 ]
 
 // Compact needs (for non-active characters)
-const compactNeeds = [
+const compactNeeds: NeedDescriptor[] = [
   { key: 'food', icon: '🍎' },
   { key: 'sleep', icon: '😴' }
 ]

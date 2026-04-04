@@ -94,24 +94,56 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
-import { gql } from 'graphql-request'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
 import { client, queries } from '../graphql'
 import { useSimulationStore } from '../stores/simulation'
+import { useRouteParams } from '../composables/useRouteParams'
+
+interface WorldSummary {
+  id: string
+  name: string
+}
+
+interface RegionSummary {
+  id: string
+  name: string
+}
+
+interface CharacterSummary {
+  id: string
+  name: string
+}
+
+interface AnimalSummary {
+  id: string
+  name: string
+}
+
+interface GetWorldResult {
+  world: WorldSummary | null
+}
+
+interface GetRegionsResult {
+  regions: RegionSummary[]
+}
+
+interface GetRegionResult {
+  region?: {
+    characters?: CharacterSummary[]
+    animals?: AnimalSummary[]
+  } | null
+}
 
 const simulationStore = useSimulationStore()
 
-const route = useRoute()
-const worldId = computed(() => route.params.worldId)
-const regionId = computed(() => route.params.regionId)
+const { worldId, regionId } = useRouteParams()
 
-const world = ref(null)
-const region = ref(null)
-const characters = ref([])
-const animals = ref([])
+const world = ref<WorldSummary | null>(null)
+const region = ref<RegionSummary | null>(null)
+const characters = ref<CharacterSummary[]>([])
+const animals = ref<AnimalSummary[]>([])
 const loading = ref(true)
-const error = ref(null)
+const error = ref<string | null>(null)
 
 const breadcrumbs = computed(() => [
   { label: 'Worlds', to: '/' },
@@ -121,9 +153,9 @@ const breadcrumbs = computed(() => [
   { label: 'Activity Log', to: '#' }
 ])
 
-const getCharacterName = (characterId) => {
-  const character = characters.value.find(c => c.id === characterId)
-  const animal = animals.value.find(a => a.id === characterId)
+const getCharacterName = (characterId: string): string => {
+  const character = characters.value.find((entry) => entry.id === characterId)
+  const animal = animals.value.find((entry) => entry.id === characterId)
   return character?.name || animal?.name || `Unknown (${characterId})`
 }
 
@@ -135,35 +167,40 @@ const clearLog = () => {
 
 const loadData = async () => {
   try {
+    if (!worldId.value || !regionId.value) {
+      error.value = 'Missing route parameters'
+      return
+    }
+
     loading.value = true
     error.value = null
 
     const [worldData, regionsData] = await Promise.all([
-      client.request(queries.getWorld, { id: worldId.value }),
-      client.request(queries.getRegions, { worldId: worldId.value })
+      client.request<GetWorldResult>(queries.getWorld, { id: worldId.value }),
+      client.request<GetRegionsResult>(queries.getRegions, { worldId: worldId.value })
     ])
 
     world.value = worldData.world
-    region.value = regionsData.regions.find(r => r.id === regionId.value)
+    region.value = regionsData.regions.find((entry) => entry.id === regionId.value) || null
 
     // Fetch characters and animals in the region
     try {
-      const regionData = await client.request(queries.getRegion, { id: regionId.value })
+      const regionData = await client.request<GetRegionResult>(queries.getRegion, { id: regionId.value })
       characters.value = regionData.region?.characters || []
       animals.value = regionData.region?.animals || []
-    } catch (e) {
+    } catch (e: unknown) {
       console.error('Error loading characters and animals:', e)
       characters.value = []
       animals.value = []
     }
-  } catch (e) {
-    error.value = e.message
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : 'Failed to load activity log data'
   } finally {
     loading.value = false
   }
 }
 
 onMounted(() => {
-  loadData()
+  void loadData()
 })
 </script>
