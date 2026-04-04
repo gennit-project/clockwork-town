@@ -90,153 +90,38 @@
         />
       </div>
 
-      <!-- Bio Tab -->
-      <div v-else-if="activeTab === 'Bio'" class="space-y-3">
-        <div class="flex items-start justify-between gap-2">
-          <div>
-            <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Age</p>
-            <p class="text-base text-gray-900 dark:text-gray-100">{{ character.age }}</p>
-          </div>
-          <button
-            type="button"
-            class="text-xs text-blue-600 dark:text-blue-400"
-            @click="editingBio = !editingBio"
-          >
-            {{ editingBio ? 'Cancel' : 'Edit Bio' }}
-          </button>
-        </div>
-
-        <div>
-          <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Bio</p>
-          <textarea
-            v-if="editingBio"
-            v-model="bioDraft"
-            rows="5"
-            class="w-full rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 text-sm"
-          />
-          <p v-else class="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{{ character.bio || 'No bio yet.' }}</p>
-          <button
-            v-if="editingBio"
-            type="button"
-            class="mt-2 rounded bg-blue-600 px-3 py-1 text-xs text-white"
-            @click="saveBio"
-          >
-            Save Bio
-          </button>
-        </div>
-
-        <div v-if="character.traits && character.traits.length > 0">
-          <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Traits</p>
-          <div class="flex flex-wrap gap-2">
-            <span
-              v-for="trait in character.traits"
-              :key="trait"
-              class="px-2 py-1 text-xs font-medium bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300 rounded-full"
-            >
-              {{ trait }}
-            </span>
-          </div>
-        </div>
-
-        <div v-if="characterState?.location">
-          <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Location</p>
-          <p class="text-base text-gray-900 dark:text-gray-100">
-            {{ characterState.location.spaceName }} ({{ characterState.location.lotName }})
-          </p>
-        </div>
-
-        <div v-if="characterState?.currentAction">
-          <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Current Activity</p>
-          <p class="text-base text-gray-900 dark:text-gray-100">{{ formatAction(characterState.currentAction) }}</p>
-        </div>
-      </div>
+      <CharacterBioTab
+        v-else-if="activeTab === 'Bio'"
+        :character="character"
+        :character-state="characterState"
+        :format-action="formatAction"
+      />
 
       <!-- Memories Tab -->
-      <div v-else-if="activeTab === 'Memories'" class="space-y-2">
-        <div class="space-y-2 mb-4">
-          <textarea
-            v-model="memoryDraft"
-            rows="3"
-            class="w-full rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 text-sm"
-            placeholder="Add a long-term memory"
-          />
-          <button
-            type="button"
-            class="rounded bg-blue-600 px-3 py-1 text-xs text-white"
-            @click="saveMemory"
-          >
-            Add Memory
-          </button>
-        </div>
-        <div v-if="longTermMemories.length > 0">
-          <div
-            v-for="memory in longTermMemories"
-            :key="memory.id"
-            class="p-2 bg-gray-50 dark:bg-gray-700 rounded text-xs"
-          >
-            <div class="flex items-center justify-between mb-1 gap-2">
-              <span class="font-medium text-gray-900 dark:text-gray-100">{{ new Date(memory.createdAt).toLocaleDateString() }}</span>
-              <div class="flex gap-2">
-                <button type="button" class="text-blue-600 dark:text-blue-400" @click="startEditingMemory(memory)">Edit</button>
-                <button type="button" class="text-red-600 dark:text-red-400" @click="removeMemory(memory.id)">Delete</button>
-              </div>
-            </div>
-            <textarea
-              v-if="editingMemoryId === memory.id"
-              v-model="editingMemoryContent"
-              rows="3"
-              class="w-full rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white px-2 py-1"
-            />
-            <p v-else class="text-gray-600 dark:text-gray-300 whitespace-pre-wrap">{{ memory.content }}</p>
-            <button
-              v-if="editingMemoryId === memory.id"
-              type="button"
-              class="mt-2 rounded bg-blue-600 px-2 py-1 text-[11px] text-white"
-              @click="saveEditedMemory"
-            >
-              Save
-            </button>
-          </div>
-        </div>
-        <div v-else class="text-center py-8 text-gray-500 dark:text-gray-400">
-          <p class="text-sm">No long-term memories yet</p>
-        </div>
-      </div>
+      <CharacterMemoriesTab
+        v-else-if="activeTab === 'Memories'"
+        :character-id="character.id"
+        :character-state="characterState"
+      />
     </div>
 
-    <div
-      v-if="showNeedPicker"
-      class="absolute inset-0 bg-white/95 dark:bg-gray-900/95 p-4 overflow-y-auto"
-    >
-      <div class="flex items-center justify-between mb-3">
-        <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-100">
-          Satisfy {{ selectedNeed }}
-        </h4>
-        <button type="button" class="text-xs text-gray-500" @click="showNeedPicker = false">Close</button>
-      </div>
-      <div v-if="selectableOptions.length === 0" class="text-xs text-gray-500 dark:text-gray-400">
-        No options available right now.
-      </div>
-      <div v-else class="space-y-2">
-        <button
-          v-for="option in selectableOptions"
-          :key="option.label"
-          type="button"
-          class="w-full rounded border border-gray-200 dark:border-gray-700 px-3 py-2 text-left text-xs text-gray-900 dark:text-gray-100"
-          @click="queueIntent(option.intent)"
-        >
-          {{ option.label }}
-        </button>
-      </div>
-    </div>
+    <CharacterNeedPicker
+      :visible="showNeedPicker"
+      :selected-need="selectedNeed"
+      :options="selectableOptions"
+      @close="showNeedPicker = false"
+      @select="queueIntent"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref } from 'vue'
 import { useSimulationStore } from '../stores/simulation'
-import { useCharacterPanelStore } from '../stores/characterPanel'
 import { useCharacterIntentOptions } from '../composables/useCharacterIntentOptions'
+import CharacterBioTab from './CharacterBioTab.vue'
+import CharacterMemoriesTab from './CharacterMemoriesTab.vue'
+import CharacterNeedPicker from './CharacterNeedPicker.vue'
 import NeedBar from './NeedBar.vue'
 
 const props = defineProps({
@@ -253,28 +138,14 @@ const props = defineProps({
 defineEmits(['close'])
 
 const simulationStore = useSimulationStore()
-const characterPanelStore = useCharacterPanelStore()
 const activeTab = ref('Basics')
 const showNeedPicker = ref(false)
-const editingBio = ref(false)
-const bioDraft = ref('')
-const memoryDraft = ref('')
-const editingMemoryId = ref<string | null>(null)
-const editingMemoryContent = ref('')
 
 const tabs = ['Basics', 'Emotions', 'Fulfillment', 'Bio', 'Memories']
 
 const { characterState, selectedNeed, selectableOptions } = useCharacterIntentOptions(
   props.character,
   props.availableRomanceTargets
-)
-
-watch(
-  () => props.character.bio,
-  (value) => {
-    bioDraft.value = value || ''
-  },
-  { immediate: true }
 )
 
 const formatAction = (action) => {
@@ -302,8 +173,6 @@ const fulfillmentNeeds = [
   { key: 'fulfillment', icon: '✨', label: 'Fulfillment' }
 ]
 
-const longTermMemories = computed(() => characterState.value?.longTermMemories || [])
-
 function openNeedPicker(needKey: string) {
   selectedNeed.value = needKey
   showNeedPicker.value = true
@@ -312,37 +181,5 @@ function openNeedPicker(needKey: string) {
 function queueIntent(intent: any) {
   simulationStore.enqueueIntent(props.character.id, intent)
   showNeedPicker.value = false
-}
-
-async function saveBio() {
-  await characterPanelStore.updateCharacterBio(props.character.id, bioDraft.value)
-  props.character.bio = bioDraft.value
-  editingBio.value = false
-}
-
-async function saveMemory() {
-  if (!memoryDraft.value.trim()) {
-    return
-  }
-  await characterPanelStore.createLongTermMemory(props.character.id, memoryDraft.value.trim())
-  memoryDraft.value = ''
-}
-
-async function saveEditedMemory() {
-  if (!editingMemoryId.value) {
-    return
-  }
-  await characterPanelStore.updateLongTermMemory(props.character.id, editingMemoryId.value, editingMemoryContent.value)
-  editingMemoryId.value = null
-  editingMemoryContent.value = ''
-}
-
-async function removeMemory(memoryId: string) {
-  await characterPanelStore.deleteLongTermMemory(props.character.id, memoryId)
-}
-
-function startEditingMemory(memory: any) {
-  editingMemoryId.value = memory.id
-  editingMemoryContent.value = memory.content
 }
 </script>
