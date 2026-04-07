@@ -58,7 +58,11 @@ export function findItemsWithAffordance({
     const space = worldData.spaces[item.spaceId]
     const lot = worldData.lots[item.lotId]
 
-    if ('needs' in characterContext && !canAccessLot(characterContext, lot.id)) {
+    if ('needs' in characterContext && !canAccessLot({
+      characterState: characterContext,
+      lotId: lot.id,
+      isPublic: lot.isPublic
+    })) {
       continue
     }
 
@@ -165,6 +169,7 @@ export function buildWorldData(lots: InputLot[], regionId: string): WorldData {
           spaceId: space.id,
           lotId: lot.id,
           regionId: regionId,
+          comfort: item.comfort ?? 0,
           allowedActivities,
           affordances,
           maxSimultaneousUsers: item.maxSimultaneousUsers || null,

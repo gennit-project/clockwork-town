@@ -1,6 +1,7 @@
 import { batch, q } from "../kuzuHelpers";
 import { decodeAffordances, encodeAffordances } from "./itemAffordances";
 import { resolveItemAffordances } from "./itemAffordanceInference";
+import { getDefaultItemComfort } from "./itemComfort";
 
 // Helper functions to safely encode/decode template data with special characters
 const encodeTemplateData = (data: any): string => {
@@ -26,6 +27,7 @@ export const WorldResolvers = {
         MATCH (s:Space {id:$id})<-[:ON_SPACE]-(i:Item)
         RETURN i.id AS id, i.name AS name, i.description AS description,
                i.itemRoles AS itemRoles,
+               i.comfort AS comfort,
                i.allowedActivities AS allowedActivities,
                i.satisfiesNeeds AS satisfiesNeeds,
                i.canBeUsedByHumans AS canBeUsedByHumans,
@@ -59,6 +61,9 @@ export const WorldResolvers = {
   Item: {
     itemRoles: (parent: any) => {
       return parent.itemRoles || [];
+    },
+    comfort: (parent: any) => {
+      return parent.comfort ?? 0;
     },
     allowedActivities: (parent: any) => {
       return parent.allowedActivities || [];
@@ -105,6 +110,7 @@ export const WorldResolvers = {
         MATCH (l:Lot {id:$id})<-[:ON_LOT]-(i:Item)
         RETURN i.id AS id, i.name AS name, i.description AS description,
                i.itemRoles AS itemRoles,
+               i.comfort AS comfort,
                i.allowedActivities AS allowedActivities,
                i.satisfiesNeeds AS satisfiesNeeds,
                i.canBeUsedByHumans AS canBeUsedByHumans,
@@ -192,6 +198,7 @@ export const WorldResolvers = {
         MATCH (s:Space {id:$id})<-[:ON_SPACE]-(i:Item)
         RETURN i.id AS id, i.name AS name, i.description AS description,
                i.itemRoles AS itemRoles,
+               i.comfort AS comfort,
                i.allowedActivities AS allowedActivities,
                i.satisfiesNeeds AS satisfiesNeeds,
                i.canBeUsedByHumans AS canBeUsedByHumans,
@@ -630,11 +637,13 @@ export const WorldResolvers = {
       name: string;
       description: string;
       itemRoles?: string[];
+      comfort?: number | null;
       affordances?: Array<{ action: string; weight: number }>;
       maxSimultaneousUsers?: number | null;
     } }) => {
-      const { id, spaceId, name, description, itemRoles, affordances, maxSimultaneousUsers } = input;
+      const { id, spaceId, name, description, itemRoles, comfort, affordances, maxSimultaneousUsers } = input;
       const encodedAffordances = encodeAffordances(affordances);
+      const normalizedComfort = comfort ?? getDefaultItemComfort({ name, itemRoles });
       await batch(async () => {
         // Create item with basic properties (other fields can be null/default)
         await q(`CREATE (:Item {
@@ -642,6 +651,7 @@ export const WorldResolvers = {
           name: $name,
           description: $description,
           itemRoles: $itemRoles,
+          comfort: $comfort,
           canBeUsedByHumans: true,
           canBeUsedByAnimals: false,
           canStoreItems: false,
@@ -655,6 +665,7 @@ export const WorldResolvers = {
           name,
           description,
           itemRoles: itemRoles || [],
+          comfort: normalizedComfort,
           maxSimultaneousUsers: maxSimultaneousUsers ?? null,
           satisfiesNeeds: encodedAffordances.satisfiesNeeds,
           allowedActivities: encodedAffordances.allowedActivities
@@ -671,6 +682,7 @@ export const WorldResolvers = {
         MATCH (i:Item {id:$id})
         RETURN i.id AS id, i.name AS name, i.description AS description,
                i.itemRoles AS itemRoles,
+               i.comfort AS comfort,
                i.allowedActivities AS allowedActivities,
                i.satisfiesNeeds AS satisfiesNeeds,
                i.canBeUsedByHumans AS canBeUsedByHumans,
@@ -694,6 +706,7 @@ export const WorldResolvers = {
             description: item.itemDescription,
             affordances: item.affordances
           }));
+          const comfort = getDefaultItemComfort({ name: item.itemName });
 
           // Create item with basic properties
           await q(`CREATE (:Item {
@@ -701,6 +714,7 @@ export const WorldResolvers = {
             name: $name,
             description: $description,
             itemRoles: $itemRoles,
+            comfort: $comfort,
             canBeUsedByHumans: true,
             canBeUsedByAnimals: false,
             canStoreItems: false,
@@ -713,6 +727,7 @@ export const WorldResolvers = {
             name: item.itemName,
             description: item.itemDescription,
             itemRoles: [],
+            comfort,
             count: item.itemCount,
             satisfiesNeeds: encodedAffordances.satisfiesNeeds,
             allowedActivities: encodedAffordances.allowedActivities
@@ -737,6 +752,7 @@ export const WorldResolvers = {
         name?: string;
         description?: string;
         itemRoles?: string[];
+        comfort?: number;
         allowedActivities?: string[];
         affordances?: Array<{ action: string; weight: number }>;
         canBeUsedByHumans?: boolean;
@@ -762,6 +778,10 @@ export const WorldResolvers = {
       if (updates.itemRoles !== undefined) {
         setFields.push('i.itemRoles = $itemRoles');
         params.itemRoles = updates.itemRoles;
+      }
+      if (updates.comfort !== undefined) {
+        setFields.push('i.comfort = $comfort');
+        params.comfort = updates.comfort;
       }
       if (updates.allowedActivities !== undefined) {
         setFields.push('i.allowedActivities = $allowedActivities');
@@ -800,6 +820,7 @@ export const WorldResolvers = {
         SET ${setFields.join(', ')}
         RETURN i.id AS id, i.name AS name, i.description AS description,
                i.itemRoles AS itemRoles,
+               i.comfort AS comfort,
                i.allowedActivities AS allowedActivities,
                i.canBeUsedByHumans AS canBeUsedByHumans,
                i.canBeUsedByAnimals AS canBeUsedByAnimals,

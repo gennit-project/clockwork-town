@@ -31,6 +31,12 @@
       <span v-if="simulationState.location.spaceName" class="ml-1">→ {{ simulationState.location.spaceName }}</span>
     </p>
 
+    <NeedSummaryStrip
+      v-if="simulationState && showNeeds"
+      :summaries="needSummaries"
+      class="mt-2"
+    />
+
     <!-- Needs - Show all for active character, compact for others -->
     <div v-if="simulationState && showNeeds && isActive" class="mt-2 space-y-1 text-[10px]">
       <div v-for="need in allNeeds" :key="need.key" class="flex items-center">
@@ -72,6 +78,8 @@
 import { computed } from 'vue'
 import { useSimulationStore } from '../stores/simulation'
 import type { ActionName, NeedName } from '../stores/types'
+import NeedSummaryStrip from './NeedSummaryStrip.vue'
+import { createNeedSummaries } from '../composables/useNeedSummary'
 
 const simulationStore = useSimulationStore()
 
@@ -111,6 +119,14 @@ const activeClass = computed(() => {
 
 const simulationState = computed(() => {
   return simulationStore.getCharacterState(props.entity.id)
+})
+
+const needSummaries = computed(() => {
+  if (!simulationState.value) {
+    return []
+  }
+
+  return createNeedSummaries(simulationState.value.needs)
 })
 
 const statusBadgeClass = computed(() => {

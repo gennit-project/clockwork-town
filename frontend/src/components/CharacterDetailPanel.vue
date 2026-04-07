@@ -37,6 +37,11 @@
     <!-- Content -->
     <div class="p-4 overflow-y-auto flex-1">
       <div v-if="activeTab === 'Needs'" class="space-y-5">
+        <NeedSummaryStrip
+          v-if="characterState"
+          :summaries="needSummaries"
+        />
+
         <!-- Location & Status -->
         <div class="flex items-center justify-between text-xs mb-4 pb-3 border-b border-gray-200 dark:border-gray-700">
           <div class="flex items-center text-gray-700 dark:text-gray-300">
@@ -109,6 +114,8 @@ import CharacterBioTab from './CharacterBioTab.vue'
 import CharacterMemoriesTab from './CharacterMemoriesTab.vue'
 import CharacterNeedPicker from './CharacterNeedPicker.vue'
 import NeedBar from './NeedBar.vue'
+import NeedSummaryStrip from './NeedSummaryStrip.vue'
+import { createNeedSummaries } from '../composables/useNeedSummary'
 
 interface CharacterPanelEntity {
   id: string
@@ -157,6 +164,13 @@ const { characterState, selectedNeed, selectableOptions } = useCharacterIntentOp
 const statusMeta = computed(() => getCharacterStatusMeta(characterState.value))
 const statusSummary = computed(() => statusMeta.value.summary)
 const statusLocation = computed(() => statusMeta.value.location)
+const needSummaries = computed(() => {
+  if (!characterState.value) {
+    return []
+  }
+
+  return createNeedSummaries(characterState.value.needs)
+})
 
 const formatAction = (action: string): string => {
   return action

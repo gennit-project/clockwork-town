@@ -301,9 +301,7 @@ describe('selectBestIntent', () => {
 
     const intent = selectBestIntent('char-1', characterState, worldData, itemOccupancy)
 
-    // Might return idle or low-utility action
-    expect(intent.action).toBeDefined()
-    expect(intent.utility).toBeLessThanOrEqual(0)
+    expect(intent.utility).toBeLessThanOrEqual(worldData.items['item-2'].comfort ?? 0)
   })
 
   it('should prioritize critical needs over minor ones', () => {
@@ -325,5 +323,43 @@ describe('selectBestIntent', () => {
     expect(intent.action).toBe('eat')
     // Utility = needWeight (3.0) × needDeficit (0.95) - travelCost (1) = 1.85
     expect(intent.utility).toBeGreaterThan(1.5)
+  })
+
+  it('should prefer the higher-comfort sleep item when both are available', () => {
+    worldData.items['item-1'].allowedActivities = ['read', 'chat_friend', 'sleep']
+    worldData.items['item-1'].affordances = [
+      { action: 'read', weight: 1 },
+      { action: 'chat_friend', weight: 1 },
+      { action: 'sleep', weight: 1 }
+    ]
+    worldData.items['item-1'].comfort = 0.1
+    worldData.itemsByAffordance.sleep = ['item-1', 'item-2']
+    worldData.items['item-2'].comfort = 0.25
+    characterState.needs.sleep = 0.1
+    characterState.needs.food = 1
+    characterState.needs.fulfillment = 1
+
+    const intent = selectBestIntent('char-1', characterState, worldData, itemOccupancy)
+
+    expect(intent.itemId).toBe('item-2')
+  })
+
+  it('should allow a higher-comfort couch to beat a lower-comfort bed', () => {
+    worldData.items['item-1'].allowedActivities = ['read', 'chat_friend', 'sleep']
+    worldData.items['item-1'].affordances = [
+      { action: 'read', weight: 1 },
+      { action: 'chat_friend', weight: 1 },
+      { action: 'sleep', weight: 1 }
+    ]
+    worldData.items['item-1'].comfort = 0.4
+    worldData.itemsByAffordance.sleep = ['item-1', 'item-2']
+    worldData.items['item-2'].comfort = 0.2
+    characterState.needs.sleep = 0.1
+    characterState.needs.food = 1
+    characterState.needs.fulfillment = 1
+
+    const intent = selectBestIntent('char-1', characterState, worldData, itemOccupancy)
+
+    expect(intent.itemId).toBe('item-1')
   })
 })

@@ -64,6 +64,19 @@
                   placeholder="Leave empty for unlimited"
                 />
               </div>
+              <div class="flex-1">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                  Comfort Bonus
+                </label>
+                <input
+                  v-model.number="newItem.comfort"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Leave empty for default"
+                />
+              </div>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
@@ -181,6 +194,19 @@
                   placeholder="Leave empty for unlimited"
                 />
               </div>
+              <div>
+                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Comfort Bonus
+                </label>
+                <input
+                  v-model.number="editingItem.comfort"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  class="dark:text-white w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Leave empty for default"
+                />
+              </div>
               <div class="flex gap-2">
                 <button
                   @click="saveEdit"
@@ -280,6 +306,9 @@
                       {{ formatItemRole(role) }}
                     </span>
                   </div>
+                  <p v-if="item.comfort > 0" class="mt-2 text-[10px] font-medium text-gray-500 dark:text-gray-400">
+                    Comfort +{{ item.comfort.toFixed(2) }}
+                  </p>
                 </div>
                 <div class="flex gap-1 ml-2">
                 <button
@@ -422,6 +451,7 @@ interface SpaceItem {
   name: string
   description: string
   itemRoles: string[]
+  comfort: number
   allowedActivities: ActionName[]
   affordances: ItemAffordance[]
   maxSimultaneousUsers: number | null
@@ -523,12 +553,14 @@ const newItem = ref<{
   name: string
   description: string
   itemRoles: string[]
+  comfort: number | null
   maxSimultaneousUsers: number | null
   affordances: ItemAffordance[]
 }>({
   name: '',
   description: '',
   itemRoles: [],
+  comfort: null,
   maxSimultaneousUsers: null,
   affordances: []
 })
@@ -693,29 +725,22 @@ const addItem = async () => {
 
     const itemId = crypto.randomUUID()
 
-    await client.request(mutations.createItem, {
+    const response = await client.request<{ createItem: SpaceItem }>(mutations.createItem, {
       input: {
         id: itemId,
         spaceId: spaceId.value,
         name: newItem.value.name,
         description: newItem.value.description,
         itemRoles: newItem.value.itemRoles,
+        comfort: newItem.value.comfort,
         maxSimultaneousUsers: newItem.value.maxSimultaneousUsers || null,
         affordances: newItem.value.affordances
       }
     })
 
-    items.value.push({
-      id: itemId,
-      name: newItem.value.name,
-      description: newItem.value.description,
-      itemRoles: [...newItem.value.itemRoles],
-      maxSimultaneousUsers: newItem.value.maxSimultaneousUsers || null,
-      affordances: [...newItem.value.affordances],
-      allowedActivities: newItem.value.affordances.map(entry => entry.action as ActionName)
-    })
+    items.value.push(response.createItem)
 
-    newItem.value = { name: '', description: '', itemRoles: [], maxSimultaneousUsers: null, affordances: [] }
+    newItem.value = { name: '', description: '', itemRoles: [], comfort: null, maxSimultaneousUsers: null, affordances: [] }
     showAddItemForm.value = false
   } catch (e: unknown) {
     error.value = e instanceof Error ? e.message : 'Failed to add item'
@@ -747,12 +772,13 @@ const saveEdit = async () => {
     saving.value = true
     error.value = null
 
-    await client.request(mutations.updateItem, {
+    const response = await client.request<{ updateItem: SpaceItem }>(mutations.updateItem, {
       input: {
         id: editingItem.value.id,
         name: editingItem.value.name,
         description: editingItem.value.description,
         itemRoles: editingItem.value.itemRoles,
+        comfort: editingItem.value.comfort,
         maxSimultaneousUsers: editingItem.value.maxSimultaneousUsers || null,
         affordances: editingItem.value.affordances || []
       }
@@ -760,7 +786,7 @@ const saveEdit = async () => {
 
     const index = items.value.findIndex(item => item.id === editingItem.value?.id)
     if (index !== -1) {
-      items.value[index] = { ...editingItem.value }
+      items.value[index] = response.updateItem
     }
 
     editingItem.value = null

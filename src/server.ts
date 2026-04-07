@@ -79,9 +79,14 @@ async function main() {
     if (repairedItems > 0) {
       console.log(`   Repaired affordances for ${repairedItems} existing items`);
     }
-    if (migrationResult.addedItemRolesColumn || migrationResult.backfilledItemRoles > 0) {
+    if (
+      migrationResult.addedItemRolesColumn
+      || migrationResult.backfilledItemRoles > 0
+      || migrationResult.addedComfortColumn
+      || migrationResult.backfilledComfort > 0
+    ) {
       console.log(
-        `   Migrated itemRoles column: added=${migrationResult.addedItemRolesColumn}, backfilled=${migrationResult.backfilledItemRoles}`
+        `   Migrated item fields: itemRoles added=${migrationResult.addedItemRolesColumn}, itemRoles backfilled=${migrationResult.backfilledItemRoles}, comfort added=${migrationResult.addedComfortColumn}, comfort backfilled=${migrationResult.backfilledComfort}`
       );
     }
     if (hasBuiltFrontend) {

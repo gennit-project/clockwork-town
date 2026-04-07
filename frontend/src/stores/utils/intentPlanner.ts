@@ -140,16 +140,38 @@ function buildDirectPlanCandidates({
 
   return items.map((itemOption) => {
     const primaryStep = buildDirectStep(action, itemOption)
+    const utility = calculateUtility(characterId, action, characterState.needs, itemOption)
+      + getItemActionModifier({
+        action,
+        itemId: itemOption.itemId,
+        worldData
+      })
 
     return {
       goal: action,
       strategy: `${action}:direct`,
-      utility: calculateUtility(characterId, action, characterState.needs, itemOption),
+      utility,
       travelCost: itemOption.travelCost,
       primaryStep,
       steps: [primaryStep]
     }
   })
+}
+
+function getItemActionModifier({
+  action,
+  itemId,
+  worldData
+}: {
+  action: ActionName
+  itemId: string
+  worldData: WorldData
+}): number {
+  if (action !== 'sleep') {
+    return 0
+  }
+
+  return worldData.items[itemId]?.comfort ?? 0
 }
 
 function buildStructuredReadCandidates({

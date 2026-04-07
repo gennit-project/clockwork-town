@@ -32,10 +32,25 @@ export function deriveAccessibleLotIds(
 }
 
 export function canAccessLot(
-  characterState: Pick<CharacterState, 'accessibleLotIds'>,
-  lotId: string
+  {
+    characterState,
+    lotId,
+    isPublic
+  }: {
+    characterState: Pick<CharacterState, 'accessibleLotIds' | 'homeLotId' | 'location'>
+    lotId: string
+    isPublic: boolean
+  }
 ): boolean {
-  if (!characterState.accessibleLotIds?.length) {
+  if (isPublic) {
+    return true
+  }
+
+  if (characterState.homeLotId === lotId) {
+    return true
+  }
+
+  if (characterState.location?.lotId === lotId) {
     return true
   }
 

@@ -103,10 +103,16 @@ export function createSimulationRuntime(
     }
   }
 
-  function applyActionEffects(characterId: string, action: ActionName, itemName: string | null = null): void {
-    const actionData = ACTION_EFFECTS[action]
+  function applyActionEffects({
+    characterId,
+    intent
+  }: {
+    characterId: string
+    intent: Intent
+  }): void {
+    const actionData = ACTION_EFFECTS[intent.action]
     if (!actionData) {
-      logger.logUnknownAction(action)
+      logger.logUnknownAction(intent.action)
       return
     }
 
@@ -116,9 +122,19 @@ export function createSimulationRuntime(
       return
     }
 
-    logger.debug(`⚡ Applying action "${action}" to character ${characterId}`)
+    logger.debug(`⚡ Applying action "${intent.action}" to character ${characterId}`)
 
-    const stateChange = applyActionToCharacterState(state, action, actionData)
+    const itemComfort = intent.itemId
+      ? refs.worldData.value.items[intent.itemId]?.comfort ?? 0
+      : 0
+    const effectiveActionData = intent.action === 'sleep'
+      ? {
+          ...actionData,
+          primaryEffect: actionData.primaryEffect + itemComfort
+        }
+      : actionData
+
+    const stateChange = applyActionToCharacterState(state, intent.action, effectiveActionData)
 
     if (stateChange.primaryNeedChange) {
       const { need, oldValue, newValue, effect } = stateChange.primaryNeedChange
@@ -133,14 +149,16 @@ export function createSimulationRuntime(
       logger.logCooldownApplied(stateChange.cooldownTicksApplied)
     }
 
-    const details = itemName ? `using ${itemName}` : 'action performed'
-    logActivity(characterId, action, details)
+    const details = intent.itemName || intent.socialTargetName
+      ? `using ${intent.itemName || intent.socialTargetName}`
+      : 'action performed'
+    logActivity(characterId, intent.action, details)
 
-    logger.logActionApplied(action, characterId)
+    logger.logActionApplied(intent.action, characterId)
   }
 
   async function completeIntent(characterId: string, intent: Intent): Promise<void> {
-    applyActionEffects(characterId, intent.action, intent.itemName || intent.socialTargetName || null)
+    applyActionEffects({ characterId, intent })
 
     if (intent.itemId) {
       setItemOccupancy(characterId, intent.itemId)

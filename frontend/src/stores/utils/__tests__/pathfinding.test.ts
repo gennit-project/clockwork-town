@@ -6,15 +6,16 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { findItemsWithAffordance, buildWorldData } from '../pathfinding'
 import {
   createMockWorldData,
+  createMockCharacterState,
   mockConsole
 } from '../../__tests__/mockData'
-import type { CharacterLocation, WorldData, ItemOccupancy } from '../../types'
+import type { CharacterLocation, CharacterState, WorldData, ItemOccupancy } from '../../types'
 
 mockConsole()
 
 function findResults(overrides: {
   action?: string
-  characterContext?: CharacterLocation
+  characterContext?: CharacterLocation | CharacterState
   worldData?: WorldData
   itemOccupancy?: ItemOccupancy
 } = {}) {
@@ -216,6 +217,56 @@ describe('findItemsWithAffordance', () => {
     })
 
     expect(results.some((result) => result.itemId === 'item-1')).toBe(true)
+  })
+
+  it('excludes sleep items on inaccessible residential lots', () => {
+    worldData.lots['lot-3'] = {
+      id: 'lot-3',
+      name: 'Neighbor House',
+      regionId: 'region-1',
+      lotType: 'RESIDENTIAL',
+      isPublic: false,
+      spaceIds: ['space-4']
+    }
+    worldData.spaces['space-4'] = {
+      id: 'space-4',
+      name: 'Guest Room',
+      lotId: 'lot-3',
+      itemIds: ['item-5']
+    }
+    worldData.items['item-5'] = {
+      id: 'item-5',
+      name: 'Guest Bed',
+      spaceId: 'space-4',
+      lotId: 'lot-3',
+      regionId: 'region-1',
+      comfort: 0.25,
+      allowedActivities: ['sleep'],
+      affordances: [{ action: 'sleep', weight: 1 }],
+      maxSimultaneousUsers: 1,
+      classification: {
+        isFoodStorage: false,
+        isTakeoutSource: false,
+        isGrocerySource: false,
+        isKitchenStation: false,
+        isTableSeat: false,
+        isChairSeat: false,
+        isLoungeSeat: false,
+        isBedSeat: true,
+        isBookSource: false
+      }
+    }
+    worldData.itemsByAffordance.sleep = ['item-2', 'item-5']
+
+    const results = findResults({
+      action: 'sleep',
+      worldData,
+      characterContext: createMockCharacterState({
+        accessibleLotIds: ['lot-1', 'lot-2']
+      })
+    })
+
+    expect(results.some((result) => result.itemId === 'item-5')).toBe(false)
   })
 })
 

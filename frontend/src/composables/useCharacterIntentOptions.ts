@@ -74,6 +74,24 @@ export function useCharacterIntentOptions(character: CharacterTarget, availableR
           source: 'manual'
         }
       }))
+      .sort((left, right) => {
+        if (action !== 'sleep') {
+          return 0
+        }
+
+        const leftComfort = left.intent.itemId
+          ? simulationStore.worldData.items[left.intent.itemId]?.comfort ?? 0
+          : 0
+        const rightComfort = right.intent.itemId
+          ? simulationStore.worldData.items[right.intent.itemId]?.comfort ?? 0
+          : 0
+
+        if (rightComfort !== leftComfort) {
+          return rightComfort - leftComfort
+        }
+
+        return (left.intent.travelCost ?? 0) - (right.intent.travelCost ?? 0)
+      })
   })
 
   return {

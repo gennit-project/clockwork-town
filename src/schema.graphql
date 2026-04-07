@@ -120,6 +120,7 @@ type Item {
   name: String!
   description: String!
   itemRoles: [String!]!
+  comfort: Float!
   canBeUsedByHumans: Boolean
   canBeUsedByAnimals: Boolean
   minimumAgeToUse: Int
@@ -446,6 +447,7 @@ input NewItem {
   name: String!
   description: String!
   itemRoles: [String!]
+  comfort: Float
   affordances: [ItemAffordanceInput!]
   maxSimultaneousUsers: Int
 }
@@ -455,6 +457,7 @@ input UpdateItemInput {
   name: String
   description: String
   itemRoles: [String!]
+  comfort: Float
   allowedActivities: [String!]
   affordances: [ItemAffordanceInput!]
   canBeUsedByHumans: Boolean

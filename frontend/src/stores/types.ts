@@ -158,6 +158,7 @@ export interface ItemData {
   spaceId: string
   lotId: string
   regionId: string
+  comfort?: number
   allowedActivities: string[]
   affordances: ItemAffordance[]
   maxSimultaneousUsers: number | null
@@ -308,6 +309,7 @@ export interface InputItem {
   name: string
   description?: string
   itemRoles?: string[]
+  comfort?: number
   allowedActivities?: string[]
   affordances?: ItemAffordance[]
   maxSimultaneousUsers?: number | null
