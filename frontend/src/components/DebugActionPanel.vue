@@ -358,7 +358,13 @@ const testSelectBestIntent = () => {
   console.log('')
 
   // Call selectBestIntent
-  const intent = selectBestIntent(selectedCharacterId.value, charState, simulationStore.worldData, {})
+  const intent = selectBestIntent(
+    selectedCharacterId.value,
+    charState,
+    simulationStore.worldData,
+    {},
+    simulationStore.simulationDateTime
+  )
 
   console.log('\n🏆 Selected Intent:')
   console.log(intent)

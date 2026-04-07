@@ -1,4 +1,5 @@
 import { batch, q } from "../kuzuHelpers";
+import { serializeWorkSchedule } from "./workSchedule";
 
 export const HouseholdResolvers = {
   Query: {
@@ -33,7 +34,7 @@ export const HouseholdResolvers = {
 
       const characters = await q(`
         MATCH (h:Household {id:$id})<-[:IN_HOUSEHOLD]-(c:Character)
-        RETURN c.id AS id, c.name AS name, c.age AS age, c.bio AS bio
+        RETURN c.id AS id, c.name AS name, c.age AS age, c.bio AS bio, c.workSchedule AS workSchedule
       `, { id });
 
       const animals = await q(`
@@ -49,7 +50,13 @@ export const HouseholdResolvers = {
   Mutation: {
     createHousehold: async (_: any, { input, characters, animals }: {
       input: { id: string; name: string; regionId: string; lotId: string };
-      characters: Array<{ id: string; name: string; age: number; bio?: string }>;
+      characters: Array<{
+        id: string;
+        name: string;
+        age: number;
+        bio?: string;
+        workSchedule?: Array<{ day: string; start: string; end: string; locationLotId: string }>;
+      }>;
       animals?: Array<{ id: string; name: string; age: number; traits: string[]; ownerId: string; bio?: string }>
     }) => {
       const { id, name, lotId } = input;
@@ -66,11 +73,12 @@ export const HouseholdResolvers = {
 
         // Create and link characters
         for (const char of characters) {
-          await q(`CREATE (:Character {id:$cid, name:$cname, age:$age, bio:$bio})`, {
+          await q(`CREATE (:Character {id:$cid, name:$cname, age:$age, bio:$bio, workSchedule:$workSchedule})`, {
             cid: char.id,
             cname: char.name,
             age: char.age,
-            bio: char.bio || null
+            bio: char.bio || null,
+            workSchedule: serializeWorkSchedule(char.workSchedule)
           });
 
           await q(`
@@ -129,7 +137,13 @@ export const HouseholdResolvers = {
       id: string;
       name: string;
       lotId: string;
-      characters?: Array<{ id: string; name: string; age: number; bio?: string }>;
+      characters?: Array<{
+        id: string;
+        name: string;
+        age: number;
+        bio?: string;
+        workSchedule?: Array<{ day: string; start: string; end: string; locationLotId: string }>;
+      }>;
       animals?: Array<{ id: string; name: string; age: number; traits: string[]; ownerId: string; bio?: string }>
     }) => {
       // Update household and lot in one batch
@@ -163,19 +177,21 @@ export const HouseholdResolvers = {
             if (existingCharIds.has(char.id)) {
               await q(`
                 MATCH (c:Character {id:$cid})
-                SET c.name = $cname, c.age = $age, c.bio = $bio
+                SET c.name = $cname, c.age = $age, c.bio = $bio, c.workSchedule = $workSchedule
               `, {
                 cid: char.id,
                 cname: char.name,
                 age: char.age,
-                bio: char.bio || null
+                bio: char.bio || null,
+                workSchedule: serializeWorkSchedule(char.workSchedule)
               });
             } else {
-              await q(`CREATE (:Character {id:$cid, name:$cname, age:$age, bio:$bio})`, {
+              await q(`CREATE (:Character {id:$cid, name:$cname, age:$age, bio:$bio, workSchedule:$workSchedule})`, {
                 cid: char.id,
                 cname: char.name,
                 age: char.age,
-                bio: char.bio || null
+                bio: char.bio || null,
+                workSchedule: serializeWorkSchedule(char.workSchedule)
               });
 
               await q(`

@@ -56,6 +56,15 @@ export const queries = {
           name
           age
           bio
+          workSchedule {
+            day
+            start
+            end
+            location {
+              id
+              name
+            }
+          }
           location {
             id
             name
@@ -203,6 +212,15 @@ export const queries = {
           id
           name
           age
+          workSchedule {
+            day
+            start
+            end
+            location {
+              id
+              name
+            }
+          }
         }
       }
     }
@@ -220,6 +238,15 @@ export const queries = {
           name
           age
           bio
+          workSchedule {
+            day
+            start
+            end
+            location {
+              id
+              name
+            }
+          }
         }
         animals {
           id
@@ -451,6 +478,15 @@ export const mutations = {
           id
           name
           age
+          workSchedule {
+            day
+            start
+            end
+            location {
+              id
+              name
+            }
+          }
         }
       }
     }

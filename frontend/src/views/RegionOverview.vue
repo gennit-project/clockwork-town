@@ -182,6 +182,12 @@ interface CharacterSummary {
   name: string
   age: number
   bio?: string | null
+  workSchedule?: Array<{
+    day: string
+    start: string
+    end: string
+    location: { id: string; name: string }
+  }>
   location?: CharacterLocationSummary | null
 }
 
@@ -410,7 +416,14 @@ const loadData = async () => {
           ...character,
           householdId: household?.id ?? null,
           homeLotId: household?.lotId ?? character.location?.id ?? null,
-          homeLotName: household?.lotName ?? character.location?.name ?? null
+          homeLotName: household?.lotName ?? character.location?.name ?? null,
+          workSchedule: (character.workSchedule || []).map((shift) => ({
+            day: shift.day,
+            start: shift.start,
+            end: shift.end,
+            locationLotId: shift.location.id,
+            locationLotName: shift.location.name
+          }))
         })
       }
     } catch (e: unknown) {

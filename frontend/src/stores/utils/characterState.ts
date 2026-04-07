@@ -10,6 +10,7 @@ interface CharacterSeed {
   householdId?: string | null
   homeLotId?: string | null
   homeLotName?: string | null
+  workSchedule?: CharacterState['workSchedule']
 }
 
 export function createCharacterState(character: CharacterSeed): CharacterState {
@@ -27,7 +28,7 @@ export function createCharacterState(character: CharacterSeed): CharacterState {
     homeLotId: character.homeLotId ?? null,
     homeLotName: character.homeLotName ?? null,
     accessibleLotIds: character.homeLotId ? [character.homeLotId] : [],
-    workSchedule: []
+    workSchedule: character.workSchedule ?? []
   }
 }
 

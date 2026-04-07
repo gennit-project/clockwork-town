@@ -96,7 +96,7 @@ export async function executeTick({
     }
 
     // Select the best intent for this character (pass itemOccupancy to check slot availability)
-    const intent = selectBestIntent(characterId, state, worldData.value, itemOccupancy.value)
+    const intent = selectBestIntent(characterId, state, worldData.value, itemOccupancy.value, simulationDateTime?.value)
     intents[characterId] = intent
 
     // Log the intent

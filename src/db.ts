@@ -39,9 +39,12 @@ export async function migrateDatabase(): Promise<{
   backfilledItemRoles: number;
   addedComfortColumn: boolean;
   backfilledComfort: number;
+  addedWorkScheduleColumn: boolean;
+  backfilledWorkSchedule: number;
 }> {
   let addedItemRolesColumn = false;
   let addedComfortColumn = false;
+  let addedWorkScheduleColumn = false;
 
   try {
     await conn.query("ALTER TABLE Item ADD itemRoles STRING[]");
@@ -95,11 +98,31 @@ export async function migrateDatabase(): Promise<{
     backfilledComfort += 1;
   }
 
+  try {
+    await conn.query("ALTER TABLE Character ADD workSchedule STRING[]");
+    addedWorkScheduleColumn = true;
+  } catch (error) {
+    if (!isDuplicatePropertyError(error, "workSchedule")) {
+      throw error;
+    }
+  }
+
+  const updatedCharacters = await conn.query(`
+    MATCH (c:Character)
+    WHERE c.workSchedule IS NULL
+    SET c.workSchedule = []
+    RETURN COUNT(c) AS count
+  `);
+  const [characterRow] = await updatedCharacters.getAll();
+  const backfilledWorkSchedule = Number(characterRow?.count ?? 0);
+
   return {
     addedItemRolesColumn,
     backfilledItemRoles,
     addedComfortColumn,
-    backfilledComfort
+    backfilledComfort,
+    addedWorkScheduleColumn,
+    backfilledWorkSchedule
   };
 }
 
@@ -116,9 +139,11 @@ async function runSetup({ includeMigrations }: { includeMigrations: boolean }) {
     || migrationResult.backfilledItemRoles > 0
     || migrationResult.addedComfortColumn
     || migrationResult.backfilledComfort > 0
+    || migrationResult.addedWorkScheduleColumn
+    || migrationResult.backfilledWorkSchedule > 0
   ) {
     console.log(
-      `Migrations applied. Added itemRoles column: ${migrationResult.addedItemRolesColumn}. Backfilled itemRoles: ${migrationResult.backfilledItemRoles}. Added comfort column: ${migrationResult.addedComfortColumn}. Backfilled comfort: ${migrationResult.backfilledComfort}.`
+      `Migrations applied. Added itemRoles column: ${migrationResult.addedItemRolesColumn}. Backfilled itemRoles: ${migrationResult.backfilledItemRoles}. Added comfort column: ${migrationResult.addedComfortColumn}. Backfilled comfort: ${migrationResult.backfilledComfort}. Added workSchedule column: ${migrationResult.addedWorkScheduleColumn}. Backfilled workSchedule: ${migrationResult.backfilledWorkSchedule}.`
     );
   } else {
     console.log("Migrations already up to date.");
@@ -141,7 +166,7 @@ if (process.argv.includes("--migrate")) {
   migrateDatabase()
     .then(result => {
       console.log(
-        `Migration finished. Added itemRoles column: ${result.addedItemRolesColumn}. Backfilled itemRoles: ${result.backfilledItemRoles}. Added comfort column: ${result.addedComfortColumn}. Backfilled comfort: ${result.backfilledComfort}.`
+        `Migration finished. Added itemRoles column: ${result.addedItemRolesColumn}. Backfilled itemRoles: ${result.backfilledItemRoles}. Added comfort column: ${result.addedComfortColumn}. Backfilled comfort: ${result.backfilledComfort}. Added workSchedule column: ${result.addedWorkScheduleColumn}. Backfilled workSchedule: ${result.backfilledWorkSchedule}.`
       );
       process.exit(0);
     })

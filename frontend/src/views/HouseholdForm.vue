@@ -121,6 +121,89 @@
                   rows="6"
                 ></textarea>
               </div>
+              <div class="mt-4">
+                <div class="mb-2 flex items-center justify-between">
+                  <label class="block text-xs font-medium text-gray-700 mb-1">
+                    Work Schedule
+                  </label>
+                  <button
+                    type="button"
+                    class="text-xs font-medium text-blue-600 hover:text-blue-800"
+                    @click="addWorkShift(character)"
+                  >
+                    + Add Shift
+                  </button>
+                </div>
+                <div v-if="character.workSchedule.length === 0" class="text-xs text-gray-500">
+                  No work shifts yet.
+                </div>
+                <div v-else class="space-y-2">
+                  <div
+                    v-for="(shift, shiftIndex) in character.workSchedule"
+                    :key="`${character.id}-${shiftIndex}`"
+                    class="rounded border border-gray-200 bg-gray-50 p-3"
+                  >
+                    <div class="mb-2 flex justify-end">
+                      <button
+                        type="button"
+                        class="text-xs text-red-600 hover:text-red-800"
+                        @click="removeWorkShift(character, shiftIndex)"
+                      >
+                        Remove Shift
+                      </button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
+                      <div>
+                        <label class="mb-1 block text-[11px] font-medium text-gray-700">
+                          Day
+                        </label>
+                        <select
+                          v-model="shift.day"
+                          class="w-full rounded-md border border-gray-300 px-2 py-2 text-sm"
+                        >
+                          <option v-for="weekday in weekdayOptions" :key="weekday" :value="weekday">
+                            {{ weekday }}
+                          </option>
+                        </select>
+                      </div>
+                      <div>
+                        <label class="mb-1 block text-[11px] font-medium text-gray-700">
+                          Start
+                        </label>
+                        <input
+                          v-model="shift.start"
+                          type="time"
+                          class="w-full rounded-md border border-gray-300 px-2 py-2 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label class="mb-1 block text-[11px] font-medium text-gray-700">
+                          End
+                        </label>
+                        <input
+                          v-model="shift.end"
+                          type="time"
+                          class="w-full rounded-md border border-gray-300 px-2 py-2 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label class="mb-1 block text-[11px] font-medium text-gray-700">
+                          Workplace
+                        </label>
+                        <select
+                          v-model="shift.locationLotId"
+                          class="w-full rounded-md border border-gray-300 px-2 py-2 text-sm"
+                        >
+                          <option value="">Select lot</option>
+                          <option v-for="lot in lots" :key="lot.id" :value="lot.id">
+                            {{ lot.name }}
+                          </option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -285,6 +368,12 @@ interface CharacterFormEntry {
   name: string
   age: number
   bio: string
+  workSchedule: Array<{
+    day: string
+    start: string
+    end: string
+    locationLotId: string
+  }>
 }
 
 interface AnimalFormEntry {
@@ -316,7 +405,18 @@ interface GetHouseholdResult {
   household: {
     name: string
     lotId: string
-    characters: Array<{ id: string; name: string; age: number; bio?: string | null }>
+    characters: Array<{
+      id: string
+      name: string
+      age: number
+      bio?: string | null
+      workSchedule?: Array<{
+        day: string
+        start: string
+        end: string
+        location: { id: string; name: string }
+      }>
+    }>
     animals: Array<{ id: string; name: string; age: number; ownerId?: string | null; traits?: string[]; bio?: string | null }>
   } | null
 }
@@ -344,6 +444,8 @@ const formData = ref<{
   characters: [],
   animals: []
 })
+
+const weekdayOptions = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
 const breadcrumbs = computed(() => [
   { label: 'Worlds', to: '/' },
@@ -388,7 +490,13 @@ const loadData = async () => {
             id: character.id,
             name: character.name,
             age: character.age,
-            bio: character.bio || ''
+            bio: character.bio || '',
+            workSchedule: (character.workSchedule || []).map((shift) => ({
+              day: shift.day,
+              start: shift.start,
+              end: shift.end,
+              locationLotId: shift.location.id
+            }))
           })),
           animals: household.animals.map((animal) => ({
             id: animal.id,
@@ -413,12 +521,26 @@ const addCharacter = () => {
     id: crypto.randomUUID(),
     name: '',
     age: 0,
-    bio: ''
+    bio: '',
+    workSchedule: []
   })
 }
 
 const removeCharacter = (index: number) => {
   formData.value.characters.splice(index, 1)
+}
+
+const addWorkShift = (character: CharacterFormEntry) => {
+  character.workSchedule.push({
+    day: 'Monday',
+    start: '09:00',
+    end: '17:00',
+    locationLotId: formData.value.lotId || availableLots.value[0]?.id || ''
+  })
+}
+
+const removeWorkShift = (character: CharacterFormEntry, index: number) => {
+  character.workSchedule.splice(index, 1)
 }
 
 const addAnimal = () => {
@@ -455,7 +577,8 @@ const saveHousehold = async () => {
           id: character.id,
           name: character.name,
           age: character.age,
-          bio: character.bio || null
+          bio: character.bio || null,
+          workSchedule: character.workSchedule
         })),
         animals: formData.value.animals.map((animal) => ({
           id: animal.id,
@@ -478,7 +601,8 @@ const saveHousehold = async () => {
           id: character.id,
           name: character.name,
           age: character.age,
-          bio: character.bio || null
+          bio: character.bio || null,
+          workSchedule: character.workSchedule
         })),
         animals: formData.value.animals.map((animal) => ({
           id: animal.id,

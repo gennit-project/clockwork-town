@@ -84,9 +84,11 @@ async function main() {
       || migrationResult.backfilledItemRoles > 0
       || migrationResult.addedComfortColumn
       || migrationResult.backfilledComfort > 0
+      || migrationResult.addedWorkScheduleColumn
+      || migrationResult.backfilledWorkSchedule > 0
     ) {
       console.log(
-        `   Migrated item fields: itemRoles added=${migrationResult.addedItemRolesColumn}, itemRoles backfilled=${migrationResult.backfilledItemRoles}, comfort added=${migrationResult.addedComfortColumn}, comfort backfilled=${migrationResult.backfilledComfort}`
+        `   Migrated fields: itemRoles added=${migrationResult.addedItemRolesColumn}, itemRoles backfilled=${migrationResult.backfilledItemRoles}, comfort added=${migrationResult.addedComfortColumn}, comfort backfilled=${migrationResult.backfilledComfort}, workSchedule added=${migrationResult.addedWorkScheduleColumn}, workSchedule backfilled=${migrationResult.backfilledWorkSchedule}`
       );
     }
     if (hasBuiltFrontend) {

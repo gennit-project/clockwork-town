@@ -1,4 +1,5 @@
 import { batch, q } from "../kuzuHelpers";
+import { deserializeStoredWorkSchedule, serializeWorkSchedule } from "./workSchedule";
 
 export const CharacterResolvers = {
   Character: {
@@ -23,6 +24,33 @@ export const CharacterResolvers = {
         ORDER BY m.createdAt DESC
       `, { cid: parent.id });
     },
+    workSchedule: async (parent: { id: string; workSchedule?: string[] | null }) => {
+      const entries = parent.workSchedule
+        ?? ((await q(`
+          MATCH (c:Character {id:$cid})
+          RETURN c.workSchedule AS workSchedule
+        `, { cid: parent.id }))[0]?.workSchedule ?? []);
+
+      const schedule = deserializeStoredWorkSchedule(entries);
+      const lotCache = new Map<string, { id: string; name: string }>();
+
+      return Promise.all(schedule.map(async (shift) => {
+        if (!lotCache.has(shift.locationLotId)) {
+          const [lot] = await q(`
+            MATCH (l:Lot {id:$id})
+            RETURN l.id AS id, l.name AS name
+          `, { id: shift.locationLotId });
+          lotCache.set(shift.locationLotId, lot ?? { id: shift.locationLotId, name: 'Unknown Workplace' });
+        }
+
+        return {
+          day: shift.day,
+          start: shift.start,
+          end: shift.end,
+          location: lotCache.get(shift.locationLotId)
+        };
+      }));
+    }
   },
 
   Query: {
@@ -69,11 +97,18 @@ export const CharacterResolvers = {
   Mutation: {
     createCharacter: async (_: any, { input }: { input: {
       id: string, name: string, age: number, bio?: string,
-      traitIds: string[], valueIds: string[], homeLotId: string, householdId: string
+      traitIds: string[], valueIds: string[], homeLotId: string, householdId: string,
+      workSchedule?: Array<{ day: string; start: string; end: string; locationLotId: string }>
     }}) => {
-      const { id, name, age, bio, traitIds, valueIds, homeLotId, householdId } = input;
+      const { id, name, age, bio, traitIds, valueIds, homeLotId, householdId, workSchedule } = input;
       await batch(async () => {
-        await q(`CREATE (:Character {id:$id, name:$name, age:$age, bio:$bio})`, { id, name, age, bio: bio ?? null });
+        await q(`CREATE (:Character {id:$id, name:$name, age:$age, bio:$bio, workSchedule:$workSchedule})`, {
+          id,
+          name,
+          age,
+          bio: bio ?? null,
+          workSchedule: serializeWorkSchedule(workSchedule)
+        });
         if (traitIds?.length) {
           for (const tid of traitIds) {
             await q(`
@@ -101,7 +136,7 @@ export const CharacterResolvers = {
 
       const [created] = await q(`
         MATCH (c:Character {id:$id})
-        RETURN c.id AS id, c.name AS name, c.age AS age, c.bio AS bio
+        RETURN c.id AS id, c.name AS name, c.age AS age, c.bio AS bio, c.workSchedule AS workSchedule
       `, { id });
       return created;
     },

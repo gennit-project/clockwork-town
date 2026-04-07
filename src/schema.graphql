@@ -284,6 +284,7 @@ type Character {
   # Routine & job
   weeklySchedule: [Activity!]!
   employment: Employment
+  workSchedule: [Shift!]!
 }
 
 type Animal {
@@ -407,6 +408,7 @@ input NewCharacterSimple {
   name: String!
   age: Int!
   bio: String
+  workSchedule: [WorkShiftInput!]
 }
 
 input NewAnimalSimple {
@@ -427,6 +429,14 @@ input NewCharacter {
   valueIds: [ID!]!        # pass Value IDs; resolver attaches Value nodes
   homeLotId: ID!
   householdId: ID!
+  workSchedule: [WorkShiftInput!]
+}
+
+input WorkShiftInput {
+  day: String!
+  start: String!
+  end: String!
+  locationLotId: ID!
 }
 
 input MoveInput {

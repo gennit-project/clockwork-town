@@ -362,4 +362,48 @@ describe('selectBestIntent', () => {
 
     expect(intent.itemId).toBe('item-1')
   })
+
+  it('should choose work during an active shift', () => {
+    characterState.workSchedule = [{
+      day: 'Monday',
+      start: '09:00',
+      end: '17:00',
+      locationLotId: 'lot-2',
+      locationLotName: 'Community Center'
+    }]
+
+    const intent = selectBestIntent('char-1', characterState, worldData, itemOccupancy, {
+      iso: '2026-04-06T15:00:00.000Z',
+      year: 2026,
+      month: 4,
+      day: 6,
+      weekday: 'Monday',
+      hour: 9,
+      minute: 0
+    })
+
+    expect(intent.action).toBe('work')
+  })
+
+  it('should send the character to the scheduled work lot', () => {
+    characterState.workSchedule = [{
+      day: 'Monday',
+      start: '09:00',
+      end: '17:00',
+      locationLotId: 'lot-2',
+      locationLotName: 'Community Center'
+    }]
+
+    const intent = selectBestIntent('char-1', characterState, worldData, itemOccupancy, {
+      iso: '2026-04-06T15:00:00.000Z',
+      year: 2026,
+      month: 4,
+      day: 6,
+      weekday: 'Monday',
+      hour: 9,
+      minute: 0
+    })
+
+    expect(intent.targetLotId).toBe('lot-2')
+  })
 })

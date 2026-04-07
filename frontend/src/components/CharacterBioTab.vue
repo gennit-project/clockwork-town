@@ -57,6 +57,19 @@
       <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Current Status</p>
       <p class="text-base text-gray-900 dark:text-gray-100">{{ statusSummary }}</p>
     </div>
+
+    <div v-if="characterState?.workSchedule?.length">
+      <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Work Schedule</p>
+      <div class="space-y-1">
+        <p
+          v-for="shift in characterState.workSchedule"
+          :key="`${shift.day}-${shift.start}-${shift.locationLotId || shift.locationLotName}`"
+          class="text-sm text-gray-900 dark:text-gray-100"
+        >
+          {{ shift.day }} {{ shift.start }}-{{ shift.end }} at {{ shift.locationLotName || 'Work' }}
+        </p>
+      </div>
+    </div>
   </div>
 </template>
 

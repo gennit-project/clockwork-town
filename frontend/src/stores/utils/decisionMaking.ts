@@ -9,11 +9,13 @@ import type {
   WorldData,
   ItemOccupancy,
   ItemOption,
-  Intent
+  Intent,
+  SimulationDateTime
 } from '../types'
 import { buildPlanCandidates, planCandidateToIntent } from './intentPlanner'
 import { calculateUtility } from './actionUtility'
 import { debugLog } from './simulationDebug'
+import { buildWorkIntent } from './workSchedule'
 
 /**
  * Calculate utility score for a character performing an action at a specific item
@@ -41,9 +43,19 @@ export function selectBestIntent(
   characterId: string,
   characterState: CharacterState,
   worldData: WorldData,
-  itemOccupancy: ItemOccupancy = {}
+  itemOccupancy: ItemOccupancy = {},
+  simulationDateTime?: SimulationDateTime
 ): Intent {
   debugLog(`\n🎯 selectBestIntent for character ${characterId}`)
+  const workIntent = buildWorkIntent({
+    characterState,
+    simulationDateTime,
+    worldData
+  })
+  if (workIntent) {
+    return workIntent
+  }
+
   const intents: Intent[] = buildPlanCandidates({
     characterId,
     characterState,
