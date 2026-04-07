@@ -1,4 +1,11 @@
-import { advanceTask, buildCompletionIntent, isTaskComplete } from './taskLifecycle'
+import {
+  advanceTask,
+  buildCompletionIntent,
+  getCurrentTaskStep,
+  isTaskComplete,
+  moveToNextTaskStep,
+  syncTaskSnapshot
+} from './taskLifecycle'
 import type { CharacterState, Intent } from '../types'
 
 export interface TaskProgressionDependencies {
@@ -26,6 +33,20 @@ export async function progressActiveTask(
   }
 
   const nextTask = advanceTask(task)
+  const activeStep = getCurrentTaskStep(nextTask)
+
+  if (activeStep && activeStep.remainingTicks <= 0 && nextTask.currentStepIndex < nextTask.steps.length - 1) {
+    const upcomingTask = moveToNextTaskStep(nextTask)
+    state.currentTask = syncTaskSnapshot(upcomingTask)
+    state.currentAction = state.currentTask.action
+    dependencies.logActivity(
+      characterId,
+      state.currentTask.action,
+      `Advanced to step ${state.currentTask.currentStepIndex + 1}/${state.currentTask.steps.length}`
+    )
+    return true
+  }
+
   state.currentTask = nextTask
 
   if (!isTaskComplete(nextTask)) {

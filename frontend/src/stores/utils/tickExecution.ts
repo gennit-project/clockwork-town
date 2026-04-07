@@ -8,17 +8,20 @@ import type {
   WorldData,
   ItemOccupancy,
   Intent,
-  ActivityLogEntry
+  ActivityLogEntry,
+  SimulationDateTime
 } from '../types'
 import { NEED_DECAY_RATES } from '../config/needs'
 import { selectBestIntent } from './decisionMaking'
 import { debugLog } from './simulationDebug'
+import { advanceSimulationDateTime } from './simulationCalendar'
 
 /**
  * Parameters for executeTick function
  */
 export interface ExecuteTickParams {
   currentTick: Ref<number>
+  simulationDateTime?: Ref<SimulationDateTime>
   characterStates: Ref<Record<string, CharacterState>>
   worldData: Ref<WorldData>
   itemOccupancy: Ref<ItemOccupancy>
@@ -35,6 +38,7 @@ export interface ExecuteTickParams {
  */
 export async function executeTick({
   currentTick,
+  simulationDateTime,
   characterStates,
   worldData,
   itemOccupancy,
@@ -43,6 +47,9 @@ export async function executeTick({
   progressTask
 }: ExecuteTickParams): Promise<void> {
   currentTick.value++
+  if (simulationDateTime) {
+    simulationDateTime.value = advanceSimulationDateTime(simulationDateTime.value)
+  }
 
   debugLog(`\n========== TICK ${currentTick.value} ==========`)
 

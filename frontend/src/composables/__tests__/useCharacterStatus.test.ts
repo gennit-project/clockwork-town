@@ -43,7 +43,26 @@ function createState(overrides: Partial<CharacterState> = {}): CharacterState {
       spaceName: 'Living Room'
     },
     traits: [],
+    accessibleLotIds: [],
+    workSchedule: [],
     currentTask: null,
+    ...overrides
+  }
+}
+
+function createTask(overrides: Partial<NonNullable<CharacterState['currentTask']>> = {}): NonNullable<CharacterState['currentTask']> {
+  return {
+    planId: 'task-1',
+    goal: 'sleep',
+    action: 'sleep',
+    remainingTicks: 1,
+    totalTicks: 3,
+    currentStepIndex: 0,
+    steps: [{
+      action: 'sleep',
+      remainingTicks: 1,
+      totalTicks: 3
+    }],
     ...overrides
   }
 }
@@ -52,13 +71,17 @@ describe('useCharacterStatus', () => {
   it('formats item interactions into readable status text', () => {
     const state = createState({
       currentAction: 'sleep',
-      currentTask: {
-        action: 'sleep',
+      currentTask: createTask({
         itemId: 'item-1',
         itemName: 'the couch',
-        remainingTicks: 1,
-        totalTicks: 3
-      }
+        steps: [{
+          action: 'sleep',
+          itemId: 'item-1',
+          itemName: 'the couch',
+          remainingTicks: 1,
+          totalTicks: 3
+        }]
+      })
     })
 
     expect(getCharacterStatusText(state)).toBe('sleeping on the couch')
@@ -67,13 +90,20 @@ describe('useCharacterStatus', () => {
   it('formats social interactions with the target name', () => {
     const state = createState({
       currentAction: 'chat_friend',
-      currentTask: {
+      currentTask: createTask({
+        goal: 'chat_friend',
         action: 'chat_friend',
         socialTargetId: 'char-2',
         socialTargetName: 'Alex',
-        remainingTicks: 1,
-        totalTicks: 2
-      }
+        totalTicks: 2,
+        steps: [{
+          action: 'chat_friend',
+          socialTargetId: 'char-2',
+          socialTargetName: 'Alex',
+          remainingTicks: 1,
+          totalTicks: 2
+        }]
+      })
     })
 
     expect(getCharacterStatusText(state)).toBe('chatting with Alex')

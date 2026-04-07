@@ -8,7 +8,9 @@ import type {
   ItemOccupancy,
   ActivityLogEntry,
   Intent,
-  InputLot
+  InputLot,
+  SimulationDateTime,
+  WorkShift
 } from './types'
 import {
   moveCharacterToLot,
@@ -21,6 +23,18 @@ import {
 } from './utils/characterState'
 import { buildWorldData } from './utils/pathfinding'
 import { createSimulationRuntime } from './utils/simulationRuntime'
+import { createSimulationDateTime, formatSimulationDateTime } from './utils/simulationCalendar'
+import { deriveAccessibleLotIds } from './utils/accessControl'
+
+interface CharacterSimulationSeed {
+  id: string
+  name: string
+  traits?: string[]
+  householdId?: string | null
+  homeLotId?: string | null
+  homeLotName?: string | null
+  workSchedule?: WorkShift[]
+}
 
 export const useSimulationStore = defineStore('simulation', () => {
   // ============================================
@@ -29,6 +43,7 @@ export const useSimulationStore = defineStore('simulation', () => {
 
   // Tick state
   const currentTick = ref(0)
+  const simulationDateTime = ref<SimulationDateTime>(createSimulationDateTime())
   const isPaused = ref(true)
   const tickIntervalId: Ref<NodeJS.Timeout | null> = ref(null)
   const autoTickSpeed = ref<AutoTickSpeed>('slow')
@@ -57,6 +72,7 @@ export const useSimulationStore = defineStore('simulation', () => {
   // ============================================
 
   const isRunning = computed(() => !isPaused.value && tickIntervalId.value !== null)
+  const formattedSimulationDateTime = computed(() => formatSimulationDateTime(simulationDateTime.value))
 
   // Get character state by ID
   const getCharacterState = computed(() => (characterId: string): CharacterState | null => {
@@ -87,10 +103,17 @@ export const useSimulationStore = defineStore('simulation', () => {
   /**
    * Initialize a character's state in the simulation
    */
-  function initializeCharacter(character: { id: string; name: string; traits?: string[] }): void {
+  function initializeCharacter(character: CharacterSimulationSeed): void {
     if (!characterStates.value[character.id]) {
       characterStates.value[character.id] = createCharacterState(character)
     }
+
+    const state = characterStates.value[character.id]
+    state.householdId = character.householdId ?? state.householdId ?? null
+    state.homeLotId = character.homeLotId ?? state.homeLotId ?? null
+    state.homeLotName = character.homeLotName ?? state.homeLotName ?? null
+    state.workSchedule = character.workSchedule ?? state.workSchedule ?? []
+    state.accessibleLotIds = deriveAccessibleLotIds(state, worldData.value)
   }
 
   /**
@@ -108,6 +131,7 @@ export const useSimulationStore = defineStore('simulation', () => {
   const runtime = createSimulationRuntime(
     {
       currentTick,
+      simulationDateTime,
       isPaused,
       tickIntervalId,
       activityLog,
@@ -131,6 +155,10 @@ export const useSimulationStore = defineStore('simulation', () => {
    */
   function loadWorldData(lots: InputLot[], regionId: string): void {
     worldData.value = buildWorldData(lots, regionId)
+
+    for (const state of Object.values(characterStates.value)) {
+      state.accessibleLotIds = deriveAccessibleLotIds(state, worldData.value)
+    }
   }
 
   function enqueueIntent(characterId: string, intent: Intent): void {
@@ -145,6 +173,7 @@ export const useSimulationStore = defineStore('simulation', () => {
   return {
     // State
     currentTick,
+    simulationDateTime,
     isPaused,
     activityLog,
     characterStates,
@@ -153,6 +182,7 @@ export const useSimulationStore = defineStore('simulation', () => {
 
     // Getters
     isRunning,
+    formattedSimulationDateTime,
     getCharacterState,
     recentActivityLog,
     getItemActiveUsers,

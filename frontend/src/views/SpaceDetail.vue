@@ -425,6 +425,17 @@ interface GetRegionResult {
   } | null
 }
 
+interface HouseholdSummary {
+  id: string
+  lotId?: string | null
+  lotName?: string | null
+  characters: Array<{ id: string }>
+}
+
+interface GetHouseholdsResult {
+  households: HouseholdSummary[]
+}
+
 interface GetLotResult {
   lot: LotSummary | null
 }
@@ -543,11 +554,12 @@ const loadData = async () => {
     loading.value = true
     error.value = null
 
-    const [worldData, regionsData, lotsData, regionData, lotData, spaceData] = await Promise.all([
+    const [worldData, regionsData, lotsData, regionData, householdsData, lotData, spaceData] = await Promise.all([
       client.request<GetWorldResult>(queries.getWorld, { id: worldId.value }),
       client.request<GetRegionsResult>(queries.getRegions, { worldId: worldId.value }),
       client.request<GetLotsResult>(queries.getLots, { regionId: regionId.value }),
       client.request<GetRegionResult>(queries.getRegion, { id: regionId.value }),
+      client.request<GetHouseholdsResult>(queries.getHouseholds, { regionId: regionId.value }),
       client.request<GetLotResult>(queries.getLot, { id: lotId.value }),
       client.request<GetSpaceResult>(queries.getSpace, { id: spaceId.value })
     ])
@@ -574,7 +586,16 @@ const loadData = async () => {
     simulationStore.loadWorldData(lotsWithSpacesData, regionId.value)
 
     for (const character of characters) {
-      simulationStore.initializeCharacter(character)
+      const characterHousehold = householdsData.households.find((household) =>
+        household.characters.some((member) => member.id === character.id)
+      )
+
+      simulationStore.initializeCharacter({
+        ...character,
+        householdId: characterHousehold?.id ?? null,
+        homeLotId: characterHousehold?.lotId ?? character.location?.id ?? null,
+        homeLotName: characterHousehold?.lotName ?? character.location?.name ?? null
+      })
 
       if (!character.location?.id) {
         continue

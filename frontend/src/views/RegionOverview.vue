@@ -205,6 +205,17 @@ interface GetLotsResult {
   lots: InputLot[]
 }
 
+interface HouseholdSummary {
+  id: string
+  lotId?: string | null
+  lotName?: string | null
+  characters: Array<{ id: string }>
+}
+
+interface GetHouseholdsResult {
+  households: HouseholdSummary[]
+}
+
 interface GetRegionResult {
   region?: {
     characters?: CharacterSummary[]
@@ -338,10 +349,11 @@ const loadData = async () => {
     loading.value = true
     error.value = null
 
-    const [worldData, regionsData, lotsData] = await Promise.all([
+    const [worldData, regionsData, lotsData, householdsData] = await Promise.all([
       client.request<GetWorldResult>(queries.getWorld, { id: worldId.value }),
       client.request<GetRegionsResult>(queries.getRegions, { worldId: worldId.value }),
-      client.request<GetLotsResult>(queries.getLots, { regionId: regionId.value })
+      client.request<GetLotsResult>(queries.getLots, { regionId: regionId.value }),
+      client.request<GetHouseholdsResult>(queries.getHouseholds, { regionId: regionId.value })
     ])
 
     world.value = worldData.world
@@ -385,10 +397,22 @@ const loadData = async () => {
 
     simulationStore.loadWorldData(lotsWithSpacesData, regionId.value)
 
+    const households = householdsData.households || []
+
     try {
       const regionData = await client.request<GetRegionResult>(queries.getRegion, { id: regionId.value })
       characters.value = regionData.region?.characters || []
       animals.value = regionData.region?.animals || []
+
+      for (const character of characters.value) {
+        const household = households.find((entry) => entry.characters.some((member) => member.id === character.id))
+        simulationStore.initializeCharacter({
+          ...character,
+          householdId: household?.id ?? null,
+          homeLotId: household?.lotId ?? character.location?.id ?? null,
+          homeLotName: household?.lotName ?? character.location?.name ?? null
+        })
+      }
     } catch (e: unknown) {
       console.error('Error loading characters and animals:', e)
       characters.value = []
@@ -403,8 +427,6 @@ const loadData = async () => {
 
 watch(characters, (newCharacters: CharacterSummary[]) => {
   for (const character of newCharacters) {
-    simulationStore.initializeCharacter(character)
-
     if (!character.location?.id || !regionId.value) {
       continue
     }

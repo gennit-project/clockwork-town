@@ -6,6 +6,7 @@ import type {
   CharacterState,
   Intent,
   ItemOccupancy,
+  SimulationDateTime,
   WorldData
 } from '../types'
 import { ACTION_EFFECTS } from '../config/actionEffects'
@@ -28,9 +29,11 @@ import { createSimulationLogger } from './simulationLogger'
 import { createTaskFromIntent, getActionDuration } from './taskLifecycle'
 import { progressActiveTask } from './taskProgression'
 import { executeTick as runTick } from './tickExecution'
+import { createSimulationDateTime } from './simulationCalendar'
 
 export interface SimulationRuntimeRefs {
   currentTick: Ref<number>
+  simulationDateTime: Ref<SimulationDateTime>
   isPaused: Ref<boolean>
   tickIntervalId: Ref<NodeJS.Timeout | null>
   activityLog: Ref<ActivityLogEntry[]>
@@ -232,6 +235,7 @@ export function createSimulationRuntime(
   async function executeTick() {
     await runTick({
       currentTick: refs.currentTick,
+      simulationDateTime: refs.simulationDateTime,
       characterStates: refs.characterStates,
       worldData: refs.worldData,
       itemOccupancy: refs.itemOccupancy,
@@ -273,6 +277,7 @@ export function createSimulationRuntime(
   function resetSimulation() {
     pauseAutoTick()
     refs.currentTick.value = 0
+    refs.simulationDateTime.value = createSimulationDateTime()
     refs.activityLog.value = []
     refs.characterStates.value = {}
     refs.itemOccupancy.value = {}

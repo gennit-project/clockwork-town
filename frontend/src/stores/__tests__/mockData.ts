@@ -59,6 +59,8 @@ export const createMockCharacterState = (overrides: Partial<CharacterState> = {}
   queuedActions: [],
   currentTask: null,
   longTermMemories: [],
+  accessibleLotIds: ['lot-1', 'lot-2'],
+  workSchedule: [],
   ...overrides
 })
 
@@ -68,12 +70,16 @@ export const createMockWorldData = (): WorldData => ({
       id: 'lot-1',
       name: 'Test House',
       regionId: 'region-1',
+      lotType: 'RESIDENTIAL',
+      isPublic: false,
       spaceIds: ['space-1', 'space-2']
     },
     'lot-2': {
       id: 'lot-2',
       name: 'Community Center',
       regionId: 'region-1',
+      lotType: 'COMMUNITY',
+      isPublic: true,
       spaceIds: ['space-3']
     }
   },

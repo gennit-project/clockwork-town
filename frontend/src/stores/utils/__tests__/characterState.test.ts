@@ -23,6 +23,8 @@ describe('characterState utilities', () => {
     expect(state.queuedActions).toEqual([])
     expect(state.longTermMemories).toEqual([])
     expect(state.currentTask).toBeNull()
+    expect(state.accessibleLotIds).toEqual([])
+    expect(state.workSchedule).toEqual([])
   })
 
   it('updates location and enqueues manual intents', () => {

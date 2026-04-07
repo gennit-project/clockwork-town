@@ -87,6 +87,8 @@ export interface LongTermMemory {
 }
 
 export interface ActiveTask {
+  planId: string
+  goal: ActionName
   action: ActionName
   itemId?: string
   itemName?: string
@@ -98,6 +100,8 @@ export interface ActiveTask {
   totalTicks: number
   socialTargetId?: string
   socialTargetName?: string
+  currentStepIndex: number
+  steps: TaskStep[]
 }
 
 export interface CharacterState {
@@ -112,6 +116,11 @@ export interface CharacterState {
   longTermMemories?: LongTermMemory[]
   queuedActions?: Intent[]
   currentTask?: ActiveTask | null
+  householdId?: string | null
+  homeLotId?: string | null
+  homeLotName?: string | null
+  accessibleLotIds: string[]
+  workSchedule: WorkShift[]
 }
 
 export interface Memory {
@@ -170,6 +179,8 @@ export interface LotData {
   id: string
   name: string
   regionId: string
+  lotType: string
+  isPublic: boolean
   spaceIds: string[]
 }
 
@@ -178,6 +189,24 @@ export interface WorldData {
   spaces: Record<string, SpaceData>
   items: Record<string, ItemData>
   itemsByAffordance: Record<string, string[]>
+}
+
+export interface SimulationDateTime {
+  iso: string
+  year: number
+  month: number
+  day: number
+  weekday: string
+  hour: number
+  minute: number
+}
+
+export interface WorkShift {
+  day: string
+  start: string
+  end: string
+  locationLotId?: string | null
+  locationLotName?: string | null
 }
 
 export type ItemOccupancy = Record<string, string[]>
@@ -214,6 +243,20 @@ export interface Intent {
   travelCost?: number
   utility: number
   source?: 'auto' | 'manual'
+  socialTargetId?: string
+  socialTargetName?: string
+}
+
+export interface TaskStep {
+  action: ActionName
+  itemId?: string
+  itemName?: string
+  targetSpaceId?: string
+  targetSpaceName?: string
+  targetLotId?: string
+  targetLotName?: string
+  totalTicks: number
+  remainingTicks: number
   socialTargetId?: string
   socialTargetName?: string
 }

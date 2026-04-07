@@ -103,7 +103,13 @@ export function selectBestIntent(
     }
 
     // Find items that support this action (excluding full items)
-    const items = findItemsWithAffordance(characterId, action, characterState.location, worldData, itemOccupancy)
+    const items = findItemsWithAffordance({
+      characterId,
+      action,
+      characterContext: characterState,
+      worldData,
+      itemOccupancy
+    })
 
     if (items.length === 0) {
       debugLog(`  ❌ ${action}: no accessible items`)

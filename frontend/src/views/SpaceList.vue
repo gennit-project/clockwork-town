@@ -431,7 +431,16 @@ const loadData = async () => {
     }
 
     for (const character of characters.value) {
-      simulationStore.initializeCharacter(character)
+      const characterHousehold = householdsData.households.find((household) =>
+        household.characters.some((member) => member.id === character.id)
+      )
+
+      simulationStore.initializeCharacter({
+        ...character,
+        householdId: characterHousehold?.id ?? null,
+        homeLotId: characterHousehold?.lotId ?? character.location?.id ?? null,
+        homeLotName: characterHousehold?.lotName ?? character.location?.name ?? null
+      })
 
       if (!character.location?.id) {
         continue

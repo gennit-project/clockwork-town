@@ -5,10 +5,12 @@
 import type {
   WorldData,
   CharacterLocation,
+  CharacterState,
   ItemOption,
   ItemOccupancy
 } from '../types'
 import { debugLog } from './simulationDebug'
+import { canAccessLot, isPublicLot } from './accessControl'
 
 /**
  * Find items with a specific affordance (action) accessible to a character
@@ -21,13 +23,22 @@ import { debugLog } from './simulationDebug'
  * @param itemOccupancy - Current item occupancy { [itemId]: [characterId1, characterId2, ...] }
  * @returns Array of item options: [{ itemId, itemName, spaceId, spaceName, lotId, lotName, travelCost }]
  */
-export function findItemsWithAffordance(
-  characterId: string,
-  action: string,
-  characterLocation: CharacterLocation,
-  worldData: WorldData,
-  itemOccupancy: ItemOccupancy = {}
-): ItemOption[] {
+export interface FindItemsWithAffordanceParams {
+  characterId: string
+  action: string
+  characterContext: CharacterLocation | CharacterState
+  worldData: WorldData
+  itemOccupancy?: ItemOccupancy
+}
+
+export function findItemsWithAffordance({
+  characterId,
+  action,
+  characterContext,
+  worldData,
+  itemOccupancy = {}
+}: FindItemsWithAffordanceParams): ItemOption[] {
+  const characterLocation = 'needs' in characterContext ? characterContext.location : characterContext
   const { spaceId: currentSpaceId, lotId: currentLotId, regionId: currentRegionId } = characterLocation
 
   if (!currentSpaceId || !currentLotId || !currentRegionId) {
@@ -45,6 +56,10 @@ export function findItemsWithAffordance(
     const item = worldData.items[itemId]
     const space = worldData.spaces[item.spaceId]
     const lot = worldData.lots[item.lotId]
+
+    if ('needs' in characterContext && !canAccessLot(characterContext, lot.id)) {
+      continue
+    }
 
     let travelCost = null
 
@@ -173,12 +188,14 @@ export function buildWorldData(lots: InputLot[], regionId: string): WorldData {
     }
 
     // Store lot data
-    worldData.lots[lot.id] = {
-      id: lot.id,
-      name: lot.name,
-      regionId: regionId,
-      spaceIds
-    }
+      worldData.lots[lot.id] = {
+        id: lot.id,
+        name: lot.name,
+        regionId: regionId,
+        lotType: lot.lotType,
+        isPublic: isPublicLot(lot.lotType),
+        spaceIds
+      }
   }
 
   debugLog(`✅ World data loaded:`)

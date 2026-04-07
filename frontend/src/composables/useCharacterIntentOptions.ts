@@ -52,7 +52,13 @@ export function useCharacterIntentOptions(character: CharacterTarget, availableR
       return []
     }
 
-    return findItemsWithAffordance(character.id, action, state.location, simulationStore.worldData, {})
+    return findItemsWithAffordance({
+      characterId: character.id,
+      action,
+      characterContext: state,
+      worldData: simulationStore.worldData,
+      itemOccupancy: {}
+    })
       .map((option) => ({
         label: `${option.itemName} in ${option.lotName} → ${option.spaceName}`,
         intent: {

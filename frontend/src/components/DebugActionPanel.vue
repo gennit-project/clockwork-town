@@ -228,7 +228,13 @@ const testFindItems = (action: ActionName) => {
     return
   }
 
-  const items = findItemsWithAffordance(selectedCharacterId.value, action, charState.location, simulationStore.worldData, {})
+  const items = findItemsWithAffordance({
+    characterId: selectedCharacterId.value,
+    action,
+    characterContext: charState,
+    worldData: simulationStore.worldData,
+    itemOccupancy: {}
+  })
   const cost0 = items.filter(i => i.travelCost === 0)
   const cost1 = items.filter(i => i.travelCost === 1)
   const cost2 = items.filter(i => i.travelCost === 2)
@@ -286,7 +292,13 @@ const testUtilityCalculation = () => {
   const utilities: Array<{ action: ActionName; utility: string; item: string; space: string; travelCost: number }> = []
 
   for (const action of actions) {
-    const items = findItemsWithAffordance(selectedCharacterId.value, action, charState.location, simulationStore.worldData, {})
+    const items = findItemsWithAffordance({
+      characterId: selectedCharacterId.value,
+      action,
+      characterContext: charState,
+      worldData: simulationStore.worldData,
+      itemOccupancy: {}
+    })
 
     if (items.length > 0) {
       // Calculate utility for the best (closest) item

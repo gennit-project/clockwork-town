@@ -3,7 +3,16 @@ import { INITIAL_COOLDOWNS, INITIAL_NEEDS } from '../config/needs'
 
 const MAX_SHORT_TERM_MEMORIES = 20
 
-export function createCharacterState(character: { id: string; name: string; traits?: string[] }): CharacterState {
+interface CharacterSeed {
+  id: string
+  name: string
+  traits?: string[]
+  householdId?: string | null
+  homeLotId?: string | null
+  homeLotName?: string | null
+}
+
+export function createCharacterState(character: CharacterSeed): CharacterState {
   return {
     name: character.name || 'Unknown',
     needs: { ...INITIAL_NEEDS },
@@ -13,7 +22,12 @@ export function createCharacterState(character: { id: string; name: string; trai
     traits: character.traits || [],
     queuedActions: [],
     currentTask: null,
-    longTermMemories: []
+    longTermMemories: [],
+    householdId: character.householdId ?? null,
+    homeLotId: character.homeLotId ?? null,
+    homeLotName: character.homeLotName ?? null,
+    accessibleLotIds: character.homeLotId ? [character.homeLotId] : [],
+    workSchedule: []
   }
 }
 
