@@ -119,6 +119,7 @@ type Item {
   id: ID!
   name: String!
   description: String!
+  itemRoles: [String!]!
   canBeUsedByHumans: Boolean
   canBeUsedByAnimals: Boolean
   minimumAgeToUse: Int
@@ -444,6 +445,7 @@ input NewItem {
   spaceId: ID!
   name: String!
   description: String!
+  itemRoles: [String!]
   affordances: [ItemAffordanceInput!]
   maxSimultaneousUsers: Int
 }
@@ -452,6 +454,7 @@ input UpdateItemInput {
   id: ID!
   name: String
   description: String
+  itemRoles: [String!]
   allowedActivities: [String!]
   affordances: [ItemAffordanceInput!]
   canBeUsedByHumans: Boolean

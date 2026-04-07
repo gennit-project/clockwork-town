@@ -33,6 +33,7 @@ CREATE NODE TABLE IF NOT EXISTS Household(
 
 CREATE NODE TABLE IF NOT EXISTS Item(
   id STRING, name STRING, description STRING,
+  itemRoles STRING[],
   canBeUsedByHumans BOOL, canBeUsedByAnimals BOOL,
   minimumAgeToUse INT64, maxSimultaneousUsers INT64,
   satisfiesNeeds STRING[], allowedActivities STRING[],

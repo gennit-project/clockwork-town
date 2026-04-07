@@ -161,6 +161,19 @@ export interface ItemData {
   allowedActivities: string[]
   affordances: ItemAffordance[]
   maxSimultaneousUsers: number | null
+  classification: ItemClassification
+}
+
+export interface ItemClassification {
+  isFoodStorage: boolean
+  isTakeoutSource: boolean
+  isGrocerySource: boolean
+  isKitchenStation: boolean
+  isTableSeat: boolean
+  isChairSeat: boolean
+  isLoungeSeat: boolean
+  isBedSeat: boolean
+  isBookSource: boolean
 }
 
 export interface ItemAffordance {
@@ -294,6 +307,7 @@ export interface InputItem {
   id: string
   name: string
   description?: string
+  itemRoles?: string[]
   allowedActivities?: string[]
   affordances?: ItemAffordance[]
   maxSimultaneousUsers?: number | null

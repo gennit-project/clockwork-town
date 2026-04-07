@@ -29,10 +29,72 @@ export async function applyDDL() {
   }
 }
 
+function isDuplicatePropertyError(error: unknown, propertyName: string): boolean {
+  return error instanceof Error && error.message.includes(`already has property ${propertyName}`);
+}
+
+export async function migrateDatabase(): Promise<{ addedItemRolesColumn: boolean; backfilledItemRoles: number }> {
+  let addedItemRolesColumn = false;
+
+  try {
+    await conn.query("ALTER TABLE Item ADD itemRoles STRING[]");
+    addedItemRolesColumn = true;
+  } catch (error) {
+    if (!isDuplicatePropertyError(error, "itemRoles")) {
+      throw error;
+    }
+  }
+
+  const updatedRows = await conn.query(`
+    MATCH (i:Item)
+    WHERE i.itemRoles IS NULL
+    SET i.itemRoles = []
+    RETURN COUNT(i) AS count
+  `);
+  const [row] = await updatedRows.getAll();
+  const backfilledItemRoles = Number(row?.count ?? 0);
+
+  return {
+    addedItemRolesColumn,
+    backfilledItemRoles
+  };
+}
+
+async function runSetup({ includeMigrations }: { includeMigrations: boolean }) {
+  await applyDDL();
+
+  if (!includeMigrations) {
+    return;
+  }
+
+  const migrationResult = await migrateDatabase();
+  if (migrationResult.addedItemRolesColumn || migrationResult.backfilledItemRoles > 0) {
+    console.log(
+      `Migrations applied. Added itemRoles column: ${migrationResult.addedItemRolesColumn}. Backfilled items: ${migrationResult.backfilledItemRoles}.`
+    );
+  } else {
+    console.log("Migrations already up to date.");
+  }
+}
+
 if (process.argv.includes("--ddl")) {
-  applyDDL()
+  runSetup({ includeMigrations: true })
     .then(() => {
       console.log("DDL applied.");
+      process.exit(0);
+    })
+    .catch(e => {
+      console.error(e);
+      process.exit(1);
+    });
+}
+
+if (process.argv.includes("--migrate")) {
+  migrateDatabase()
+    .then(result => {
+      console.log(
+        `Migration finished. Added itemRoles column: ${result.addedItemRolesColumn}. Backfilled items: ${result.backfilledItemRoles}.`
+      );
       process.exit(0);
     })
     .catch(e => {

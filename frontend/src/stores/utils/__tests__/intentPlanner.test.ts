@@ -33,6 +33,18 @@ function createEatingStrategyWorldData(): WorldData {
     allowedActivities: [],
     affordances: [],
     maxSimultaneousUsers: 4
+    ,
+    classification: {
+      isFoodStorage: false,
+      isTakeoutSource: false,
+      isGrocerySource: false,
+      isKitchenStation: false,
+      isTableSeat: true,
+      isChairSeat: false,
+      isLoungeSeat: false,
+      isBedSeat: false,
+      isBookSource: false
+    }
   }
   worldData.items['item-6'] = {
     id: 'item-6',
@@ -43,6 +55,18 @@ function createEatingStrategyWorldData(): WorldData {
     allowedActivities: [],
     affordances: [],
     maxSimultaneousUsers: 1
+    ,
+    classification: {
+      isFoodStorage: false,
+      isTakeoutSource: false,
+      isGrocerySource: false,
+      isKitchenStation: true,
+      isTableSeat: false,
+      isChairSeat: false,
+      isLoungeSeat: false,
+      isBedSeat: false,
+      isBookSource: false
+    }
   }
   worldData.items['item-7'] = {
     id: 'item-7',
@@ -53,6 +77,18 @@ function createEatingStrategyWorldData(): WorldData {
     allowedActivities: [],
     affordances: [],
     maxSimultaneousUsers: 4
+    ,
+    classification: {
+      isFoodStorage: false,
+      isTakeoutSource: true,
+      isGrocerySource: false,
+      isKitchenStation: false,
+      isTableSeat: true,
+      isChairSeat: false,
+      isLoungeSeat: false,
+      isBedSeat: false,
+      isBookSource: false
+    }
   }
   worldData.items['item-8'] = {
     id: 'item-8',
@@ -63,6 +99,18 @@ function createEatingStrategyWorldData(): WorldData {
     allowedActivities: [],
     affordances: [],
     maxSimultaneousUsers: 4
+    ,
+    classification: {
+      isFoodStorage: false,
+      isTakeoutSource: false,
+      isGrocerySource: true,
+      isKitchenStation: false,
+      isTableSeat: false,
+      isChairSeat: false,
+      isLoungeSeat: false,
+      isBedSeat: false,
+      isBookSource: false
+    }
   }
 
   return worldData

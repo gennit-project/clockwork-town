@@ -11,6 +11,7 @@ import type {
 } from '../types'
 import { debugLog } from './simulationDebug'
 import { canAccessLot, isPublicLot } from './accessControl'
+import { classifyItem } from './itemClassification'
 
 /**
  * Find items with a specific affordance (action) accessible to a character
@@ -166,7 +167,8 @@ export function buildWorldData(lots: InputLot[], regionId: string): WorldData {
           regionId: regionId,
           allowedActivities,
           affordances,
-          maxSimultaneousUsers: item.maxSimultaneousUsers || null
+          maxSimultaneousUsers: item.maxSimultaneousUsers || null,
+          classification: classifyItem(item.name, item.itemRoles || [])
         }
 
         // Index by affordance

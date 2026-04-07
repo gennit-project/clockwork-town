@@ -25,6 +25,7 @@ export const WorldResolvers = {
       const items = await q(`
         MATCH (s:Space {id:$id})<-[:ON_SPACE]-(i:Item)
         RETURN i.id AS id, i.name AS name, i.description AS description,
+               i.itemRoles AS itemRoles,
                i.allowedActivities AS allowedActivities,
                i.satisfiesNeeds AS satisfiesNeeds,
                i.canBeUsedByHumans AS canBeUsedByHumans,
@@ -56,6 +57,9 @@ export const WorldResolvers = {
     }
   },
   Item: {
+    itemRoles: (parent: any) => {
+      return parent.itemRoles || [];
+    },
     allowedActivities: (parent: any) => {
       return parent.allowedActivities || [];
     },
@@ -100,6 +104,7 @@ export const WorldResolvers = {
       const items = await q(`
         MATCH (l:Lot {id:$id})<-[:ON_LOT]-(i:Item)
         RETURN i.id AS id, i.name AS name, i.description AS description,
+               i.itemRoles AS itemRoles,
                i.allowedActivities AS allowedActivities,
                i.satisfiesNeeds AS satisfiesNeeds,
                i.canBeUsedByHumans AS canBeUsedByHumans,
@@ -186,6 +191,7 @@ export const WorldResolvers = {
       const items = await q(`
         MATCH (s:Space {id:$id})<-[:ON_SPACE]-(i:Item)
         RETURN i.id AS id, i.name AS name, i.description AS description,
+               i.itemRoles AS itemRoles,
                i.allowedActivities AS allowedActivities,
                i.satisfiesNeeds AS satisfiesNeeds,
                i.canBeUsedByHumans AS canBeUsedByHumans,
@@ -623,10 +629,11 @@ export const WorldResolvers = {
       spaceId: string;
       name: string;
       description: string;
+      itemRoles?: string[];
       affordances?: Array<{ action: string; weight: number }>;
       maxSimultaneousUsers?: number | null;
     } }) => {
-      const { id, spaceId, name, description, affordances, maxSimultaneousUsers } = input;
+      const { id, spaceId, name, description, itemRoles, affordances, maxSimultaneousUsers } = input;
       const encodedAffordances = encodeAffordances(affordances);
       await batch(async () => {
         // Create item with basic properties (other fields can be null/default)
@@ -634,6 +641,7 @@ export const WorldResolvers = {
           id: $id,
           name: $name,
           description: $description,
+          itemRoles: $itemRoles,
           canBeUsedByHumans: true,
           canBeUsedByAnimals: false,
           canStoreItems: false,
@@ -646,6 +654,7 @@ export const WorldResolvers = {
           id,
           name,
           description,
+          itemRoles: itemRoles || [],
           maxSimultaneousUsers: maxSimultaneousUsers ?? null,
           satisfiesNeeds: encodedAffordances.satisfiesNeeds,
           allowedActivities: encodedAffordances.allowedActivities
@@ -661,6 +670,7 @@ export const WorldResolvers = {
       const [created] = await q(`
         MATCH (i:Item {id:$id})
         RETURN i.id AS id, i.name AS name, i.description AS description,
+               i.itemRoles AS itemRoles,
                i.allowedActivities AS allowedActivities,
                i.satisfiesNeeds AS satisfiesNeeds,
                i.canBeUsedByHumans AS canBeUsedByHumans,
@@ -690,6 +700,7 @@ export const WorldResolvers = {
             id: $id,
             name: $name,
             description: $description,
+            itemRoles: $itemRoles,
             canBeUsedByHumans: true,
             canBeUsedByAnimals: false,
             canStoreItems: false,
@@ -701,6 +712,7 @@ export const WorldResolvers = {
             id: itemId,
             name: item.itemName,
             description: item.itemDescription,
+            itemRoles: [],
             count: item.itemCount,
             satisfiesNeeds: encodedAffordances.satisfiesNeeds,
             allowedActivities: encodedAffordances.allowedActivities
@@ -724,6 +736,7 @@ export const WorldResolvers = {
         id: string;
         name?: string;
         description?: string;
+        itemRoles?: string[];
         allowedActivities?: string[];
         affordances?: Array<{ action: string; weight: number }>;
         canBeUsedByHumans?: boolean;
@@ -745,6 +758,10 @@ export const WorldResolvers = {
       if (updates.description !== undefined) {
         setFields.push('i.description = $description');
         params.description = updates.description;
+      }
+      if (updates.itemRoles !== undefined) {
+        setFields.push('i.itemRoles = $itemRoles');
+        params.itemRoles = updates.itemRoles;
       }
       if (updates.allowedActivities !== undefined) {
         setFields.push('i.allowedActivities = $allowedActivities');
@@ -782,6 +799,7 @@ export const WorldResolvers = {
         MATCH (i:Item {id:$id})
         SET ${setFields.join(', ')}
         RETURN i.id AS id, i.name AS name, i.description AS description,
+               i.itemRoles AS itemRoles,
                i.allowedActivities AS allowedActivities,
                i.canBeUsedByHumans AS canBeUsedByHumans,
                i.canBeUsedByAnimals AS canBeUsedByAnimals,

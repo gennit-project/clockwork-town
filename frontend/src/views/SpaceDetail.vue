@@ -67,6 +67,27 @@
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                Item Roles
+              </label>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <label
+                  v-for="role in ITEM_ROLE_OPTIONS"
+                  :key="role.key"
+                  class="rounded border border-gray-200 px-3 py-2 text-sm"
+                >
+                  <span class="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      :checked="newItem.itemRoles.includes(role.key)"
+                      @change="handleItemRoleToggle(newItem, role.key, $event)"
+                    />
+                    {{ role.label }}
+                  </span>
+                </label>
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                 Affordances
               </label>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -177,6 +198,25 @@
               </div>
               <div>
                 <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Item Roles
+                </label>
+                <div class="grid grid-cols-1 gap-2">
+                  <label
+                    v-for="role in ITEM_ROLE_OPTIONS"
+                    :key="role.key"
+                    class="flex items-center gap-2 text-xs"
+                  >
+                    <input
+                      type="checkbox"
+                      :checked="editingItem.itemRoles.includes(role.key)"
+                      @change="editingItem && handleItemRoleToggle(editingItem, role.key, $event)"
+                    />
+                    {{ role.label }}
+                  </label>
+                </div>
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Affordances
                 </label>
                 <div class="space-y-2">
@@ -231,6 +271,15 @@
                 <div class="flex-1">
                   <h3 class="font-medium text-sm text-gray-900 dark:text-gray-100">{{ item.name }}</h3>
                   <p class="text-xs text-gray-600 dark:text-gray-300 mt-1">{{ item.description }}</p>
+                  <div v-if="item.itemRoles.length" class="mt-2 flex flex-wrap gap-1">
+                    <span
+                      v-for="role in item.itemRoles"
+                      :key="role"
+                      class="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-700 dark:bg-slate-700 dark:text-slate-100"
+                    >
+                      {{ formatItemRole(role) }}
+                    </span>
+                  </div>
                 </div>
                 <div class="flex gap-1 ml-2">
                 <button
@@ -338,6 +387,7 @@ import { useCharacterPanelStore } from '../stores/characterPanel'
 import { useRouteParams } from '../composables/useRouteParams'
 import { useBreadcrumbs } from '../composables/useBreadcrumbs'
 import type { ActionName, InputLot, ItemAffordance } from '../stores/types'
+import { ITEM_ROLE_OPTIONS } from '../stores/utils/itemClassification'
 
 const simulationStore = useSimulationStore()
 const characterPanelStore = useCharacterPanelStore()
@@ -371,6 +421,7 @@ interface SpaceItem {
   id: string
   name: string
   description: string
+  itemRoles: string[]
   allowedActivities: ActionName[]
   affordances: ItemAffordance[]
   maxSimultaneousUsers: number | null
@@ -471,11 +522,13 @@ const affordanceOptions: Array<{ action: ActionName; label: string }> = [
 const newItem = ref<{
   name: string
   description: string
+  itemRoles: string[]
   maxSimultaneousUsers: number | null
   affordances: ItemAffordance[]
 }>({
   name: '',
   description: '',
+  itemRoles: [],
   maxSimultaneousUsers: null,
   affordances: []
 })
@@ -646,6 +699,7 @@ const addItem = async () => {
         spaceId: spaceId.value,
         name: newItem.value.name,
         description: newItem.value.description,
+        itemRoles: newItem.value.itemRoles,
         maxSimultaneousUsers: newItem.value.maxSimultaneousUsers || null,
         affordances: newItem.value.affordances
       }
@@ -655,12 +709,13 @@ const addItem = async () => {
       id: itemId,
       name: newItem.value.name,
       description: newItem.value.description,
+      itemRoles: [...newItem.value.itemRoles],
       maxSimultaneousUsers: newItem.value.maxSimultaneousUsers || null,
       affordances: [...newItem.value.affordances],
       allowedActivities: newItem.value.affordances.map(entry => entry.action as ActionName)
     })
 
-    newItem.value = { name: '', description: '', maxSimultaneousUsers: null, affordances: [] }
+    newItem.value = { name: '', description: '', itemRoles: [], maxSimultaneousUsers: null, affordances: [] }
     showAddItemForm.value = false
   } catch (e: unknown) {
     error.value = e instanceof Error ? e.message : 'Failed to add item'
@@ -697,6 +752,7 @@ const saveEdit = async () => {
         id: editingItem.value.id,
         name: editingItem.value.name,
         description: editingItem.value.description,
+        itemRoles: editingItem.value.itemRoles,
         maxSimultaneousUsers: editingItem.value.maxSimultaneousUsers || null,
         affordances: editingItem.value.affordances || []
       }
@@ -778,6 +834,25 @@ function handleAffordanceToggle(target: AffordanceTarget, action: ActionName, ev
 function handleAffordanceWeightInput(target: AffordanceTarget, action: ActionName, event: Event) {
   const input = event.target as HTMLInputElement | null
   setAffordanceWeight(target, action, input?.value ?? '1')
+}
+
+function handleItemRoleToggle(target: { itemRoles: string[] }, role: string, event: Event) {
+  const checkbox = event.target as HTMLInputElement | null
+  if (checkbox?.checked) {
+    if (!target.itemRoles.includes(role)) {
+      target.itemRoles = [...target.itemRoles, role]
+    }
+    return
+  }
+
+  target.itemRoles = target.itemRoles.filter((entry) => entry !== role)
+}
+
+function formatItemRole(role: string): string {
+  return role
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
 }
 
 function getItemActions(item: SpaceItem): ActionName[] {

@@ -124,6 +124,7 @@ export const queries = {
             id
             name
             description
+            itemRoles
             allowedActivities
             affordances {
               action
@@ -144,6 +145,7 @@ export const queries = {
             id
             name
             description
+            itemRoles
             allowedActivities
             affordances {
               action
@@ -171,6 +173,7 @@ export const queries = {
           id
           name
           description
+          itemRoles
           allowedActivities
           affordances {
             action
@@ -398,6 +401,7 @@ export const mutations = {
         id
         name
         description
+        itemRoles
         allowedActivities
         maxSimultaneousUsers
         affordances {
@@ -414,6 +418,7 @@ export const mutations = {
         id
         name
         description
+        itemRoles
         allowedActivities
         maxSimultaneousUsers
         affordances {

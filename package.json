@@ -9,6 +9,7 @@
     "dev:frontend": "vite",
     "build:frontend": "vite build",
     "ddl": "tsx src/db.ts --ddl",
+    "migrate": "tsx src/db.ts --migrate",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage"

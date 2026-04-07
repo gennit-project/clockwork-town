@@ -352,6 +352,22 @@ describe('buildWorldData', () => {
     expect(worldData.items['item-1'].allowedActivities).toEqual(['eat', 'work'])
   })
 
+  it('classifies the bench as neither food storage nor a book source', () => {
+    const worldData = buildWorldData(completeLots, 'test-region')
+
+    expect(worldData.items['item-2'].classification).toEqual({
+      isFoodStorage: false,
+      isTakeoutSource: false,
+      isGrocerySource: false,
+      isKitchenStation: false,
+      isTableSeat: false,
+      isChairSeat: true,
+      isLoungeSeat: false,
+      isBedSeat: false,
+      isBookSource: false
+    })
+  })
+
   it('stores the max simultaneous users value', () => {
     const worldData = buildWorldData(completeLots, 'test-region')
 

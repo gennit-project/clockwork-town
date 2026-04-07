@@ -2,7 +2,6 @@ import type {
   ActionName,
   CharacterState,
   Cooldowns,
-  ItemData,
   ItemOption,
   ItemOccupancy,
   PlanCandidate,
@@ -36,16 +35,6 @@ const DEFAULT_PLANNED_ACTIONS: CooldownAction[] = [
   'volunteer'
 ]
 
-const STORAGE_ITEM_PATTERN = /fridge|refrigerator|cabinet|pantry/i
-const TAKEOUT_ITEM_PATTERN = /pizza|takeout|delivery|counter|register/i
-const GROCERY_ITEM_PATTERN = /grocery|market|produce|checkout/i
-const KITCHEN_ITEM_PATTERN = /stove|oven|range|cooktop|kitchen/i
-const TABLE_ITEM_PATTERN = /table|desk|counter/i
-const CHAIR_ITEM_PATTERN = /chair|stool|bench/i
-const LOUNGE_ITEM_PATTERN = /couch|sofa|loveseat/i
-const BED_ITEM_PATTERN = /bed/i
-const BOOK_SOURCE_PATTERN = /bookshelf|bookcase|shelf/i
-
 function buildAccessibleItemOptions({
   characterId,
   characterState,
@@ -57,12 +46,12 @@ function buildAccessibleItemOptions({
   characterState: CharacterState
   worldData: WorldData
   itemOccupancy: ItemOccupancy
-  matcher: (item: ItemData) => boolean
+  matcher: (itemId: string) => boolean
 }): ItemOption[] {
   const options: ItemOption[] = []
 
   for (const item of Object.values(worldData.items)) {
-    if (!matcher(item)) {
+    if (!matcher(item.id)) {
       continue
     }
 
@@ -179,7 +168,7 @@ function buildStructuredReadCandidates({
     characterState,
     worldData,
     itemOccupancy,
-    matcher: (item) => BOOK_SOURCE_PATTERN.test(item.name)
+    matcher: (itemId) => worldData.items[itemId].classification.isBookSource
   })
 
   const seats = buildAccessibleItemOptions({
@@ -187,7 +176,10 @@ function buildStructuredReadCandidates({
     characterState,
     worldData,
     itemOccupancy,
-    matcher: (item) => CHAIR_ITEM_PATTERN.test(item.name) || BED_ITEM_PATTERN.test(item.name)
+    matcher: (itemId) => {
+      const classification = worldData.items[itemId].classification
+      return classification.isChairSeat || classification.isBedSeat
+    }
   })
 
   const candidates: PlanCandidate[] = []
@@ -257,7 +249,7 @@ function buildStructuredEatCandidates({
     characterState,
     worldData,
     itemOccupancy,
-    matcher: (item) => STORAGE_ITEM_PATTERN.test(item.name)
+    matcher: (itemId) => worldData.items[itemId].classification.isFoodStorage
   })
 
   const tableSeats = buildAccessibleItemOptions({
@@ -265,7 +257,7 @@ function buildStructuredEatCandidates({
     characterState,
     worldData,
     itemOccupancy,
-    matcher: (item) => TABLE_ITEM_PATTERN.test(item.name)
+    matcher: (itemId) => worldData.items[itemId].classification.isTableSeat
   })
 
   const fallbackSeats = buildAccessibleItemOptions({
@@ -273,7 +265,10 @@ function buildStructuredEatCandidates({
     characterState,
     worldData,
     itemOccupancy,
-    matcher: (item) => CHAIR_ITEM_PATTERN.test(item.name) || LOUNGE_ITEM_PATTERN.test(item.name)
+    matcher: (itemId) => {
+      const classification = worldData.items[itemId].classification
+      return classification.isChairSeat || classification.isLoungeSeat
+    }
   })
 
   const candidates: PlanCandidate[] = []
@@ -303,7 +298,7 @@ function buildStructuredEatCandidates({
     characterState,
     worldData,
     itemOccupancy,
-    matcher: (item) => TAKEOUT_ITEM_PATTERN.test(item.name)
+    matcher: (itemId) => worldData.items[itemId].classification.isTakeoutSource
   })
 
   candidates.push(...buildSeatedEatCandidates({
@@ -331,7 +326,7 @@ function buildStructuredEatCandidates({
     characterState,
     worldData,
     itemOccupancy,
-    matcher: (item) => GROCERY_ITEM_PATTERN.test(item.name)
+    matcher: (itemId) => worldData.items[itemId].classification.isGrocerySource
   })
 
   const kitchenStations = buildAccessibleItemOptions({
@@ -339,7 +334,7 @@ function buildStructuredEatCandidates({
     characterState,
     worldData,
     itemOccupancy,
-    matcher: (item) => KITCHEN_ITEM_PATTERN.test(item.name)
+    matcher: (itemId) => worldData.items[itemId].classification.isKitchenStation
   })
 
   candidates.push(...buildCookedMealCandidates({

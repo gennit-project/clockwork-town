@@ -112,7 +112,18 @@ export const createMockWorldData = (): WorldData => ({
       regionId: 'region-1',
       allowedActivities: ['read', 'chat_friend'],
       affordances: [{ action: 'read', weight: 1 }, { action: 'chat_friend', weight: 1 }],
-      maxSimultaneousUsers: 3
+      maxSimultaneousUsers: 3,
+      classification: {
+        isFoodStorage: false,
+        isTakeoutSource: false,
+        isGrocerySource: false,
+        isKitchenStation: false,
+        isTableSeat: false,
+        isChairSeat: false,
+        isLoungeSeat: true,
+        isBedSeat: false,
+        isBookSource: false
+      }
     },
     'item-2': {
       id: 'item-2',
@@ -122,7 +133,18 @@ export const createMockWorldData = (): WorldData => ({
       regionId: 'region-1',
       allowedActivities: ['sleep'],
       affordances: [{ action: 'sleep', weight: 1 }],
-      maxSimultaneousUsers: 1
+      maxSimultaneousUsers: 1,
+      classification: {
+        isFoodStorage: false,
+        isTakeoutSource: false,
+        isGrocerySource: false,
+        isKitchenStation: false,
+        isTableSeat: false,
+        isChairSeat: false,
+        isLoungeSeat: false,
+        isBedSeat: true,
+        isBookSource: false
+      }
     },
     'item-3': {
       id: 'item-3',
@@ -132,7 +154,18 @@ export const createMockWorldData = (): WorldData => ({
       regionId: 'region-1',
       allowedActivities: ['eat'],
       affordances: [{ action: 'eat', weight: 1 }],
-      maxSimultaneousUsers: null
+      maxSimultaneousUsers: null,
+      classification: {
+        isFoodStorage: true,
+        isTakeoutSource: false,
+        isGrocerySource: false,
+        isKitchenStation: false,
+        isTableSeat: false,
+        isChairSeat: false,
+        isLoungeSeat: false,
+        isBedSeat: false,
+        isBookSource: false
+      }
     },
     'item-4': {
       id: 'item-4',
@@ -142,7 +175,18 @@ export const createMockWorldData = (): WorldData => ({
       regionId: 'region-1',
       allowedActivities: ['read'],
       affordances: [{ action: 'read', weight: 1 }],
-      maxSimultaneousUsers: null
+      maxSimultaneousUsers: null,
+      classification: {
+        isFoodStorage: false,
+        isTakeoutSource: false,
+        isGrocerySource: false,
+        isKitchenStation: false,
+        isTableSeat: false,
+        isChairSeat: false,
+        isLoungeSeat: false,
+        isBedSeat: false,
+        isBookSource: true
+      }
     }
   },
   itemsByAffordance: {

@@ -4,7 +4,7 @@ import { makeExecutableSchema } from "@graphql-tools/schema";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { applyDDL } from "./db";
+import { applyDDL, migrateDatabase } from "./db";
 import { resolvers } from "./resolvers";
 import { backfillMissingItemAffordances } from "./resolvers/itemAffordanceInference";
 
@@ -17,6 +17,7 @@ async function main() {
   }
 
   await applyDDL();
+  const migrationResult = await migrateDatabase();
   const repairedItems = await backfillMissingItemAffordances();
 
   const typeDefs = fs.readFileSync(schemaPath, "utf8");
@@ -77,6 +78,11 @@ async function main() {
     console.log(`   GraphQL endpoint: http://localhost:${port}/graphql`);
     if (repairedItems > 0) {
       console.log(`   Repaired affordances for ${repairedItems} existing items`);
+    }
+    if (migrationResult.addedItemRolesColumn || migrationResult.backfilledItemRoles > 0) {
+      console.log(
+        `   Migrated itemRoles column: added=${migrationResult.addedItemRolesColumn}, backfilled=${migrationResult.backfilledItemRoles}`
+      );
     }
     if (hasBuiltFrontend) {
       console.log(`   Frontend: http://localhost:${port}`);
