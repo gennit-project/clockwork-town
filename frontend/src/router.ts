@@ -8,6 +8,7 @@ import SpaceList from './views/SpaceList.vue'
 import SpaceDetail from './views/SpaceDetail.vue'
 import HouseholdForm from './views/HouseholdForm.vue'
 import HouseholdDetail from './views/HouseholdDetail.vue'
+import CharacterEditor from './views/CharacterEditor.vue'
 import Library from './views/Library.vue'
 import LotTemplates from './views/LotTemplates.vue'
 import LotTemplateDetail from './views/LotTemplateDetail.vue'
@@ -76,6 +77,16 @@ export const router = createRouter({
       component: HouseholdDetail
     },
     {
+      path: '/world/:worldId/region/:regionId/household/:householdId/character/new',
+      name: 'character-create',
+      component: CharacterEditor
+    },
+    {
+      path: '/world/:worldId/region/:regionId/character/:characterId/edit',
+      name: 'character-edit',
+      component: CharacterEditor
+    },
+    {
       path: '/library',
       component: Library,
       redirect: '/library/lots',
@@ -124,4 +135,3 @@ export const router = createRouter({
     }
   ]
 })
-

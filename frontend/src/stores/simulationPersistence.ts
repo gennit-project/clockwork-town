@@ -7,6 +7,15 @@ interface FetchCharacterDetailsResult {
     name: string
     age: number
     bio?: string | null
+    workSchedule?: Array<{
+      day: string
+      start: string
+      end: string
+      location: {
+        id: string
+        name: string
+      }
+    }>
     longTermMemories?: LongTermMemory[]
   } | null
 }
@@ -35,6 +44,44 @@ export async function fetchCharacterDetails(characterId: string): Promise<FetchC
 
 export async function persistCharacterBio(characterId: string, bio: string): Promise<void> {
   await client.request(mutations.updateCharacterBio, { characterId, bio })
+}
+
+export async function persistCharacterDetails(input: {
+  id: string
+  name?: string
+  age?: number
+  bio?: string | null
+  workSchedule?: Array<{
+    day: string
+    start: string
+    end: string
+    locationLotId: string
+  }>
+}): Promise<void> {
+  await client.request(mutations.updateCharacter, { input })
+}
+
+export async function createCharacterDetails(input: {
+  id: string
+  name: string
+  age: number
+  bio?: string | null
+  homeLotId: string
+  householdId: string
+  workSchedule?: Array<{
+    day: string
+    start: string
+    end: string
+    locationLotId: string
+  }>
+}): Promise<void> {
+  await client.request(mutations.createCharacter, {
+    input: {
+      ...input,
+      traitIds: [],
+      valueIds: []
+    }
+  })
 }
 
 export async function createCharacterLongTermMemory(characterId: string, content: string): Promise<void> {

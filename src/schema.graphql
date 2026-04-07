@@ -432,6 +432,14 @@ input NewCharacter {
   workSchedule: [WorkShiftInput!]
 }
 
+input UpdateCharacterInput {
+  id: ID!
+  name: String
+  age: Int
+  bio: String
+  workSchedule: [WorkShiftInput!]
+}
+
 input WorkShiftInput {
   day: String!
   start: String!
@@ -552,6 +560,7 @@ type Mutation {
   deleteHousehold(id: ID!): Boolean!
 
   createCharacter(input: NewCharacter!): Character!
+  updateCharacter(input: UpdateCharacterInput!): Character!
   updateCharacterBio(characterId: ID!, bio: String!): Character!
   createCharacterLongTermMemory(characterId: ID!, content: String!): Memory!
   updateCharacterLongTermMemory(memoryId: ID!, content: String!): Memory!

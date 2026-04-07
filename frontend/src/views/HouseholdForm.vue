@@ -323,7 +323,7 @@
           </button>
           <button
             type="submit"
-            :disabled="saving || formData.characters.length === 0"
+            :disabled="saving"
             class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md disabled:opacity-50"
           >
             {{ saving ? 'Saving...' : 'Save Household' }}
@@ -589,10 +589,12 @@ const saveHousehold = async () => {
           bio: animal.bio || null
         }))
       })
+      router.push(`/world/${worldId.value}/region/${regionId.value}/household/${householdId.value}`)
     } else {
+      const newHouseholdId = crypto.randomUUID()
       await client.request(mutations.createHousehold, {
         input: {
-          id: crypto.randomUUID(),
+          id: newHouseholdId,
           name: formData.value.name,
           regionId: regionId.value,
           lotId: formData.value.lotId
@@ -613,9 +615,8 @@ const saveHousehold = async () => {
           bio: animal.bio || null
         }))
       })
+      router.push(`/world/${worldId.value}/region/${regionId.value}/household/${newHouseholdId}`)
     }
-
-    goBack()
   } catch (e: unknown) {
     error.value = e instanceof Error ? e.message : 'Failed to save household'
   } finally {

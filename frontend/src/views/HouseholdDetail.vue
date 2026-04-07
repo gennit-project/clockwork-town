@@ -41,6 +41,14 @@
         </div>
 
         <div v-else class="space-y-6">
+          <div class="flex justify-end">
+            <router-link
+              :to="`/world/${worldId}/region/${regionId}/household/${householdId}/character/new`"
+              class="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
+            >
+              Add Character
+            </router-link>
+          </div>
           <div
             v-for="character in household.characters"
             :key="character.id"
@@ -51,6 +59,12 @@
                 <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100">{{ character.name }}</h3>
                 <p class="text-sm text-gray-500">Age: {{ character.age }}</p>
               </div>
+              <router-link
+                :to="`/world/${worldId}/region/${regionId}/character/${character.id}/edit`"
+                class="rounded-md bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-100"
+              >
+                Edit Character
+              </router-link>
             </div>
 
             <div v-if="character.bio" class="mt-4">

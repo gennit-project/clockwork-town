@@ -141,6 +141,47 @@ export const CharacterResolvers = {
       return created;
     },
 
+    updateCharacter: async (_: any, { input }: { input: {
+      id: string;
+      name?: string;
+      age?: number;
+      bio?: string | null;
+      workSchedule?: Array<{ day: string; start: string; end: string; locationLotId: string }>;
+    } }) => {
+      const { id, ...updates } = input;
+      const setFields: string[] = [];
+      const params: Record<string, unknown> = { id };
+
+      if (updates.name !== undefined) {
+        setFields.push('c.name = $name');
+        params.name = updates.name;
+      }
+      if (updates.age !== undefined) {
+        setFields.push('c.age = $age');
+        params.age = updates.age;
+      }
+      if (updates.bio !== undefined) {
+        setFields.push('c.bio = $bio');
+        params.bio = updates.bio;
+      }
+      if (updates.workSchedule !== undefined) {
+        setFields.push('c.workSchedule = $workSchedule');
+        params.workSchedule = serializeWorkSchedule(updates.workSchedule);
+      }
+
+      if (setFields.length === 0) {
+        throw new Error('No character fields to update');
+      }
+
+      const [updated] = await q(`
+        MATCH (c:Character {id:$id})
+        SET ${setFields.join(', ')}
+        RETURN c.id AS id, c.name AS name, c.age AS age, c.bio AS bio, c.workSchedule AS workSchedule
+      `, params);
+
+      return updated ?? null;
+    },
+
     updateCharacterBio: async (_: any, { characterId, bio }: { characterId: string; bio: string }) => {
       await q(`
         MATCH (c:Character {id:$characterId})

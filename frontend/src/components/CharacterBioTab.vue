@@ -70,11 +70,22 @@
         </p>
       </div>
     </div>
+
+    <div class="pt-2">
+      <button
+        type="button"
+        class="text-xs font-medium text-blue-600 dark:text-blue-400"
+        @click="openEditor"
+      >
+        Open Character Editor
+      </button>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, inject, ref, watch } from 'vue'
+import { routerKey } from 'vue-router'
 import { getCharacterStatusText } from '../composables/useCharacterStatus'
 import { useCharacterPanelStore } from '../stores/characterPanel'
 import type { CharacterState } from '../stores/types'
@@ -92,6 +103,7 @@ const props = defineProps<{
   formatAction: (action: string) => string
 }>()
 
+const router = inject(routerKey, null)
 const characterPanelStore = useCharacterPanelStore()
 const editingBio = ref(false)
 const bioDraft = ref('')
@@ -108,5 +120,20 @@ watch(
 async function saveBio() {
   await characterPanelStore.updateCharacterBio(props.character.id, bioDraft.value)
   editingBio.value = false
+}
+
+function openEditor() {
+  if (!router) {
+    return
+  }
+
+  const currentRoute = router.currentRoute.value
+  const worldId = currentRoute.params.worldId
+  const regionId = currentRoute.params.regionId
+  if (typeof worldId !== 'string' || typeof regionId !== 'string') {
+    return
+  }
+
+  router.push(`/world/${worldId}/region/${regionId}/character/${props.character.id}/edit`)
 }
 </script>

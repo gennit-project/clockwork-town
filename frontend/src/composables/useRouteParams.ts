@@ -22,6 +22,7 @@ export function useRouteParams() {
     lotId: computed(() => normalizeParam(route.params.lotId)),
     spaceId: computed(() => normalizeParam(route.params.spaceId)),
     householdId: computed(() => normalizeParam(route.params.householdId)),
+    characterId: computed(() => normalizeParam(route.params.characterId)),
     templateId: computed(() => normalizeParam(route.params.templateId)),
     params: computed(() => route.params)
   }

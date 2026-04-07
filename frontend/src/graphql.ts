@@ -309,6 +309,15 @@ export const queries = {
         name
         age
         bio
+        workSchedule {
+          day
+          start
+          end
+          location {
+            id
+            name
+          }
+        }
         longTermMemories {
           id
           content
@@ -590,6 +599,46 @@ export const mutations = {
   moveCharacter: `
     mutation MoveCharacter($input: MoveInput!) {
       moveCharacter(input: $input)
+    }
+  `,
+
+  createCharacter: `
+    mutation CreateCharacter($input: NewCharacter!) {
+      createCharacter(input: $input) {
+        id
+        name
+        age
+        bio
+        workSchedule {
+          day
+          start
+          end
+          location {
+            id
+            name
+          }
+        }
+      }
+    }
+  `,
+
+  updateCharacter: `
+    mutation UpdateCharacter($input: UpdateCharacterInput!) {
+      updateCharacter(input: $input) {
+        id
+        name
+        age
+        bio
+        workSchedule {
+          day
+          start
+          end
+          location {
+            id
+            name
+          }
+        }
+      }
     }
   `,
 
