@@ -235,6 +235,7 @@ export interface ItemOption {
 export interface Intent {
   goal?: ActionName
   strategy?: string
+  entryStepIndex?: number
   action: ActionName
   itemId?: string
   itemName?: string
@@ -272,6 +273,7 @@ export interface PlanCandidate {
   travelCost: number
   primaryStep: TaskStep
   steps: TaskStep[]
+  entryStepIndex?: number
 }
 
 // ============================================

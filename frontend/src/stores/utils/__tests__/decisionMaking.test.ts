@@ -141,7 +141,7 @@ describe('selectBestIntent', () => {
     const intent = selectBestIntent('char-1', characterState, worldData, itemOccupancy)
 
     expect(intent.action).toBe('eat')
-    expect(intent.itemId).toBe('item-3') // Fridge
+    expect(intent.strategy).toBe('eat:stored-food-seat')
     expect(intent.utility).toBeGreaterThan(0)
   })
 

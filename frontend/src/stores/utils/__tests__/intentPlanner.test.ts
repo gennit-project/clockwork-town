@@ -28,7 +28,7 @@ describe('intentPlanner', () => {
     expect(candidates[0].goal).toBe('eat')
   })
 
-  it('creates direct strategies for the current planner implementation', () => {
+  it('creates at least one structured strategy for the current planner implementation', () => {
     const candidates = buildPlanCandidates({
       characterId: 'char-1',
       characterState: createMockCharacterState(),
@@ -36,7 +36,7 @@ describe('intentPlanner', () => {
       itemOccupancy: createMockItemOccupancy()
     })
 
-    expect(candidates.every((candidate) => candidate.strategy.endsWith(':direct'))).toBe(true)
+    expect(candidates.some((candidate) => !candidate.strategy.endsWith(':direct'))).toBe(true)
   })
 
   it('keeps a step list on each candidate', () => {

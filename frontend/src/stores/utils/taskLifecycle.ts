@@ -47,7 +47,7 @@ export function createTaskFromIntent(intent: Intent): ActiveTask {
     totalTicks: step.totalTicks,
     socialTargetId: step.socialTargetId,
     socialTargetName: step.socialTargetName,
-    currentStepIndex: 0,
+    currentStepIndex: intent.entryStepIndex ?? 0,
     steps,
   }
 }
