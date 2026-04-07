@@ -86,6 +86,13 @@
         :format-action="formatAction"
       />
 
+      <CharacterRelationshipsTab
+        v-else-if="activeTab === 'Relationships'"
+        :character-name="character.name"
+        :character-state="characterState"
+        :available-characters="availableRomanceTargets"
+      />
+
       <!-- Memories Tab -->
       <CharacterMemoriesTab
         v-else-if="activeTab === 'Memories'"
@@ -113,6 +120,7 @@ import type { Intent, NeedName } from '../stores/types'
 import CharacterBioTab from './CharacterBioTab.vue'
 import CharacterMemoriesTab from './CharacterMemoriesTab.vue'
 import CharacterNeedPicker from './CharacterNeedPicker.vue'
+import CharacterRelationshipsTab from './CharacterRelationshipsTab.vue'
 import NeedBar from './NeedBar.vue'
 import NeedSummaryStrip from './NeedSummaryStrip.vue'
 import { createNeedSummaries } from '../composables/useNeedSummary'
@@ -154,7 +162,7 @@ const simulationStore = useSimulationStore()
 const activeTab = ref('Needs')
 const showNeedPicker = ref(false)
 
-const tabs = ['Needs', 'Bio', 'Memories'] as const
+const tabs = ['Needs', 'Bio', 'Relationships', 'Memories'] as const
 
 const { characterState, selectedNeed, selectableOptions } = useCharacterIntentOptions(
   props.character,

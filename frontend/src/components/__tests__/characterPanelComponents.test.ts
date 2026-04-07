@@ -4,13 +4,14 @@ import { createApp, nextTick, reactive } from 'vue'
 import CharacterBioTab from '../CharacterBioTab.vue'
 import CharacterMemoriesTab from '../CharacterMemoriesTab.vue'
 import CharacterNeedPicker from '../CharacterNeedPicker.vue'
+import CharacterRelationshipsTab from '../CharacterRelationshipsTab.vue'
 import { useSimulationStore } from '../../stores/simulation'
-import type { LongTermMemory } from '../../stores/types'
+import type { CharacterRelationship, LongTermMemory } from '../../stores/types'
 
 const persistenceMocks = vi.hoisted(() => ({
   moveCharacterToLot: vi.fn(async () => {}),
   startCharacterActivity: vi.fn(async () => {}),
-  fetchCharacterDetails: vi.fn<(characterId: string) => Promise<{ character: { longTermMemories: LongTermMemory[] } }>>(async () => ({ character: { longTermMemories: [] } })),
+  fetchCharacterDetails: vi.fn<(characterId: string) => Promise<{ character: { longTermMemories: LongTermMemory[]; relationships?: CharacterRelationship[] } }>>(async () => ({ character: { longTermMemories: [] } })),
   persistCharacterBio: vi.fn(async () => {}),
   createCharacterLongTermMemory: vi.fn(async () => {}),
   updateCharacterLongTermMemory: vi.fn(async () => {}),
@@ -192,5 +193,47 @@ describe('character panel components', () => {
 
     app.unmount()
     container.remove()
+  })
+
+  it('CharacterRelationshipsTab renders relationship details and linked memories', async () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const simulationStore = useSimulationStore()
+    simulationStore.initializeCharacter({ id: 'char-1', name: 'Alice' })
+    simulationStore.characterStates['char-1'].relationships = [{
+      id: 'rel-1',
+      fromCharacterId: 'char-1',
+      toCharacterId: 'char-2',
+      shortTermScore: 4,
+      longTermScore: 8,
+      labels: ['best friend'],
+      lastSeenAt: '2026-04-01T12:00:00.000Z',
+      lastSpokeAt: '2026-04-01T18:00:00.000Z',
+      isDeceasedTarget: false
+    }]
+    simulationStore.characterStates['char-1'].longTermMemories = [{
+      id: 'mem-1',
+      content: 'Met for lunch at the cafe.',
+      createdAt: '2026-04-01T12:00:00.000Z',
+      eventType: 'ate_lunch_together',
+      locationLotName: 'Main Street Cafe',
+      locationSpaceName: 'Patio',
+      relationshipIds: ['rel-1']
+    }]
+
+    const { container, unmount } = mountComponent(CharacterRelationshipsTab, {
+      characterName: 'Alice',
+      characterState: simulationStore.characterStates['char-1'],
+      availableCharacters: [{ id: 'char-2', name: 'Bob' }]
+    })
+
+    await nextTick()
+
+    expect(container.textContent).toContain('Alice -> Bob')
+    expect(container.textContent).toContain('best friend')
+    expect(container.textContent).toContain('Met for lunch at the cafe.')
+    expect(container.textContent).toContain('Main Street Cafe -> Patio')
+
+    unmount()
   })
 })
