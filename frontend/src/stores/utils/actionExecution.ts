@@ -14,7 +14,7 @@ export interface MovementPlan {
 }
 
 export interface StartedActionPlan {
-  isMultiTick: boolean
+  shouldCreateTask: boolean
   logDetails: string | null
 }
 
@@ -62,15 +62,15 @@ export function buildMovementPlan(
 }
 
 export function buildStartedActionPlan(intent: Intent, duration: number): StartedActionPlan {
-  if (duration > 1) {
+  if (duration > 1 || (intent.steps?.length ?? 0) > 1) {
     return {
-      isMultiTick: true,
-      logDetails: `Started multi-tick action at ${intent.itemName || intent.socialTargetName || 'target'}`
+      shouldCreateTask: true,
+      logDetails: `Started planned action at ${intent.itemName || intent.socialTargetName || 'target'}`
     }
   }
 
   return {
-    isMultiTick: false,
+    shouldCreateTask: false,
     logDetails: null
   }
 }

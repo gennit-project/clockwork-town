@@ -138,9 +138,11 @@ describe('taskProgression utilities', () => {
 
     expect(completeIntent).toHaveBeenCalledWith('char-1', {
       action: 'sleep',
+      goal: 'sleep',
       itemId: 'item-1',
       itemName: 'Bed',
       source: 'manual',
+      strategy: 'task:completion',
       targetLotId: 'lot-1',
       targetLotName: 'Home',
       targetSpaceId: 'space-1',

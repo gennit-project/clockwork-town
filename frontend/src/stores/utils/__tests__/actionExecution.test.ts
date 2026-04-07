@@ -108,11 +108,11 @@ describe('actionExecution utilities', () => {
     )
 
     expect(multiTick).toEqual({
-      isMultiTick: true,
-      logDetails: 'Started multi-tick action at Bed'
+      shouldCreateTask: true,
+      logDetails: 'Started planned action at Bed'
     })
     expect(singleTick).toEqual({
-      isMultiTick: false,
+      shouldCreateTask: false,
       logDetails: null
     })
   })

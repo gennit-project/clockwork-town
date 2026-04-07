@@ -8,24 +8,34 @@ export function getActionDuration(action: ActionName): number {
 }
 
 export function createTaskFromIntent(intent: Intent): ActiveTask {
-  const totalTicks = getActionDuration(intent.action)
-  const step: TaskStep = {
-    action: intent.action,
-    itemId: intent.itemId,
-    itemName: intent.itemName,
-    targetSpaceId: intent.targetSpaceId,
-    targetSpaceName: intent.targetSpaceName,
-    targetLotId: intent.targetLotId,
-    targetLotName: intent.targetLotName,
-    totalTicks,
-    remainingTicks: totalTicks - 1,
-    socialTargetId: intent.socialTargetId,
-    socialTargetName: intent.socialTargetName
-  }
+  const steps = intent.steps?.length
+    ? intent.steps.map((step) => {
+      const totalTicks = step.totalTicks ?? getActionDuration(step.action)
+      return {
+        ...step,
+        totalTicks,
+        remainingTicks: step.remainingTicks ?? Math.max(totalTicks - 1, 0)
+      }
+    })
+    : [{
+      action: intent.action,
+      itemId: intent.itemId,
+      itemName: intent.itemName,
+      targetSpaceId: intent.targetSpaceId,
+      targetSpaceName: intent.targetSpaceName,
+      targetLotId: intent.targetLotId,
+      targetLotName: intent.targetLotName,
+      totalTicks: getActionDuration(intent.action),
+      remainingTicks: Math.max(getActionDuration(intent.action) - 1, 0),
+      socialTargetId: intent.socialTargetId,
+      socialTargetName: intent.socialTargetName
+    } satisfies TaskStep]
+
+  const step = steps[0]
 
   return {
     planId: crypto.randomUUID(),
-    goal: intent.action,
+    goal: intent.goal ?? intent.action,
     action: step.action,
     itemId: step.itemId,
     itemName: step.itemName,
@@ -38,7 +48,7 @@ export function createTaskFromIntent(intent: Intent): ActiveTask {
     socialTargetId: step.socialTargetId,
     socialTargetName: step.socialTargetName,
     currentStepIndex: 0,
-    steps: [step]
+    steps,
   }
 }
 
@@ -67,6 +77,8 @@ export function buildCompletionIntent(task: ActiveTask): Intent {
   const activeStep = getCurrentTaskStep(task) ?? task.steps.at(-1)
 
   return {
+    goal: task.goal,
+    strategy: 'task:completion',
     action: activeStep?.action ?? task.action,
     itemId: activeStep?.itemId ?? task.itemId,
     itemName: activeStep?.itemName ?? task.itemName,

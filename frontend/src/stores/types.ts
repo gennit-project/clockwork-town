@@ -233,6 +233,8 @@ export interface ItemOption {
 // ============================================
 
 export interface Intent {
+  goal?: ActionName
+  strategy?: string
   action: ActionName
   itemId?: string
   itemName?: string
@@ -245,10 +247,12 @@ export interface Intent {
   source?: 'auto' | 'manual'
   socialTargetId?: string
   socialTargetName?: string
+  steps?: TaskStep[]
 }
 
 export interface TaskStep {
   action: ActionName
+  label?: string
   itemId?: string
   itemName?: string
   targetSpaceId?: string
@@ -259,6 +263,15 @@ export interface TaskStep {
   remainingTicks: number
   socialTargetId?: string
   socialTargetName?: string
+}
+
+export interface PlanCandidate {
+  goal: ActionName
+  strategy: string
+  utility: number
+  travelCost: number
+  primaryStep: TaskStep
+  steps: TaskStep[]
 }
 
 // ============================================

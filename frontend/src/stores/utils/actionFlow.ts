@@ -80,7 +80,7 @@ export async function finalizeStartedIntent(
   state: CharacterState,
   intent: Intent,
   startedActionPlan: {
-    isMultiTick: boolean
+    shouldCreateTask: boolean
     logDetails: string | null
   },
   dependencies: Pick<ActionFlowDependencies, 'setItemOccupancy' | 'createTaskFromIntent' | 'completeIntent' | 'logActivity'>
@@ -89,10 +89,10 @@ export async function finalizeStartedIntent(
     dependencies.setItemOccupancy(characterId, intent.itemId)
   }
 
-  if (startedActionPlan.isMultiTick) {
+  if (startedActionPlan.shouldCreateTask) {
     state.currentAction = intent.action
     state.currentTask = dependencies.createTaskFromIntent(intent)
-    dependencies.logActivity(characterId, intent.action, startedActionPlan.logDetails || 'Started multi-tick action')
+    dependencies.logActivity(characterId, intent.action, startedActionPlan.logDetails || 'Started planned action')
     return 'multi_tick'
   }
 

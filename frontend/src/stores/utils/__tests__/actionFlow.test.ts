@@ -170,7 +170,7 @@ describe('actionFlow utilities', () => {
       'char-1',
       state,
       { action: 'sleep', itemId: 'item-1', utility: 4 } as Intent,
-      { isMultiTick: true, logDetails: 'Started multi-tick action at Bed' },
+      { shouldCreateTask: true, logDetails: 'Started planned action at Bed' },
       {
         setItemOccupancy: vi.fn(),
         createTaskFromIntent: vi.fn().mockReturnValue(createTask()),
@@ -189,7 +189,7 @@ describe('actionFlow utilities', () => {
       'char-1',
       createState(),
       { action: 'sleep', itemId: 'item-1', utility: 4 } as Intent,
-      { isMultiTick: true, logDetails: 'Started multi-tick action at Bed' },
+      { shouldCreateTask: true, logDetails: 'Started planned action at Bed' },
       {
         setItemOccupancy,
         createTaskFromIntent: vi.fn().mockReturnValue(createTask()),
@@ -208,7 +208,7 @@ describe('actionFlow utilities', () => {
       'char-1',
       createState(),
       { action: 'sleep', itemId: 'item-1', utility: 4 } as Intent,
-      { isMultiTick: true, logDetails: 'Started multi-tick action at Bed' },
+      { shouldCreateTask: true, logDetails: 'Started planned action at Bed' },
       {
         setItemOccupancy: vi.fn(),
         createTaskFromIntent,
@@ -227,7 +227,7 @@ describe('actionFlow utilities', () => {
       'char-1',
       createState(),
       { action: 'sleep', itemId: 'item-1', utility: 4 } as Intent,
-      { isMultiTick: true, logDetails: 'Started multi-tick action at Bed' },
+      { shouldCreateTask: true, logDetails: 'Started planned action at Bed' },
       {
         setItemOccupancy: vi.fn(),
         createTaskFromIntent: vi.fn().mockReturnValue(createTask()),
@@ -236,7 +236,7 @@ describe('actionFlow utilities', () => {
       }
     )
 
-    expect(logActivity).toHaveBeenCalledWith('char-1', 'sleep', 'Started multi-tick action at Bed')
+    expect(logActivity).toHaveBeenCalledWith('char-1', 'sleep', 'Started planned action at Bed')
   })
 
   it('does not complete a multi-tick action immediately', async () => {
@@ -246,7 +246,7 @@ describe('actionFlow utilities', () => {
       'char-1',
       createState(),
       { action: 'sleep', itemId: 'item-1', utility: 4 } as Intent,
-      { isMultiTick: true, logDetails: 'Started multi-tick action at Bed' },
+      { shouldCreateTask: true, logDetails: 'Started planned action at Bed' },
       {
         setItemOccupancy: vi.fn(),
         createTaskFromIntent: vi.fn().mockReturnValue(createTask()),

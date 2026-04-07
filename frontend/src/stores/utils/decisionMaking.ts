@@ -4,7 +4,6 @@
 
 import type {
   ActionName,
-  Cooldowns,
   Needs,
   CharacterState,
   WorldData,
@@ -12,8 +11,8 @@ import type {
   ItemOption,
   Intent
 } from '../types'
-import { ACTION_EFFECTS, NEED_WEIGHTS } from '../config/actionEffects'
-import { findItemsWithAffordance } from './pathfinding'
+import { buildPlanCandidates, planCandidateToIntent } from './intentPlanner'
+import { calculateUtility } from './actionUtility'
 import { debugLog } from './simulationDebug'
 
 /**
@@ -26,49 +25,7 @@ import { debugLog } from './simulationDebug'
  * @param itemOption - Item option from findItemsWithAffordance
  * @returns Utility score (higher is better)
  */
-export function calculateUtility(
-  characterId: string,
-  action: ActionName,
-  characterNeeds: Needs,
-  itemOption: ItemOption
-): number {
-  const actionData = ACTION_EFFECTS[action]
-  if (!actionData) {
-    console.warn(`Unknown action: ${action}`)
-    return -Infinity
-  }
-
-  // Get the primary need this action satisfies
-  const primaryNeed = actionData.primaryNeed
-  if (!primaryNeed) {
-    // Idle or actions without primary needs have no utility
-    return 0
-  }
-
-  // Calculate need deficit (1.0 - current need value)
-  const currentNeedValue = characterNeeds[primaryNeed] || 0
-  const needDeficit = 1.0 - currentNeedValue
-
-  // Get need weight
-  const needWeight = NEED_WEIGHTS[primaryNeed] || 1.0
-
-  // Calculate base utility: needWeight × needDeficit
-  const baseUtility = needWeight * needDeficit
-
-  // Travel penalty (from pathfinding cost)
-  const travelPenalty = itemOption.travelCost
-
-  // Item-specific weighting for this affordance
-  const affordanceBonus = itemOption.affordanceWeight - 1
-
-  // Context bonus (will be implemented in Step 14 for trait-based bonuses)
-  const contextBonus = 0
-
-  // Final utility
-  const utility = baseUtility - travelPenalty + contextBonus + affordanceBonus
-
-  return utility
-}
+export { calculateUtility } from './actionUtility'
 
 /**
  * Select the best action intent for a character
@@ -87,55 +44,15 @@ export function selectBestIntent(
   itemOccupancy: ItemOccupancy = {}
 ): Intent {
   debugLog(`\n🎯 selectBestIntent for character ${characterId}`)
-
-  // All possible actions (excluding idle and work for now)
-  type CooldownAction = keyof Cooldowns
-  const possibleActions: CooldownAction[] = ['eat', 'sleep', 'use_toilet', 'shower', 'medicate', 'chat_friend', 'call_mom', 'date', 'read', 'write', 'view_art', 'volunteer']
-
-  const intents: Intent[] = []
-
-  // Evaluate each action
-  for (const action of possibleActions) {
-    // Check if action is on cooldown
-    if (characterState.cooldowns[action] > 0) {
-      debugLog(`  ❌ ${action}: on cooldown (${characterState.cooldowns[action]} ticks remaining)`)
-      continue
-    }
-
-    // Find items that support this action (excluding full items)
-    const items = findItemsWithAffordance({
-      characterId,
-      action,
-      characterContext: characterState,
-      worldData,
-      itemOccupancy
-    })
-
-    if (items.length === 0) {
-      debugLog(`  ❌ ${action}: no accessible items`)
-      continue
-    }
-
-    // Get the best (closest) item
-    const bestItem = items[0]
-
-    // Calculate utility
-    const utility = calculateUtility(characterId, action, characterState.needs, bestItem)
-
-    debugLog(`  ✓ ${action}: utility ${utility.toFixed(2)} (${bestItem.itemName} in ${bestItem.spaceName}, cost ${bestItem.travelCost})`)
-
-    intents.push({
-      action,
-      itemId: bestItem.itemId,
-      itemName: bestItem.itemName,
-      targetSpaceId: bestItem.spaceId,
-      targetSpaceName: bestItem.spaceName,
-      targetLotId: bestItem.lotId,
-      targetLotName: bestItem.lotName,
-      travelCost: bestItem.travelCost,
-      utility
-    })
-  }
+  const intents: Intent[] = buildPlanCandidates({
+    characterId,
+    characterState,
+    worldData,
+    itemOccupancy
+  }).map((candidate) => {
+    debugLog(`  ✓ ${candidate.goal}:${candidate.strategy} utility ${candidate.utility.toFixed(2)} (cost ${candidate.travelCost})`)
+    return planCandidateToIntent(candidate)
+  })
 
   // If no valid intents, return idle
   if (intents.length === 0) {
@@ -146,8 +63,13 @@ export function selectBestIntent(
     }
   }
 
-  // Sort by utility (highest first)
-  intents.sort((a, b) => b.utility - a.utility)
+  intents.sort((a, b) => {
+    if (b.utility !== a.utility) {
+      return b.utility - a.utility
+    }
+
+    return (a.travelCost ?? 0) - (b.travelCost ?? 0)
+  })
 
   const bestIntent = intents[0]
   debugLog(`\n  🏆 Best intent: ${bestIntent.action} (utility ${bestIntent.utility.toFixed(2)})`)
