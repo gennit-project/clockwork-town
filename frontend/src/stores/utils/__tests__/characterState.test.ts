@@ -24,6 +24,7 @@ describe('characterState utilities', () => {
     expect(state.incomingSocialInvitations).toEqual([])
     expect(state.outgoingSocialInvitations).toEqual([])
     expect(state.longTermMemories).toEqual([])
+    expect(state.relationships).toEqual([])
     expect(state.currentTask).toBeNull()
     expect(state.accessibleLotIds).toEqual([])
     expect(state.workSchedule).toEqual([])

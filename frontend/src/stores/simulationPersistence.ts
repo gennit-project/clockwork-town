@@ -1,5 +1,5 @@
 import { client, mutations, queries } from '../graphql'
-import type { LongTermMemory } from './types'
+import type { CharacterRelationship, LongTermMemory } from './types'
 
 interface FetchCharacterDetailsResult {
   character?: {
@@ -17,6 +17,7 @@ interface FetchCharacterDetailsResult {
       }
     }>
     longTermMemories?: LongTermMemory[]
+    relationships?: CharacterRelationship[]
   } | null
 }
 

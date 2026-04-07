@@ -42,7 +42,12 @@ CREATE NODE TABLE IF NOT EXISTS Item(
 );
 
 CREATE NODE TABLE IF NOT EXISTS Memory(
-  id STRING, content STRING, createdAt TIMESTAMP, PRIMARY KEY(id)
+  id STRING, content STRING, createdAt TIMESTAMP,
+  eventType STRING,
+  locationLotId STRING, locationLotName STRING,
+  locationSpaceId STRING, locationSpaceName STRING,
+  relationshipIds STRING[],
+  PRIMARY KEY(id)
 );
 
 CREATE NODE TABLE IF NOT EXISTS Trait(
@@ -129,7 +134,13 @@ CREATE REL TABLE IF NOT EXISTS ACTIVITY_AT(FROM Activity TO Lot);
 
 -- Relationship as node (supports Character↔Character, Character↔Animal, Animal↔Animal)
 CREATE NODE TABLE IF NOT EXISTS Relationship(
-  id STRING, relationshipType STRING, relationshipDepth STRING,
+  id STRING,
+  fromCharacterId STRING, toCharacterId STRING,
+  shortTermScore DOUBLE, longTermScore DOUBLE,
+  labels STRING[],
+  lastSeenAt TIMESTAMP, lastSpokeAt TIMESTAMP,
+  isDeceasedTarget BOOL,
+  relationshipType STRING, relationshipDepth STRING,
   longTermCloseness INT64, shortTermCloseness INT64,
   PRIMARY KEY(id)
 );

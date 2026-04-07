@@ -1,9 +1,10 @@
-import type { CharacterState, LongTermMemory } from '../types'
+import type { CharacterRelationship, CharacterState, LongTermMemory } from '../types'
 
 export interface CharacterDetailsDependencies {
   fetchCharacterDetails: (characterId: string) => Promise<{
     character?: {
       longTermMemories?: LongTermMemory[]
+      relationships?: CharacterRelationship[]
     } | null
   }>
   persistCharacterBio: (characterId: string, bio: string) => Promise<void>
@@ -19,6 +20,7 @@ export async function refreshCharacterDetails(
 ): Promise<void> {
   const data = await dependencies.fetchCharacterDetails(characterId)
   state.longTermMemories = data.character?.longTermMemories || []
+  state.relationships = data.character?.relationships || []
 }
 
 export async function saveCharacterBio(

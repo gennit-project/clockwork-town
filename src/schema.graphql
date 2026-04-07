@@ -142,6 +142,13 @@ type Memory {
   id: ID!
   content: String!
   createdAt: DateTime!
+  eventType: String
+  locationLotId: ID
+  locationLotName: String
+  locationSpaceId: ID
+  locationSpaceName: String
+  relationshipIds: [ID!]!
+  relationships: [Relationship!]!
 }
 
 type ItemAffordance {
@@ -183,15 +190,18 @@ type Trait {
 # -----------------------------
 # Relationships (Character <-> Character)
 # -----------------------------
-union RelationshipEntity = Character | Animal
-
 type Relationship {
   id: ID!
-  from: RelationshipEntity!
-  to: RelationshipEntity!
-  relationshipType: String!        # e.g., "friendship", "romance", "rivalry"
-  longTermCloseness: Int!
-  shortTermCloseness: Int!
+  fromCharacterId: ID!
+  toCharacterId: ID!
+  from: Character!
+  to: Character!
+  shortTermScore: Float!
+  longTermScore: Float!
+  labels: [String!]!
+  lastSeenAt: DateTime
+  lastSpokeAt: DateTime
+  isDeceasedTarget: Boolean!
   memories: [Memory!]!
 }
 
@@ -278,6 +288,7 @@ type Character {
   selfActualizationNeeds: [SelfActualizationNeed!]!
 
   # Social knowledge
+  relationships: [Relationship!]!
   knownCharacters: [Relationship!]!
   knownAnimals: [Relationship!]!
 
@@ -338,6 +349,18 @@ input Page {
 type CharacterEdge { cursor: String!, node: Character! }
 type CharacterConnection { edges: [CharacterEdge!]!, hasNextPage: Boolean! }
 
+input UpsertCharacterRelationshipInput {
+  id: ID
+  fromCharacterId: ID!
+  toCharacterId: ID!
+  shortTermScore: Float
+  longTermScore: Float
+  labels: [String!]
+  lastSeenAt: DateTime
+  lastSpokeAt: DateTime
+  isDeceasedTarget: Boolean
+}
+
 # -----------------------------
 # Queries
 # -----------------------------
@@ -355,6 +378,8 @@ type Query {
   character(id: ID!): Character
   characters(page: Page): CharacterConnection!
   charactersInLot(lotId: ID!): [Character!]!
+  relationship(id: ID!): Relationship
+  relationships(fromCharacterId: ID!): [Relationship!]!
 
   # "Who is where & doing what" for a region
   whereIsEveryone(regionId: ID!): [Presence!]!
@@ -562,9 +587,29 @@ type Mutation {
 
   createCharacter(input: NewCharacter!): Character!
   updateCharacter(input: UpdateCharacterInput!): Character!
+  upsertCharacterRelationship(input: UpsertCharacterRelationshipInput!): Relationship!
   updateCharacterBio(characterId: ID!, bio: String!): Character!
-  createCharacterLongTermMemory(characterId: ID!, content: String!): Memory!
-  updateCharacterLongTermMemory(memoryId: ID!, content: String!): Memory!
+  createCharacterLongTermMemory(
+    characterId: ID!
+    content: String!
+    relationshipIds: [ID!]
+    eventType: String
+    locationLotId: ID
+    locationLotName: String
+    locationSpaceId: ID
+    locationSpaceName: String
+    createdAt: DateTime
+  ): Memory!
+  updateCharacterLongTermMemory(
+    memoryId: ID!
+    content: String!
+    relationshipIds: [ID!]
+    eventType: String
+    locationLotId: ID
+    locationLotName: String
+    locationSpaceId: ID
+    locationSpaceName: String
+  ): Memory!
   deleteCharacterLongTermMemory(memoryId: ID!): Boolean!
   moveCharacter(input: MoveInput!): Boolean!
   startActivity(input: PerformInput!): Boolean!

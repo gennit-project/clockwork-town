@@ -1,5 +1,6 @@
 import { batch, q } from "../kuzuHelpers";
 import { deserializeStoredWorkSchedule, serializeWorkSchedule } from "./workSchedule";
+import { syncMemoryRelationships } from "./relationship";
 
 export const CharacterResolvers = {
   Character: {
@@ -13,14 +14,32 @@ export const CharacterResolvers = {
     longTermMemories: async (parent: { id: string }) => {
       return q(`
         MATCH (c:Character {id:$cid})-[:HAS_LONG_TERM_MEMORY]->(m:Memory)
-        RETURN m.id AS id, m.content AS content, m.createdAt AS createdAt
+        RETURN
+          m.id AS id,
+          m.content AS content,
+          m.createdAt AS createdAt,
+          m.eventType AS eventType,
+          m.locationLotId AS locationLotId,
+          m.locationLotName AS locationLotName,
+          m.locationSpaceId AS locationSpaceId,
+          m.locationSpaceName AS locationSpaceName,
+          m.relationshipIds AS relationshipIds
         ORDER BY m.createdAt DESC
       `, { cid: parent.id });
     },
     shortTermMemories: async (parent: { id: string }) => {
       return q(`
         MATCH (c:Character {id:$cid})-[:HAS_SHORT_TERM_MEMORY]->(m:Memory)
-        RETURN m.id AS id, m.content AS content, m.createdAt AS createdAt
+        RETURN
+          m.id AS id,
+          m.content AS content,
+          m.createdAt AS createdAt,
+          m.eventType AS eventType,
+          m.locationLotId AS locationLotId,
+          m.locationLotName AS locationLotName,
+          m.locationSpaceId AS locationSpaceId,
+          m.locationSpaceName AS locationSpaceName,
+          m.relationshipIds AS relationshipIds
         ORDER BY m.createdAt DESC
       `, { cid: parent.id });
     },
@@ -196,35 +215,145 @@ export const CharacterResolvers = {
       return updated ?? null;
     },
 
-    createCharacterLongTermMemory: async (_: any, { characterId, content }: { characterId: string; content: string }) => {
+    createCharacterLongTermMemory: async (_: any, {
+      characterId,
+      content,
+      relationshipIds,
+      eventType,
+      locationLotId,
+      locationLotName,
+      locationSpaceId,
+      locationSpaceName,
+      createdAt
+    }: {
+      characterId: string;
+      content: string;
+      relationshipIds?: string[];
+      eventType?: string | null;
+      locationLotId?: string | null;
+      locationLotName?: string | null;
+      locationSpaceId?: string | null;
+      locationSpaceName?: string | null;
+      createdAt?: string | null;
+    }) => {
       const id = crypto.randomUUID();
-      const createdAt = new Date().toISOString();
+      const memoryCreatedAt = createdAt ?? new Date().toISOString();
 
       await batch(async () => {
-        await q(`CREATE (:Memory {id:$id, content:$content, createdAt:$createdAt})`, { id, content, createdAt });
+        await q(`
+          CREATE (:Memory {
+            id:$id,
+            content:$content,
+            createdAt:$createdAt,
+            eventType:$eventType,
+            locationLotId:$locationLotId,
+            locationLotName:$locationLotName,
+            locationSpaceId:$locationSpaceId,
+            locationSpaceName:$locationSpaceName,
+            relationshipIds:$relationshipIds
+          })
+        `, {
+          id,
+          content,
+          createdAt: memoryCreatedAt,
+          eventType: eventType ?? null,
+          locationLotId: locationLotId ?? null,
+          locationLotName: locationLotName ?? null,
+          locationSpaceId: locationSpaceId ?? null,
+          locationSpaceName: locationSpaceName ?? null,
+          relationshipIds: relationshipIds ?? []
+        });
         await q(`
           MATCH (c:Character {id:$characterId}), (m:Memory {id:$id})
           CREATE (c)-[:HAS_LONG_TERM_MEMORY]->(m)
         `, { characterId, id });
+        await syncMemoryRelationships({ memoryId: id, relationshipIds });
       });
 
       const [memory] = await q(`
         MATCH (m:Memory {id:$id})
-        RETURN m.id AS id, m.content AS content, m.createdAt AS createdAt
+        RETURN
+          m.id AS id,
+          m.content AS content,
+          m.createdAt AS createdAt,
+          m.eventType AS eventType,
+          m.locationLotId AS locationLotId,
+          m.locationLotName AS locationLotName,
+          m.locationSpaceId AS locationSpaceId,
+          m.locationSpaceName AS locationSpaceName,
+          m.relationshipIds AS relationshipIds
       `, { id });
 
       return memory;
     },
 
-    updateCharacterLongTermMemory: async (_: any, { memoryId, content }: { memoryId: string; content: string }) => {
+    updateCharacterLongTermMemory: async (_: any, {
+      memoryId,
+      content,
+      relationshipIds,
+      eventType,
+      locationLotId,
+      locationLotName,
+      locationSpaceId,
+      locationSpaceName
+    }: {
+      memoryId: string;
+      content: string;
+      relationshipIds?: string[];
+      eventType?: string | null;
+      locationLotId?: string | null;
+      locationLotName?: string | null;
+      locationSpaceId?: string | null;
+      locationSpaceName?: string | null;
+    }) => {
+      const setFields = ["m.content = $content"];
+      const params: Record<string, unknown> = { memoryId, content };
+
+      if (eventType !== undefined) {
+        setFields.push("m.eventType = $eventType");
+        params.eventType = eventType;
+      }
+      if (locationLotId !== undefined) {
+        setFields.push("m.locationLotId = $locationLotId");
+        params.locationLotId = locationLotId;
+      }
+      if (locationLotName !== undefined) {
+        setFields.push("m.locationLotName = $locationLotName");
+        params.locationLotName = locationLotName;
+      }
+      if (locationSpaceId !== undefined) {
+        setFields.push("m.locationSpaceId = $locationSpaceId");
+        params.locationSpaceId = locationSpaceId;
+      }
+      if (locationSpaceName !== undefined) {
+        setFields.push("m.locationSpaceName = $locationSpaceName");
+        params.locationSpaceName = locationSpaceName;
+      }
+      if (relationshipIds !== undefined) {
+        setFields.push("m.relationshipIds = $relationshipIds");
+        params.relationshipIds = relationshipIds ?? [];
+      }
+
       await q(`
         MATCH (m:Memory {id:$memoryId})
-        SET m.content = $content
-      `, { memoryId, content });
+        SET ${setFields.join(", ")}
+      `, params);
+      if (relationshipIds !== undefined) {
+        await syncMemoryRelationships({ memoryId, relationshipIds });
+      }
 
       const [memory] = await q(`
         MATCH (m:Memory {id:$memoryId})
-        RETURN m.id AS id, m.content AS content, m.createdAt AS createdAt
+        RETURN
+          m.id AS id,
+          m.content AS content,
+          m.createdAt AS createdAt,
+          m.eventType AS eventType,
+          m.locationLotId AS locationLotId,
+          m.locationLotName AS locationLotName,
+          m.locationSpaceId AS locationSpaceId,
+          m.locationSpaceName AS locationSpaceName,
+          m.relationshipIds AS relationshipIds
       `, { memoryId });
 
       return memory ?? null;

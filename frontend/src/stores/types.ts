@@ -84,6 +84,24 @@ export interface LongTermMemory {
   id: string
   content: string
   createdAt: string
+  eventType?: string | null
+  locationLotId?: string | null
+  locationLotName?: string | null
+  locationSpaceId?: string | null
+  locationSpaceName?: string | null
+  relationshipIds?: string[]
+}
+
+export interface CharacterRelationship {
+  id: string
+  fromCharacterId: string
+  toCharacterId: string
+  shortTermScore: number
+  longTermScore: number
+  labels: string[]
+  lastSeenAt?: string | null
+  lastSpokeAt?: string | null
+  isDeceasedTarget: boolean
 }
 
 export type SocialInvitationStatus = 'pending' | 'accepted' | 'rejected'
@@ -134,6 +152,7 @@ export interface CharacterState {
   traits: string[]
   memories?: Memory[]
   longTermMemories?: LongTermMemory[]
+  relationships?: CharacterRelationship[]
   queuedActions?: Intent[]
   incomingSocialInvitations: SocialInvitation[]
   outgoingSocialInvitations: SocialInvitation[]

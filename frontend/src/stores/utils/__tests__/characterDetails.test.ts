@@ -13,7 +13,18 @@ describe('characterDetails utilities', () => {
     const state = createCharacterState({ id: 'char-1', name: 'Alice' })
     const fetchCharacterDetails = vi.fn().mockResolvedValue({
       character: {
-        longTermMemories: [{ id: 'mem-1', content: 'Remember', createdAt: '2026-01-01' }]
+        longTermMemories: [{ id: 'mem-1', content: 'Remember', createdAt: '2026-01-01' }],
+        relationships: [{
+          id: 'rel-1',
+          fromCharacterId: 'char-1',
+          toCharacterId: 'char-2',
+          shortTermScore: 3,
+          longTermScore: 7,
+          labels: ['friend'],
+          lastSeenAt: '2026-01-01T10:00:00.000Z',
+          lastSpokeAt: '2026-01-01T11:00:00.000Z',
+          isDeceasedTarget: false
+        }]
       }
     })
 
@@ -21,6 +32,7 @@ describe('characterDetails utilities', () => {
 
     expect(fetchCharacterDetails).toHaveBeenCalledWith('char-1')
     expect(state.longTermMemories).toEqual([{ id: 'mem-1', content: 'Remember', createdAt: '2026-01-01' }])
+    expect(state.relationships?.[0]?.id).toBe('rel-1')
   })
 
   it('persists bio updates', async () => {

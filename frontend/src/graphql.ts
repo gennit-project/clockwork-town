@@ -322,6 +322,23 @@ export const queries = {
           id
           content
           createdAt
+          eventType
+          locationLotId
+          locationLotName
+          locationSpaceId
+          locationSpaceName
+          relationshipIds
+        }
+        relationships {
+          id
+          fromCharacterId
+          toCharacterId
+          shortTermScore
+          longTermScore
+          labels
+          lastSeenAt
+          lastSpokeAt
+          isDeceasedTarget
         }
       }
     }

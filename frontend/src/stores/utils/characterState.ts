@@ -26,6 +26,7 @@ export function createCharacterState(character: CharacterSeed): CharacterState {
     outgoingSocialInvitations: [],
     currentTask: null,
     longTermMemories: [],
+    relationships: [],
     householdId: character.householdId ?? null,
     homeLotId: character.homeLotId ?? null,
     homeLotName: character.homeLotName ?? null,
