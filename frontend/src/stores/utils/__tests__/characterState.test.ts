@@ -21,6 +21,8 @@ describe('characterState utilities', () => {
     expect(state.location.lotId).toBeNull()
     expect(state.traits).toEqual(['curious'])
     expect(state.queuedActions).toEqual([])
+    expect(state.incomingSocialInvitations).toEqual([])
+    expect(state.outgoingSocialInvitations).toEqual([])
     expect(state.longTermMemories).toEqual([])
     expect(state.currentTask).toBeNull()
     expect(state.accessibleLotIds).toEqual([])

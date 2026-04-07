@@ -1,7 +1,7 @@
 import { computed, ref } from 'vue'
 import { findItemsWithAffordance } from '../stores/utils/pathfinding'
 import { useSimulationStore } from '../stores/simulation'
-import type { Intent, NeedName } from '../stores/types'
+import type { ActionName, Intent, NeedName } from '../stores/types'
 
 const NEED_TO_ACTION = {
   food: 'eat',
@@ -48,7 +48,7 @@ export function useCharacterIntentOptions(character: CharacterTarget, availableR
         ]))
     }
 
-    const action = NEED_TO_ACTION[selectedNeed.value as keyof typeof NEED_TO_ACTION]
+    const action = NEED_TO_ACTION[selectedNeed.value as keyof typeof NEED_TO_ACTION] as ActionName
     if (!action) {
       return []
     }

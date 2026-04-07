@@ -109,7 +109,12 @@ describe('simulation store integration', () => {
 
     await store.executeTick()
 
-    expect(persistenceMocks.startCharacterActivity).toHaveBeenCalledWith('char-1', 'read')
+    expect(persistenceMocks.startCharacterActivity).toHaveBeenCalledWith({
+      characterId: 'char-1',
+      actionName: 'read',
+      itemId: 'item-1',
+      note: undefined
+    })
   })
 
   it('creates a current task for multi-tick sleep', async () => {

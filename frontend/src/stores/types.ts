@@ -86,6 +86,26 @@ export interface LongTermMemory {
   createdAt: string
 }
 
+export type SocialInvitationStatus = 'pending' | 'accepted' | 'rejected'
+
+export interface SocialInvitation {
+  id: string
+  action: Extract<ActionName, 'chat_friend' | 'date'>
+  fromCharacterId: string
+  fromCharacterName: string
+  toCharacterId: string
+  toCharacterName: string
+  itemId?: string
+  itemName?: string
+  targetSpaceId?: string
+  targetSpaceName?: string
+  targetLotId?: string
+  targetLotName?: string
+  createdAtTick: number
+  status: SocialInvitationStatus
+  reason?: string
+}
+
 export interface ActiveTask {
   planId: string
   goal: ActionName
@@ -115,6 +135,8 @@ export interface CharacterState {
   memories?: Memory[]
   longTermMemories?: LongTermMemory[]
   queuedActions?: Intent[]
+  incomingSocialInvitations: SocialInvitation[]
+  outgoingSocialInvitations: SocialInvitation[]
   currentTask?: ActiveTask | null
   householdId?: string | null
   homeLotId?: string | null

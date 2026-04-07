@@ -2,6 +2,7 @@ import type {
   ActionName,
   CharacterState,
   Cooldowns,
+  Intent,
   ItemOption,
   ItemOccupancy,
   PlanCandidate,

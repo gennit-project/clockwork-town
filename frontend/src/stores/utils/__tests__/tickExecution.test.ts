@@ -202,10 +202,21 @@ describe('executeTick', () => {
       expect(params.executeAction).toHaveBeenCalledTimes(2)
     })
 
-    it('should reserve and execute a mirrored participant intent for chat actions', async () => {
+    it('records an accepted invitation for a chat action', async () => {
       params.characterStates.value['char-1'].needs.friends = 0.1
       params.characterStates.value['char-2'] = createMockCharacterState({
         name: 'Alex',
+        needs: {
+          food: 0.9,
+          sleep: 0.9,
+          bladder: 0.9,
+          hygiene: 0.9,
+          health: 0.9,
+          friends: 0.1,
+          family: 0.8,
+          romance: 0.8,
+          fulfillment: 0.8
+        },
         location: {
           regionId: 'region-1',
           lotId: 'lot-1',
@@ -217,14 +228,36 @@ describe('executeTick', () => {
 
       await executeTick(params)
 
-      expect(params.executeAction).toHaveBeenCalledWith(
-        'char-2',
-        expect.objectContaining({
-          action: 'chat_friend',
-          socialTargetId: 'char-1',
-          socialTargetName: 'Test Character'
-        })
-      )
+      expect(params.characterStates.value['char-2'].incomingSocialInvitations[0]?.status).toBe('accepted')
+    })
+
+    it('records a rejected invitation when the recipient prefers a more urgent action', async () => {
+      params.characterStates.value['char-1'].needs.friends = 0.1
+      params.characterStates.value['char-2'] = createMockCharacterState({
+        name: 'Alex',
+        needs: {
+          food: 0.05,
+          sleep: 0.8,
+          bladder: 0.8,
+          hygiene: 0.8,
+          health: 0.9,
+          friends: 0.8,
+          family: 0.7,
+          romance: 0.6,
+          fulfillment: 0.6
+        },
+        location: {
+          regionId: 'region-1',
+          lotId: 'lot-1',
+          lotName: 'Test House',
+          spaceId: 'space-1',
+          spaceName: 'Living Room'
+        }
+      })
+
+      await executeTick(params)
+
+      expect(params.characterStates.value['char-2'].incomingSocialInvitations[0]?.status).toBe('rejected')
     })
 
     it('should select idle when all actions on cooldown', async () => {
@@ -283,9 +316,20 @@ describe('executeTick', () => {
       expect(params.characterStates.value['char-1'].queuedActions).toEqual([])
     })
 
-    it('should mirror queued manual social intents onto the selected participant', async () => {
+    it('accepts a queued manual social intent when the recipient agrees', async () => {
       params.characterStates.value['char-2'] = createMockCharacterState({
         name: 'Alex',
+        needs: {
+          food: 0.9,
+          sleep: 0.9,
+          bladder: 0.9,
+          hygiene: 0.9,
+          health: 0.9,
+          friends: 0.1,
+          family: 0.8,
+          romance: 0.8,
+          fulfillment: 0.8
+        },
         location: {
           regionId: 'region-1',
           lotId: 'lot-1',
@@ -311,14 +355,7 @@ describe('executeTick', () => {
 
       await executeTick(params)
 
-      expect(params.executeAction).toHaveBeenCalledWith(
-        'char-2',
-        expect.objectContaining({
-          action: 'chat_friend',
-          socialTargetId: 'char-1',
-          socialTargetName: 'Test Character'
-        })
-      )
+      expect(params.characterStates.value['char-2'].incomingSocialInvitations[0]?.status).toBe('accepted')
     })
   })
 

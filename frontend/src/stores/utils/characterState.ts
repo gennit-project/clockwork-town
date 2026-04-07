@@ -22,6 +22,8 @@ export function createCharacterState(character: CharacterSeed): CharacterState {
     location: createEmptyLocation(),
     traits: character.traits || [],
     queuedActions: [],
+    incomingSocialInvitations: [],
+    outgoingSocialInvitations: [],
     currentTask: null,
     longTermMemories: [],
     householdId: character.householdId ?? null,
