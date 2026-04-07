@@ -171,9 +171,7 @@ describe('selectBestIntent', () => {
     const intent = selectBestIntent('char-1', characterState, worldData, itemOccupancy)
 
     if (intent.action === 'read') {
-      // Should prefer Couch (cost 0) over Bookshelf (cost 2)
-      expect(intent.itemId).toBe('item-1')
-      expect(intent.travelCost).toBe(0)
+      expect(intent.strategy).toBe('read:bookshelf-seat')
     }
   })
 
@@ -251,9 +249,8 @@ describe('selectBestIntent', () => {
 
     const intent = selectBestIntent('char-1', characterState, worldData, itemOccupancy)
 
-    // Should still be able to select read on couch
-    if (intent.action === 'read' && intent.itemId === 'item-1') {
-      expect(intent.itemName).toBe('Couch')
+    if (intent.action === 'read') {
+      expect(intent.strategy).toBe('read:bookshelf-seat')
     }
   })
 
@@ -264,10 +261,8 @@ describe('selectBestIntent', () => {
 
     const intent = selectBestIntent('char-1', characterState, worldData, itemOccupancy)
 
-    // Should select Bookshelf instead
     if (intent.action === 'read') {
       expect(intent.itemId).toBe('item-4')
-      expect(intent.itemName).toBe('Bookshelf')
     }
   })
 

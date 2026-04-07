@@ -1,10 +1,9 @@
 import {
   advanceTask,
   buildCompletionIntent,
+  buildStepTransitionIntent,
   getCurrentTaskStep,
-  isTaskComplete,
-  moveToNextTaskStep,
-  syncTaskSnapshot
+  isTaskComplete
 } from './taskLifecycle'
 import type { CharacterState, Intent } from '../types'
 
@@ -36,15 +35,19 @@ export async function progressActiveTask(
   const activeStep = getCurrentTaskStep(nextTask)
 
   if (activeStep && activeStep.remainingTicks <= 0 && nextTask.currentStepIndex < nextTask.steps.length - 1) {
-    const upcomingTask = moveToNextTaskStep(nextTask)
-    state.currentTask = syncTaskSnapshot(upcomingTask)
-    state.currentAction = state.currentTask.action
+    const nextStepIndex = nextTask.currentStepIndex + 1
+    const queuedIntent = buildStepTransitionIntent(nextTask, nextStepIndex)
+
+    state.currentTask = null
+    state.currentAction = 'idle'
+    state.queuedActions = [queuedIntent, ...(state.queuedActions || [])]
+    dependencies.clearItemOccupancy(characterId)
     dependencies.logActivity(
       characterId,
-      state.currentTask.action,
-      `Advanced to step ${state.currentTask.currentStepIndex + 1}/${state.currentTask.steps.length}`
+      queuedIntent.action,
+      `Queued step ${nextStepIndex + 1}/${nextTask.steps.length}`
     )
-    return true
+    return false
   }
 
   state.currentTask = nextTask

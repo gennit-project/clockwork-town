@@ -229,9 +229,8 @@ function buildStructuredReadCandidates({
         strategy: 'read:bookshelf-seat',
         utility,
         travelCost: totalTravelCost,
-        primaryStep: steps[1],
-        steps,
-        entryStepIndex: 1
+        primaryStep: steps[0],
+        steps
       })
     }
   }
@@ -320,9 +319,8 @@ function buildStructuredEatCandidates({
         strategy,
         utility,
         travelCost: totalTravelCost,
-        primaryStep: steps[1],
-        steps,
-        entryStepIndex: 1
+        primaryStep: steps[0],
+        steps
       })
     }
   }
@@ -387,7 +385,6 @@ export function planCandidateToIntent(candidate: PlanCandidate): Intent {
   return {
     goal: candidate.goal,
     strategy: candidate.strategy,
-    entryStepIndex: candidate.entryStepIndex,
     action: candidate.primaryStep.action,
     itemId: candidate.primaryStep.itemId,
     itemName: candidate.primaryStep.itemName,

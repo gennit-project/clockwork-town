@@ -47,7 +47,7 @@ export function createTaskFromIntent(intent: Intent): ActiveTask {
     totalTicks: step.totalTicks,
     socialTargetId: step.socialTargetId,
     socialTargetName: step.socialTargetName,
-    currentStepIndex: intent.entryStepIndex ?? 0,
+    currentStepIndex: 0,
     steps,
   }
 }
@@ -90,6 +90,27 @@ export function buildCompletionIntent(task: ActiveTask): Intent {
     source: 'manual',
     socialTargetId: activeStep?.socialTargetId ?? task.socialTargetId,
     socialTargetName: activeStep?.socialTargetName ?? task.socialTargetName
+  }
+}
+
+export function buildStepTransitionIntent(task: ActiveTask, nextStepIndex: number): Intent {
+  const nextStep = task.steps[nextStepIndex]
+
+  return {
+    goal: task.goal,
+    strategy: 'task:step-transition',
+    action: nextStep.action,
+    itemId: nextStep.itemId,
+    itemName: nextStep.itemName,
+    targetSpaceId: nextStep.targetSpaceId,
+    targetSpaceName: nextStep.targetSpaceName,
+    targetLotId: nextStep.targetLotId,
+    targetLotName: nextStep.targetLotName,
+    utility: 0,
+    source: 'manual',
+    socialTargetId: nextStep.socialTargetId,
+    socialTargetName: nextStep.socialTargetName,
+    steps: task.steps.slice(nextStepIndex)
   }
 }
 

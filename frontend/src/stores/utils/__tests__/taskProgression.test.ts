@@ -218,4 +218,44 @@ describe('taskProgression utilities', () => {
 
     expect(result).toBe(false)
   })
+
+  it('queues the next step when a multi-step task advances', async () => {
+    const state = createCharacterState({ id: 'char-1', name: 'Alice' })
+    state.currentTask = createTask({
+      remainingTicks: 0,
+      totalTicks: 1,
+      steps: [
+        {
+          action: 'eat',
+          itemId: 'item-1',
+          itemName: 'Fridge',
+          targetLotId: 'lot-1',
+          targetLotName: 'Home',
+          targetSpaceId: 'space-1',
+          targetSpaceName: 'Kitchen',
+          remainingTicks: 0,
+          totalTicks: 1
+        },
+        {
+          action: 'eat',
+          itemId: 'item-2',
+          itemName: 'Couch',
+          targetLotId: 'lot-1',
+          targetLotName: 'Home',
+          targetSpaceId: 'space-2',
+          targetSpaceName: 'Living Room',
+          remainingTicks: 1,
+          totalTicks: 2
+        }
+      ]
+    })
+
+    await progressActiveTask('char-1', state, {
+      logActivity: vi.fn(),
+      completeIntent: vi.fn(),
+      clearItemOccupancy: vi.fn()
+    })
+
+    expect(state.queuedActions?.[0]?.itemId).toBe('item-2')
+  })
 })
