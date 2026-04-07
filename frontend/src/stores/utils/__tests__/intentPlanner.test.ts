@@ -1,6 +1,72 @@
 import { describe, expect, it } from 'vitest'
 import { createMockCharacterState, createMockItemOccupancy, createMockWorldData } from '../../__tests__/mockData'
 import { buildPlanCandidates, planCandidateToIntent } from '../intentPlanner'
+import type { WorldData } from '../../types'
+
+function createEatingStrategyWorldData(): WorldData {
+  const worldData = createMockWorldData()
+
+  worldData.lots['lot-3'] = {
+    id: 'lot-3',
+    name: 'Main Street',
+    regionId: 'region-1',
+    lotType: 'COMMUNITY',
+    isPublic: true,
+    spaceIds: ['space-4']
+  }
+
+  worldData.spaces['space-1'].itemIds = ['item-1', 'item-2', 'item-5']
+  worldData.spaces['space-2'].itemIds = ['item-3', 'item-6']
+  worldData.spaces['space-4'] = {
+    id: 'space-4',
+    name: 'Pizza Shop',
+    lotId: 'lot-3',
+    itemIds: ['item-7', 'item-8']
+  }
+
+  worldData.items['item-5'] = {
+    id: 'item-5',
+    name: 'Dining Table',
+    spaceId: 'space-1',
+    lotId: 'lot-1',
+    regionId: 'region-1',
+    allowedActivities: [],
+    affordances: [],
+    maxSimultaneousUsers: 4
+  }
+  worldData.items['item-6'] = {
+    id: 'item-6',
+    name: 'Kitchen Stove',
+    spaceId: 'space-2',
+    lotId: 'lot-1',
+    regionId: 'region-1',
+    allowedActivities: [],
+    affordances: [],
+    maxSimultaneousUsers: 1
+  }
+  worldData.items['item-7'] = {
+    id: 'item-7',
+    name: 'Pizza Counter',
+    spaceId: 'space-4',
+    lotId: 'lot-3',
+    regionId: 'region-1',
+    allowedActivities: [],
+    affordances: [],
+    maxSimultaneousUsers: 4
+  }
+  worldData.items['item-8'] = {
+    id: 'item-8',
+    name: 'Grocery Market',
+    spaceId: 'space-4',
+    lotId: 'lot-3',
+    regionId: 'region-1',
+    allowedActivities: [],
+    affordances: [],
+    maxSimultaneousUsers: 4
+  }
+
+  return worldData
+}
 
 describe('intentPlanner', () => {
   it('builds candidates for available actions', () => {
@@ -59,5 +125,33 @@ describe('intentPlanner', () => {
     })[0]
 
     expect(planCandidateToIntent(candidate).steps).toEqual(candidate.steps)
+  })
+
+  it('builds a takeout eating strategy when takeout sources exist', () => {
+    const characterState = createMockCharacterState()
+    characterState.needs.food = 0.1
+
+    const candidates = buildPlanCandidates({
+      characterId: 'char-1',
+      characterState,
+      worldData: createEatingStrategyWorldData(),
+      itemOccupancy: createMockItemOccupancy()
+    })
+
+    expect(candidates.some((candidate) => candidate.strategy === 'eat:takeout-table')).toBe(true)
+  })
+
+  it('builds a cooked meal strategy when grocery and kitchen sources exist', () => {
+    const characterState = createMockCharacterState()
+    characterState.needs.food = 0.1
+
+    const candidates = buildPlanCandidates({
+      characterId: 'char-1',
+      characterState,
+      worldData: createEatingStrategyWorldData(),
+      itemOccupancy: createMockItemOccupancy()
+    })
+
+    expect(candidates.some((candidate) => candidate.strategy === 'eat:cook-meal-table')).toBe(true)
   })
 })

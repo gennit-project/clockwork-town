@@ -37,6 +37,9 @@ const DEFAULT_PLANNED_ACTIONS: CooldownAction[] = [
 ]
 
 const STORAGE_ITEM_PATTERN = /fridge|refrigerator|cabinet|pantry/i
+const TAKEOUT_ITEM_PATTERN = /pizza|takeout|delivery|counter|register/i
+const GROCERY_ITEM_PATTERN = /grocery|market|produce|checkout/i
+const KITCHEN_ITEM_PATTERN = /stove|oven|range|cooktop|kitchen/i
 const TABLE_ITEM_PATTERN = /table|desk|counter/i
 const CHAIR_ITEM_PATTERN = /chair|stool|bench/i
 const LOUNGE_ITEM_PATTERN = /couch|sofa|loveseat/i
@@ -273,15 +276,117 @@ function buildStructuredEatCandidates({
     matcher: (item) => CHAIR_ITEM_PATTERN.test(item.name) || LOUNGE_ITEM_PATTERN.test(item.name)
   })
 
-  const preferredSeats = tableSeats.length > 0 ? tableSeats : fallbackSeats
-  const seatBonus = tableSeats.length > 0 ? 0.4 : 0.2
-  const strategy = tableSeats.length > 0 ? 'eat:stored-food-table' : 'eat:stored-food-seat'
-
   const candidates: PlanCandidate[] = []
 
-  for (const storage of storageItems) {
-    for (const seat of preferredSeats) {
-      const totalTravelCost = storage.travelCost + seat.travelCost
+  candidates.push(...buildSeatedEatCandidates({
+    characterId,
+    characterState,
+    seatOptions: tableSeats,
+    sourceOptions: storageItems,
+    sourceStepLabel: 'acquire-food',
+    strategy: 'eat:stored-food-table',
+    seatBonus: 0.4
+  }))
+
+  candidates.push(...buildSeatedEatCandidates({
+    characterId,
+    characterState,
+    seatOptions: fallbackSeats,
+    sourceOptions: storageItems,
+    sourceStepLabel: 'acquire-food',
+    strategy: 'eat:stored-food-seat',
+    seatBonus: 0.2
+  }))
+
+  const takeoutSources = buildAccessibleItemOptions({
+    characterId,
+    characterState,
+    worldData,
+    itemOccupancy,
+    matcher: (item) => TAKEOUT_ITEM_PATTERN.test(item.name)
+  })
+
+  candidates.push(...buildSeatedEatCandidates({
+    characterId,
+    characterState,
+    seatOptions: tableSeats,
+    sourceOptions: takeoutSources,
+    sourceStepLabel: 'order-takeout',
+    strategy: 'eat:takeout-table',
+    seatBonus: 0.5
+  }))
+
+  candidates.push(...buildSeatedEatCandidates({
+    characterId,
+    characterState,
+    seatOptions: fallbackSeats,
+    sourceOptions: takeoutSources,
+    sourceStepLabel: 'order-takeout',
+    strategy: 'eat:takeout-seat',
+    seatBonus: 0.3
+  }))
+
+  const grocerySources = buildAccessibleItemOptions({
+    characterId,
+    characterState,
+    worldData,
+    itemOccupancy,
+    matcher: (item) => GROCERY_ITEM_PATTERN.test(item.name)
+  })
+
+  const kitchenStations = buildAccessibleItemOptions({
+    characterId,
+    characterState,
+    worldData,
+    itemOccupancy,
+    matcher: (item) => KITCHEN_ITEM_PATTERN.test(item.name)
+  })
+
+  candidates.push(...buildCookedMealCandidates({
+    characterId,
+    characterState,
+    grocerySources,
+    kitchenStations,
+    seatOptions: tableSeats,
+    strategy: 'eat:cook-meal-table',
+    seatBonus: 0.7
+  }))
+
+  candidates.push(...buildCookedMealCandidates({
+    characterId,
+    characterState,
+    grocerySources,
+    kitchenStations,
+    seatOptions: fallbackSeats,
+    strategy: 'eat:cook-meal-seat',
+    seatBonus: 0.45
+  }))
+
+  return candidates
+}
+
+function buildSeatedEatCandidates({
+  characterId,
+  characterState,
+  sourceOptions,
+  seatOptions,
+  sourceStepLabel,
+  strategy,
+  seatBonus
+}: {
+  characterId: string
+  characterState: CharacterState
+  sourceOptions: ItemOption[]
+  seatOptions: ItemOption[]
+  sourceStepLabel: string
+  strategy: string
+  seatBonus: number
+}): PlanCandidate[] {
+  const candidates: PlanCandidate[] = []
+
+  for (const source of sourceOptions) {
+    for (const seat of seatOptions) {
+      const totalTravelCost = source.travelCost + seat.travelCost
       const utility = calculateUtility(characterId, 'eat', characterState.needs, {
         ...seat,
         travelCost: totalTravelCost,
@@ -290,13 +395,13 @@ function buildStructuredEatCandidates({
       const steps: TaskStep[] = [
         {
           action: 'eat',
-          label: `acquire-food:${storage.itemName}`,
-          itemId: storage.itemId,
-          itemName: storage.itemName,
-          targetSpaceId: storage.spaceId,
-          targetSpaceName: storage.spaceName,
-          targetLotId: storage.lotId,
-          targetLotName: storage.lotName,
+          label: `${sourceStepLabel}:${source.itemName}`,
+          itemId: source.itemId,
+          itemName: source.itemName,
+          targetSpaceId: source.spaceId,
+          targetSpaceName: source.spaceName,
+          targetLotId: source.lotId,
+          targetLotName: source.lotName,
           totalTicks: 1,
           remainingTicks: 0
         },
@@ -322,6 +427,88 @@ function buildStructuredEatCandidates({
         primaryStep: steps[0],
         steps
       })
+    }
+  }
+
+  return candidates
+}
+
+function buildCookedMealCandidates({
+  characterId,
+  characterState,
+  grocerySources,
+  kitchenStations,
+  seatOptions,
+  strategy,
+  seatBonus
+}: {
+  characterId: string
+  characterState: CharacterState
+  grocerySources: ItemOption[]
+  kitchenStations: ItemOption[]
+  seatOptions: ItemOption[]
+  strategy: string
+  seatBonus: number
+}): PlanCandidate[] {
+  const candidates: PlanCandidate[] = []
+
+  for (const grocery of grocerySources) {
+    for (const kitchen of kitchenStations) {
+      for (const seat of seatOptions) {
+        const totalTravelCost = grocery.travelCost + kitchen.travelCost + seat.travelCost
+        const utility = calculateUtility(characterId, 'eat', characterState.needs, {
+          ...seat,
+          travelCost: totalTravelCost,
+          affordanceWeight: seat.affordanceWeight + seatBonus
+        })
+        const steps: TaskStep[] = [
+          {
+            action: 'eat',
+            label: `buy-groceries:${grocery.itemName}`,
+            itemId: grocery.itemId,
+            itemName: grocery.itemName,
+            targetSpaceId: grocery.spaceId,
+            targetSpaceName: grocery.spaceName,
+            targetLotId: grocery.lotId,
+            targetLotName: grocery.lotName,
+            totalTicks: 1,
+            remainingTicks: 0
+          },
+          {
+            action: 'eat',
+            label: `cook-meal:${kitchen.itemName}`,
+            itemId: kitchen.itemId,
+            itemName: kitchen.itemName,
+            targetSpaceId: kitchen.spaceId,
+            targetSpaceName: kitchen.spaceName,
+            targetLotId: kitchen.lotId,
+            targetLotName: kitchen.lotName,
+            totalTicks: 2,
+            remainingTicks: 1
+          },
+          {
+            action: 'eat',
+            label: `eat-seated:${seat.itemName}`,
+            itemId: seat.itemId,
+            itemName: seat.itemName,
+            targetSpaceId: seat.spaceId,
+            targetSpaceName: seat.spaceName,
+            targetLotId: seat.lotId,
+            targetLotName: seat.lotName,
+            totalTicks: 2,
+            remainingTicks: 1
+          }
+        ]
+
+        candidates.push({
+          goal: 'eat',
+          strategy,
+          utility,
+          travelCost: totalTravelCost,
+          primaryStep: steps[0],
+          steps
+        })
+      }
     }
   }
 
