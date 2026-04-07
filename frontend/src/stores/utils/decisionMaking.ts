@@ -17,6 +17,16 @@ import { calculateUtility } from './actionUtility'
 import { debugLog } from './simulationDebug'
 import { buildWorkIntent } from './workSchedule'
 
+export interface SelectBestIntentParams {
+  characterId: string
+  characterState: CharacterState
+  worldData: WorldData
+  itemOccupancy?: ItemOccupancy
+  simulationDateTime?: SimulationDateTime
+  characterStates?: Record<string, CharacterState>
+  reservedCharacterIds?: string[]
+}
+
 /**
  * Calculate utility score for a character performing an action at a specific item
  * Step 9: Utility = (need weight × need deficit) - travel cost + context bonus
@@ -39,13 +49,15 @@ export { calculateUtility } from './actionUtility'
  * @param itemOccupancy - Current item occupancy { [itemId]: [characterId1, ...] }
  * @returns Intent: { action, itemId, itemName, targetSpaceId, targetLotId, utility } or { action: 'idle', utility: 0 }
  */
-export function selectBestIntent(
-  characterId: string,
-  characterState: CharacterState,
-  worldData: WorldData,
-  itemOccupancy: ItemOccupancy = {},
-  simulationDateTime?: SimulationDateTime
-): Intent {
+export function selectBestIntent({
+  characterId,
+  characterState,
+  worldData,
+  itemOccupancy = {},
+  simulationDateTime,
+  characterStates,
+  reservedCharacterIds = []
+}: SelectBestIntentParams): Intent {
   debugLog(`\n🎯 selectBestIntent for character ${characterId}`)
   const workIntent = buildWorkIntent({
     characterState,
@@ -60,7 +72,9 @@ export function selectBestIntent(
     characterId,
     characterState,
     worldData,
-    itemOccupancy
+    itemOccupancy,
+    characterStates,
+    reservedCharacterIds
   }).map((candidate) => {
     debugLog(`  ✓ ${candidate.goal}:${candidate.strategy} utility ${candidate.utility.toFixed(2)} (cost ${candidate.travelCost})`)
     return planCandidateToIntent(candidate)

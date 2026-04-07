@@ -3,7 +3,7 @@ import { batch, q } from "../kuzuHelpers";
 export const ActivityResolvers = {
   Query: {},
   Mutation: {
-    startActivity: async (_: any, { input }: { input: { characterId: string, activityTypeId?: string, actionName?: string, note?: string } }) =>
+    startActivity: async (_: any, { input }: { input: { characterId: string, activityTypeId?: string, actionName?: string, itemId?: string, note?: string } }) =>
       batch(async () => {
         let activityType: any;
         let activityTypeId: string;
@@ -70,15 +70,26 @@ export const ActivityResolvers = {
           throw new Error('Character has no current location');
         }
 
-        // Find items across ALL spaces in the lot that allow this activity
-        const items = await q(`
-          MATCH (l:Lot {id:$lotId})-[:HAS_SPACE]->(s:Space)<-[:ON_SPACE]-(i:Item)
-          WHERE $activityName IN i.allowedActivities
-          RETURN i.id AS id, i.name AS name, i.maxSimultaneousUsers AS maxUsers
-        `, { lotId: currentLot.lotId, activityName: activityType.name });
+        let items;
+        if (input.itemId) {
+          items = await q(`
+            MATCH (l:Lot {id:$lotId})-[:HAS_SPACE]->(s:Space)<-[:ON_SPACE]-(i:Item {id:$itemId})
+            WHERE $activityName IN i.allowedActivities
+            RETURN i.id AS id, i.name AS name, i.maxSimultaneousUsers AS maxUsers
+          `, { lotId: currentLot.lotId, itemId: input.itemId, activityName: activityType.name });
+        } else {
+          // Find items across ALL spaces in the lot that allow this activity
+          items = await q(`
+            MATCH (l:Lot {id:$lotId})-[:HAS_SPACE]->(s:Space)<-[:ON_SPACE]-(i:Item)
+            WHERE $activityName IN i.allowedActivities
+            RETURN i.id AS id, i.name AS name, i.maxSimultaneousUsers AS maxUsers
+          `, { lotId: currentLot.lotId, activityName: activityType.name });
+        }
 
         if (items.length === 0) {
-          throw new Error(`No items available for ${activityType.name} at this location`);
+          throw new Error(input.itemId
+            ? `Requested item is unavailable for ${activityType.name} at this location`
+            : `No items available for ${activityType.name} at this location`);
         }
 
         let selectedItem: any = null;

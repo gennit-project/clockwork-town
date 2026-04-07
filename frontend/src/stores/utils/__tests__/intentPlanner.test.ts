@@ -202,4 +202,56 @@ describe('intentPlanner', () => {
 
     expect(candidates.some((candidate) => candidate.strategy === 'eat:cook-meal-table')).toBe(true)
   })
+
+  it('builds a chat strategy when a second character is available to participate', () => {
+    const characterState = createMockCharacterState({
+      needs: {
+        ...createMockCharacterState().needs,
+        friends: 0.1
+      }
+    })
+
+    const candidates = buildPlanCandidates({
+      characterId: 'char-1',
+      characterState,
+      worldData: createMockWorldData(),
+      itemOccupancy: createMockItemOccupancy(),
+      characterStates: {
+        'char-1': characterState,
+        'char-2': createMockCharacterState({
+          name: 'Alex',
+          location: {
+            regionId: 'region-1',
+            lotId: 'lot-1',
+            lotName: 'Test House',
+            spaceId: 'space-1',
+            spaceName: 'Living Room'
+          }
+        })
+      }
+    })
+
+    expect(candidates.some((candidate) => candidate.strategy === 'chat_friend:with-participant')).toBe(true)
+  })
+
+  it('does not build a chat strategy when no second character is available', () => {
+    const characterState = createMockCharacterState({
+      needs: {
+        ...createMockCharacterState().needs,
+        friends: 0.1
+      }
+    })
+
+    const candidates = buildPlanCandidates({
+      characterId: 'char-1',
+      characterState,
+      worldData: createMockWorldData(),
+      itemOccupancy: createMockItemOccupancy(),
+      characterStates: {
+        'char-1': characterState
+      }
+    })
+
+    expect(candidates.some((candidate) => candidate.strategy === 'chat_friend:with-participant')).toBe(false)
+  })
 })

@@ -37,9 +37,10 @@ export function useCharacterIntentOptions(character: CharacterTarget, availableR
       return []
     }
 
+    const availableSocialTargets = (availableRomanceTargets || []).filter((target) => target.id !== character.id)
+
     if (selectedNeed.value === 'romance') {
-      return (availableRomanceTargets || [])
-        .filter((target) => target.id !== character.id)
+      return availableSocialTargets
         .flatMap((target) => ([
           { label: `Text ${target.name}`, intent: { action: 'text_romance', utility: 1, source: 'manual', socialTargetId: target.id, socialTargetName: target.name } },
           { label: `Call ${target.name}`, intent: { action: 'call_romance', utility: 1, source: 'manual', socialTargetId: target.id, socialTargetName: target.name } },
@@ -52,15 +53,22 @@ export function useCharacterIntentOptions(character: CharacterTarget, availableR
       return []
     }
 
-    return findItemsWithAffordance({
+    const itemOptions = findItemsWithAffordance({
       characterId: character.id,
       action,
       characterContext: state,
       worldData: simulationStore.worldData,
       itemOccupancy: {}
     })
-      .map((option) => ({
-        label: `${option.itemName} in ${option.lotName} → ${option.spaceName}`,
+    const selectableTargets = action === 'chat_friend'
+      ? availableSocialTargets
+      : [{ id: '', name: '' }]
+
+    return itemOptions
+      .flatMap((option) => selectableTargets.map((target) => ({
+        label: action === 'chat_friend'
+          ? `Chat with ${target.name} at ${option.itemName} in ${option.lotName} → ${option.spaceName}`
+          : `${option.itemName} in ${option.lotName} → ${option.spaceName}`,
         intent: {
           action,
           itemId: option.itemId,
@@ -71,9 +79,18 @@ export function useCharacterIntentOptions(character: CharacterTarget, availableR
           targetLotName: option.lotName,
           travelCost: option.travelCost,
           utility: option.affordanceWeight,
-          source: 'manual'
+          source: 'manual' as const,
+          socialTargetId: target.id || undefined,
+          socialTargetName: target.name || undefined
         }
+      })))
+      .map((option) => ({
+        ...option,
+        intent: action === 'chat_friend' && !option.intent.socialTargetId
+          ? { ...option.intent, action: 'idle', utility: 0 }
+          : option.intent
       }))
+      .filter((option) => option.intent.action !== 'idle')
       .sort((left, right) => {
         if (action !== 'sleep') {
           return 0

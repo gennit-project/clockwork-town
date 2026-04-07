@@ -29,12 +29,14 @@ export async function moveCharacterToLot(characterId: string, lotId: string): Pr
   })
 }
 
-export async function startCharacterActivity(characterId: string, actionName: string): Promise<void> {
+export async function startCharacterActivity(input: {
+  characterId: string
+  actionName: string
+  itemId?: string
+  note?: string
+}): Promise<void> {
   await client.request(mutations.startActivity, {
-    input: {
-      characterId,
-      actionName
-    }
+    input
   })
 }
 

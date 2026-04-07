@@ -456,6 +456,7 @@ input PerformInput {
   characterId: ID!
   activityTypeId: ID
   actionName: String  # Alternative to activityTypeId - if provided, will look up or create ActivityType
+  itemId: ID
   note: String
 }
 

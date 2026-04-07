@@ -202,6 +202,31 @@ describe('executeTick', () => {
       expect(params.executeAction).toHaveBeenCalledTimes(2)
     })
 
+    it('should reserve and execute a mirrored participant intent for chat actions', async () => {
+      params.characterStates.value['char-1'].needs.friends = 0.1
+      params.characterStates.value['char-2'] = createMockCharacterState({
+        name: 'Alex',
+        location: {
+          regionId: 'region-1',
+          lotId: 'lot-1',
+          lotName: 'Test House',
+          spaceId: 'space-1',
+          spaceName: 'Living Room'
+        }
+      })
+
+      await executeTick(params)
+
+      expect(params.executeAction).toHaveBeenCalledWith(
+        'char-2',
+        expect.objectContaining({
+          action: 'chat_friend',
+          socialTargetId: 'char-1',
+          socialTargetName: 'Test Character'
+        })
+      )
+    })
+
     it('should select idle when all actions on cooldown', async () => {
       params.characterStates.value['char-1'].cooldowns = {
         eat: 5,
@@ -256,6 +281,44 @@ describe('executeTick', () => {
         })
       )
       expect(params.characterStates.value['char-1'].queuedActions).toEqual([])
+    })
+
+    it('should mirror queued manual social intents onto the selected participant', async () => {
+      params.characterStates.value['char-2'] = createMockCharacterState({
+        name: 'Alex',
+        location: {
+          regionId: 'region-1',
+          lotId: 'lot-1',
+          lotName: 'Test House',
+          spaceId: 'space-1',
+          spaceName: 'Living Room'
+        }
+      })
+      params.characterStates.value['char-1'].queuedActions = [{
+        action: 'chat_friend',
+        itemId: 'item-1',
+        itemName: 'Couch',
+        targetSpaceId: 'space-1',
+        targetSpaceName: 'Living Room',
+        targetLotId: 'lot-1',
+        targetLotName: 'Test House',
+        travelCost: 0,
+        utility: 10,
+        source: 'manual',
+        socialTargetId: 'char-2',
+        socialTargetName: 'Alex'
+      }]
+
+      await executeTick(params)
+
+      expect(params.executeAction).toHaveBeenCalledWith(
+        'char-2',
+        expect.objectContaining({
+          action: 'chat_friend',
+          socialTargetId: 'char-1',
+          socialTargetName: 'Test Character'
+        })
+      )
     })
   })
 

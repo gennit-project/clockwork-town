@@ -47,7 +47,12 @@ export interface SimulationRuntimeRefs {
 export interface SimulationRuntimeDependencies {
   recordShortTermMemory: (characterId: string, intent: Intent) => void
   moveCharacterToLot: (characterId: string, lotId: string) => Promise<void>
-  startCharacterActivity: (characterId: string, action: ActionName) => Promise<void>
+  startCharacterActivity: (input: {
+    characterId: string
+    actionName: ActionName
+    itemId?: string
+    note?: string
+  }) => Promise<void>
 }
 
 export function createSimulationRuntime(
@@ -230,7 +235,12 @@ export function createSimulationRuntime(
     }
 
     try {
-      await dependencies.startCharacterActivity(characterId, intent.action)
+      await dependencies.startCharacterActivity({
+        characterId,
+        actionName: intent.action,
+        itemId: intent.itemId,
+        note: intent.socialTargetName ? `with ${intent.socialTargetName}` : undefined
+      })
       logger.logActivityStart(intent.action)
 
       const duration = getActionDuration(intent.action)

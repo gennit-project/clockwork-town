@@ -10,12 +10,15 @@ import type {
 } from '../types'
 import { calculateUtility } from './actionUtility'
 import { findItemsWithAffordance } from './pathfinding'
+import { canAccessLot } from './accessControl'
 
 export interface BuildPlanCandidatesParams {
   characterId: string
   characterState: CharacterState
   worldData: WorldData
   itemOccupancy?: ItemOccupancy
+  characterStates?: Record<string, CharacterState>
+  reservedCharacterIds?: string[]
 }
 
 type CooldownAction = keyof Cooldowns
@@ -156,6 +159,131 @@ function buildDirectPlanCandidates({
       steps: [primaryStep]
     }
   })
+}
+
+function calculateTravelCostToItem({
+  characterState,
+  itemOption,
+  worldData
+}: {
+  characterState: CharacterState
+  itemOption: ItemOption
+  worldData: WorldData
+}): number | null {
+  if (itemOption.spaceId === characterState.location.spaceId) {
+    return 0
+  }
+
+  if (itemOption.lotId === characterState.location.lotId) {
+    return 1
+  }
+
+  const targetLot = worldData.lots[itemOption.lotId]
+  if (targetLot && targetLot.regionId === characterState.location.regionId) {
+    return 2
+  }
+
+  return null
+}
+
+function buildSocialPlanCandidates({
+  action,
+  characterId,
+  characterState,
+  worldData,
+  itemOccupancy,
+  characterStates = {},
+  reservedCharacterIds = []
+}: {
+  action: 'chat_friend' | 'date'
+  characterId: string
+  characterState: CharacterState
+  worldData: WorldData
+  itemOccupancy: ItemOccupancy
+  characterStates?: Record<string, CharacterState>
+  reservedCharacterIds?: string[]
+}): PlanCandidate[] {
+  const reservedCharacterIdSet = new Set(reservedCharacterIds)
+  const socialItemOptions = findItemsWithAffordance({
+    characterId,
+    action,
+    characterContext: characterState,
+    worldData,
+    itemOccupancy
+  }).filter((itemOption) => {
+    const maxUsers = worldData.items[itemOption.itemId]?.maxSimultaneousUsers
+    return maxUsers === null || maxUsers === undefined || maxUsers >= 2
+  })
+
+  const candidates: PlanCandidate[] = []
+
+  for (const itemOption of socialItemOptions) {
+    const targetLot = worldData.lots[itemOption.lotId]
+    if (!targetLot) {
+      continue
+    }
+
+    for (const [socialTargetId, socialTargetState] of Object.entries(characterStates)) {
+      if (socialTargetId === characterId || reservedCharacterIdSet.has(socialTargetId)) {
+        continue
+      }
+
+      if (socialTargetState.currentTask || (socialTargetState.queuedActions?.length ?? 0) > 0) {
+        continue
+      }
+
+      if (socialTargetState.cooldowns[action] > 0) {
+        continue
+      }
+
+      if (!canAccessLot({
+        characterState: socialTargetState,
+        lotId: itemOption.lotId,
+        isPublic: targetLot.isPublic
+      })) {
+        continue
+      }
+
+      const socialTargetTravelCost = calculateTravelCostToItem({
+        characterState: socialTargetState,
+        itemOption,
+        worldData
+      })
+      if (socialTargetTravelCost === null) {
+        continue
+      }
+
+      const utility = calculateUtility(characterId, action, characterState.needs, {
+        ...itemOption,
+        travelCost: itemOption.travelCost + socialTargetTravelCost
+      })
+      const primaryStep: TaskStep = {
+        action,
+        label: `${action}:${socialTargetState.name}`,
+        itemId: itemOption.itemId,
+        itemName: itemOption.itemName,
+        targetSpaceId: itemOption.spaceId,
+        targetSpaceName: itemOption.spaceName,
+        targetLotId: itemOption.lotId,
+        targetLotName: itemOption.lotName,
+        totalTicks: 1,
+        remainingTicks: 0,
+        socialTargetId,
+        socialTargetName: socialTargetState.name
+      }
+
+      candidates.push({
+        goal: action,
+        strategy: `${action}:with-participant`,
+        utility,
+        travelCost: itemOption.travelCost,
+        primaryStep,
+        steps: [primaryStep]
+      })
+    }
+  }
+
+  return candidates
 }
 
 function getItemActionModifier({
@@ -536,7 +664,9 @@ export function buildPlanCandidates({
   characterId,
   characterState,
   worldData,
-  itemOccupancy = {}
+  itemOccupancy = {},
+  characterStates = {},
+  reservedCharacterIds = []
 }: BuildPlanCandidatesParams): PlanCandidate[] {
   const candidates: PlanCandidate[] = []
 
@@ -561,6 +691,19 @@ export function buildPlanCandidates({
         worldData,
         itemOccupancy
       }))
+    }
+
+    if (action === 'chat_friend' || action === 'date') {
+      candidates.push(...buildSocialPlanCandidates({
+        action,
+        characterId,
+        characterState,
+        worldData,
+        itemOccupancy,
+        characterStates,
+        reservedCharacterIds
+      }))
+      continue
     }
 
     candidates.push(...buildDirectPlanCandidates({
