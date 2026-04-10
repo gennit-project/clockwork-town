@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createMockCharacterState, createMockItemOccupancy, createMockWorldData } from '../../__tests__/mockData'
 import { buildPlanCandidates, planCandidateToIntent } from '../intentPlanner'
-import type { WorldData } from '../../types'
+import type { CharacterRelationship, WorldData } from '../../types'
 
 function createEatingStrategyWorldData(): WorldData {
   const worldData = createMockWorldData()
@@ -114,6 +114,30 @@ function createEatingStrategyWorldData(): WorldData {
   }
 
   return worldData
+}
+
+function createMockRelationship({
+  id,
+  toCharacterId,
+  shortTermScore,
+  longTermScore
+}: {
+  id: string
+  toCharacterId: string
+  shortTermScore: number
+  longTermScore: number
+}): CharacterRelationship {
+  return {
+    id,
+    fromCharacterId: 'char-1',
+    toCharacterId,
+    shortTermScore,
+    longTermScore,
+    labels: [],
+    lastSeenAt: null,
+    lastSpokeAt: null,
+    isDeceasedTarget: false
+  }
 }
 
 describe('intentPlanner', () => {
@@ -253,5 +277,154 @@ describe('intentPlanner', () => {
     })
 
     expect(candidates.some((candidate) => candidate.strategy === 'chat_friend:with-participant')).toBe(false)
+  })
+
+  it('prefers the strongest relationship for autonomous social candidates', () => {
+    const characterState = createMockCharacterState({
+      needs: {
+        ...createMockCharacterState().needs,
+        friends: 0.05
+      },
+      relationships: [
+        createMockRelationship({
+          id: 'rel-1',
+          toCharacterId: 'char-2',
+          shortTermScore: 0.8,
+          longTermScore: 0.4
+        }),
+        createMockRelationship({
+          id: 'rel-2',
+          toCharacterId: 'char-3',
+          shortTermScore: 0.2,
+          longTermScore: 0.9
+        })
+      ]
+    })
+
+    const candidates = buildPlanCandidates({
+      characterId: 'char-1',
+      characterState,
+      worldData: createMockWorldData(),
+      itemOccupancy: createMockItemOccupancy(),
+      characterStates: {
+        'char-1': characterState,
+        'char-2': createMockCharacterState({
+          name: 'Alex',
+          location: {
+            regionId: 'region-1',
+            lotId: 'lot-1',
+            lotName: 'Test House',
+            spaceId: 'space-1',
+            spaceName: 'Living Room'
+          }
+        }),
+        'char-3': createMockCharacterState({
+          name: 'Bailey',
+          location: {
+            regionId: 'region-1',
+            lotId: 'lot-1',
+            lotName: 'Test House',
+            spaceId: 'space-1',
+            spaceName: 'Living Room'
+          }
+        })
+      }
+    })
+
+    expect(candidates.find((candidate) => candidate.strategy === 'chat_friend:relationship-ranked')?.primaryStep.socialTargetId).toBe('char-2')
+  })
+
+  it('skips an unavailable higher-ranked relationship and falls back to the next available target', () => {
+    const characterState = createMockCharacterState({
+      needs: {
+        ...createMockCharacterState().needs,
+        friends: 0.05
+      },
+      relationships: [
+        createMockRelationship({
+          id: 'rel-1',
+          toCharacterId: 'char-2',
+          shortTermScore: 0.9,
+          longTermScore: 0.5
+        }),
+        createMockRelationship({
+          id: 'rel-2',
+          toCharacterId: 'char-3',
+          shortTermScore: 0.5,
+          longTermScore: 0.4
+        })
+      ]
+    })
+
+    const candidates = buildPlanCandidates({
+      characterId: 'char-1',
+      characterState,
+      worldData: createMockWorldData(),
+      itemOccupancy: createMockItemOccupancy(),
+      characterStates: {
+        'char-1': characterState,
+        'char-2': createMockCharacterState({
+          name: 'Alex',
+          currentAction: 'sleep'
+        }),
+        'char-3': createMockCharacterState({
+          name: 'Bailey',
+          location: {
+            regionId: 'region-1',
+            lotId: 'lot-1',
+            lotName: 'Test House',
+            spaceId: 'space-1',
+            spaceName: 'Living Room'
+          }
+        })
+      }
+    })
+
+    expect(candidates.find((candidate) => candidate.strategy === 'chat_friend:relationship-ranked')?.primaryStep.socialTargetId).toBe('char-3')
+  })
+
+  it('falls back to a phone call when no relationship target can meet in person', () => {
+    const characterState = createMockCharacterState({
+      needs: {
+        ...createMockCharacterState().needs,
+        friends: 0.05
+      },
+      relationships: [
+        createMockRelationship({
+          id: 'rel-1',
+          toCharacterId: 'char-2',
+          shortTermScore: 0.75,
+          longTermScore: 0.35
+        })
+      ]
+    })
+
+    const candidates = buildPlanCandidates({
+      characterId: 'char-1',
+      characterState,
+      worldData: createMockWorldData(),
+      itemOccupancy: createMockItemOccupancy(),
+      characterStates: {
+        'char-1': characterState,
+        'char-2': createMockCharacterState({
+          name: 'Alex',
+          currentTask: {
+            planId: 'task-1',
+            goal: 'read',
+            action: 'read',
+            remainingTicks: 1,
+            totalTicks: 2,
+            currentStepIndex: 0,
+            steps: [{
+              action: 'read',
+              totalTicks: 2,
+              remainingTicks: 1
+            }]
+          }
+        })
+      }
+    })
+
+    expect(candidates.find((candidate) => candidate.strategy === 'call_romance:relationship-ranked')?.primaryStep.socialTargetId).toBe('char-2')
   })
 })

@@ -419,4 +419,121 @@ describe('selectBestIntent', () => {
 
     expect(intent.targetLotId).toBe('lot-2')
   })
+
+  it('should choose the highest-ranked available relationship target when lonely', () => {
+    characterState.needs = {
+      ...characterState.needs,
+      friends: 0.05,
+      food: 0.9,
+      sleep: 0.9,
+      fulfillment: 0.9
+    }
+    characterState.relationships = [
+      {
+        id: 'rel-1',
+        fromCharacterId: 'char-1',
+        toCharacterId: 'char-2',
+        shortTermScore: 0.85,
+        longTermScore: 0.4,
+        labels: [],
+        lastSeenAt: null,
+        lastSpokeAt: null,
+        isDeceasedTarget: false
+      },
+      {
+        id: 'rel-2',
+        fromCharacterId: 'char-1',
+        toCharacterId: 'char-3',
+        shortTermScore: 0.3,
+        longTermScore: 0.8,
+        labels: [],
+        lastSeenAt: null,
+        lastSpokeAt: null,
+        isDeceasedTarget: false
+      }
+    ]
+
+    const intent = selectBestIntent({
+      characterId: 'char-1',
+      characterState,
+      worldData,
+      itemOccupancy,
+      characterStates: {
+        'char-1': characterState,
+        'char-2': createMockCharacterState({
+          name: 'Alex',
+          location: {
+            regionId: 'region-1',
+            lotId: 'lot-1',
+            lotName: 'Test House',
+            spaceId: 'space-1',
+            spaceName: 'Living Room'
+          }
+        }),
+        'char-3': createMockCharacterState({
+          name: 'Bailey',
+          location: {
+            regionId: 'region-1',
+            lotId: 'lot-1',
+            lotName: 'Test House',
+            spaceId: 'space-1',
+            spaceName: 'Living Room'
+          }
+        })
+      }
+    })
+
+    expect(intent.socialTargetId).toBe('char-2')
+  })
+
+  it('should fall back to a call when the strongest relationship target is busy', () => {
+    characterState.needs = {
+      ...characterState.needs,
+      friends: 0.05,
+      food: 0.9,
+      sleep: 0.9,
+      fulfillment: 0.9
+    }
+    characterState.relationships = [
+      {
+        id: 'rel-1',
+        fromCharacterId: 'char-1',
+        toCharacterId: 'char-2',
+        shortTermScore: 0.9,
+        longTermScore: 0.45,
+        labels: [],
+        lastSeenAt: null,
+        lastSpokeAt: null,
+        isDeceasedTarget: false
+      }
+    ]
+
+    const intent = selectBestIntent({
+      characterId: 'char-1',
+      characterState,
+      worldData,
+      itemOccupancy,
+      characterStates: {
+        'char-1': characterState,
+        'char-2': createMockCharacterState({
+          name: 'Alex',
+          currentTask: {
+            planId: 'task-1',
+            goal: 'read',
+            action: 'read',
+            remainingTicks: 1,
+            totalTicks: 2,
+            currentStepIndex: 0,
+            steps: [{
+              action: 'read',
+              totalTicks: 2,
+              remainingTicks: 1
+            }]
+          }
+        })
+      }
+    })
+
+    expect(intent.action).toBe('call_romance')
+  })
 })

@@ -1,5 +1,6 @@
 import type {
   ActionName,
+  CharacterRelationship,
   CharacterState,
   Cooldowns,
   Intent,
@@ -12,6 +13,7 @@ import type {
 import { calculateUtility } from './actionUtility'
 import { findItemsWithAffordance } from './pathfinding'
 import { canAccessLot } from './accessControl'
+import { evaluateRelationshipAvailability } from './relationshipAvailability'
 
 export interface BuildPlanCandidatesParams {
   characterId: string
@@ -38,6 +40,12 @@ const DEFAULT_PLANNED_ACTIONS: CooldownAction[] = [
   'view_art',
   'volunteer'
 ]
+
+const RELATIONSHIP_SHORT_TERM_WEIGHT = 2
+const RELATIONSHIP_LONG_TERM_WEIGHT = 1
+const INVITE_OVER_BONUS = 0.1
+const CALL_BONUS = -0.15
+const MIN_RELATIONSHIP_SCORE = 0.05
 
 function buildAccessibleItemOptions({
   characterId,
@@ -118,6 +126,103 @@ function buildDirectStep(action: ActionName, option: ReturnType<typeof findItems
     targetLotName: option.lotName,
     totalTicks: 1,
     remainingTicks: 0
+  }
+}
+
+function buildRelationshipPriorityScore({
+  relationship
+}: {
+  relationship: CharacterRelationship
+}): number {
+  return (relationship.shortTermScore * RELATIONSHIP_SHORT_TERM_WEIGHT)
+    + (relationship.longTermScore * RELATIONSHIP_LONG_TERM_WEIGHT)
+}
+
+function buildRelationshipUtilityBonus({
+  relationship
+}: {
+  relationship: CharacterRelationship
+}): number {
+  return buildRelationshipPriorityScore({ relationship }) / 2
+}
+
+function buildAutonomousSocialUtility({
+  characterId,
+  characterState,
+  relationship,
+  action,
+  travelCost
+}: {
+  characterId: string
+  characterState: CharacterState
+  relationship: CharacterRelationship
+  action: Extract<ActionName, 'chat_friend' | 'invite_over' | 'call_romance'>
+  travelCost: number
+}): number {
+  const baseUtility = calculateUtility(characterId, 'chat_friend', characterState.needs, {
+    itemId: action,
+    itemName: action,
+    spaceId: characterState.location.spaceId || 'unknown-space',
+    spaceName: characterState.location.spaceName || 'Unknown space',
+    lotId: characterState.location.lotId || 'unknown-lot',
+    lotName: characterState.location.lotName || 'Unknown lot',
+    travelCost,
+    affordanceWeight: 1
+  })
+
+  if (action === 'invite_over') {
+    return baseUtility + INVITE_OVER_BONUS + buildRelationshipUtilityBonus({ relationship })
+  }
+
+  if (action === 'call_romance') {
+    return baseUtility + CALL_BONUS + buildRelationshipUtilityBonus({ relationship })
+  }
+
+  return baseUtility + buildRelationshipUtilityBonus({ relationship })
+}
+
+function findPreferredInviteFollowUp({
+  characterId,
+  characterState,
+  worldData,
+  itemOccupancy
+}: {
+  characterId: string
+  characterState: CharacterState
+  worldData: WorldData
+  itemOccupancy: ItemOccupancy
+}): TaskStep | null {
+  const chatOptions = findItemsWithAffordance({
+    characterId,
+    action: 'chat_friend',
+    characterContext: characterState,
+    worldData,
+    itemOccupancy
+  }).filter((itemOption) => {
+    const item = worldData.items[itemOption.itemId]
+    const maxUsers = item?.maxSimultaneousUsers
+    return itemOption.lotId === characterState.location.lotId
+      && (maxUsers === null || maxUsers === undefined || maxUsers >= 2)
+  })
+
+  const preferredOption = chatOptions[0]
+  if (!preferredOption) {
+    return null
+  }
+
+  return {
+    action: 'chat_friend',
+    label: `invite-follow-up:${preferredOption.itemName}`,
+    itemId: preferredOption.itemId,
+    itemName: preferredOption.itemName,
+    targetSpaceId: preferredOption.spaceId,
+    targetSpaceName: preferredOption.spaceName,
+    targetLotId: preferredOption.lotId,
+    targetLotName: preferredOption.lotName,
+    totalTicks: 1,
+    remainingTicks: 0,
+    socialTargetId: characterId,
+    socialTargetName: characterState.name
   }
 }
 
@@ -278,6 +383,151 @@ function buildSocialPlanCandidates({
         strategy: `${action}:with-participant`,
         utility,
         travelCost: itemOption.travelCost,
+        primaryStep,
+        steps: [primaryStep]
+      })
+    }
+  }
+
+  return candidates
+}
+
+function buildRelationshipSocialPlanCandidates({
+  characterId,
+  characterState,
+  worldData,
+  itemOccupancy,
+  characterStates = {},
+  reservedCharacterIds = []
+}: {
+  characterId: string
+  characterState: CharacterState
+  worldData: WorldData
+  itemOccupancy: ItemOccupancy
+  characterStates?: Record<string, CharacterState>
+  reservedCharacterIds?: string[]
+}): PlanCandidate[] {
+  const reservedCharacterIdSet = new Set(reservedCharacterIds)
+  const inviteFollowUp = findPreferredInviteFollowUp({
+    characterId,
+    characterState,
+    worldData,
+    itemOccupancy
+  })
+
+  const socialCandidates = buildSocialPlanCandidates({
+    action: 'chat_friend',
+    characterId,
+    characterState,
+    worldData,
+    itemOccupancy,
+    characterStates,
+    reservedCharacterIds
+  })
+
+  const chatCandidatesByTargetId = new Map<string, PlanCandidate>()
+  for (const candidate of socialCandidates) {
+    const socialTargetId = candidate.primaryStep.socialTargetId
+    if (!socialTargetId || chatCandidatesByTargetId.has(socialTargetId)) {
+      continue
+    }
+
+    chatCandidatesByTargetId.set(socialTargetId, candidate)
+  }
+
+  const rankedRelationships = (characterState.relationships || [])
+    .filter((relationship) => !relationship.isDeceasedTarget)
+    .filter((relationship) => buildRelationshipPriorityScore({ relationship }) >= MIN_RELATIONSHIP_SCORE)
+    .sort((left, right) => buildRelationshipPriorityScore({ relationship: right }) - buildRelationshipPriorityScore({ relationship: left }))
+
+  const candidates: PlanCandidate[] = []
+
+  for (const relationship of rankedRelationships) {
+    const socialTargetId = relationship.toCharacterId
+    const targetState = characterStates[socialTargetId]
+    if (!targetState || reservedCharacterIdSet.has(socialTargetId) || socialTargetId === characterId) {
+      continue
+    }
+
+    const availability = evaluateRelationshipAvailability({
+      relationship,
+      targetState
+    })
+
+    const chatCandidate = chatCandidatesByTargetId.get(socialTargetId)
+    if (chatCandidate && availability.canInviteOver) {
+      candidates.push({
+        ...chatCandidate,
+        strategy: 'chat_friend:relationship-ranked',
+        utility: buildAutonomousSocialUtility({
+          characterId,
+          characterState,
+          relationship,
+          action: 'chat_friend',
+          travelCost: chatCandidate.travelCost
+        })
+      })
+      continue
+    }
+
+    if (availability.canInviteOver && inviteFollowUp && characterState.cooldowns.invite_over === 0) {
+      const primaryStep: TaskStep = {
+        action: 'invite_over',
+        label: `invite-over:${targetState.name}`,
+        targetSpaceId: characterState.location.spaceId || undefined,
+        targetSpaceName: characterState.location.spaceName || undefined,
+        targetLotId: characterState.location.lotId || undefined,
+        targetLotName: characterState.location.lotName || undefined,
+        totalTicks: 1,
+        remainingTicks: 0,
+        socialTargetId,
+        socialTargetName: targetState.name,
+        inviteContextType: 'hang_out',
+        hostedFollowUp: {
+          ...inviteFollowUp,
+          socialTargetId,
+          socialTargetName: targetState.name
+        }
+      }
+
+      candidates.push({
+        goal: 'invite_over',
+        strategy: 'invite_over:relationship-ranked',
+        utility: buildAutonomousSocialUtility({
+          characterId,
+          characterState,
+          relationship,
+          action: 'invite_over',
+          travelCost: 0
+        }),
+        travelCost: 0,
+        primaryStep,
+        steps: [primaryStep]
+      })
+      continue
+    }
+
+    if (availability.canCall && characterState.cooldowns.call_romance === 0) {
+      const primaryStep: TaskStep = {
+        action: 'call_romance',
+        label: `call:${targetState.name}`,
+        totalTicks: 1,
+        remainingTicks: 0,
+        socialTargetId,
+        socialTargetName: targetState.name
+      }
+
+      candidates.push({
+        goal: 'call_romance',
+        strategy: 'call_romance:relationship-ranked',
+        utility: buildAutonomousSocialUtility({
+          characterId,
+          characterState,
+          relationship,
+          action: 'call_romance',
+          travelCost: 0
+        }),
+        travelCost: 0,
         primaryStep,
         steps: [primaryStep]
       })
@@ -669,7 +919,14 @@ export function buildPlanCandidates({
   characterStates = {},
   reservedCharacterIds = []
 }: BuildPlanCandidatesParams): PlanCandidate[] {
-  const candidates: PlanCandidate[] = []
+  const candidates: PlanCandidate[] = buildRelationshipSocialPlanCandidates({
+    characterId,
+    characterState,
+    worldData,
+    itemOccupancy,
+    characterStates,
+    reservedCharacterIds
+  })
 
   for (const action of DEFAULT_PLANNED_ACTIONS) {
     if (characterState.cooldowns[action] > 0) {
@@ -745,6 +1002,8 @@ export function planCandidateToIntent(candidate: PlanCandidate): Intent {
     source: 'auto',
     socialTargetId: candidate.primaryStep.socialTargetId,
     socialTargetName: candidate.primaryStep.socialTargetName,
+    inviteContextType: candidate.primaryStep.inviteContextType,
+    hostedFollowUp: candidate.primaryStep.hostedFollowUp as TaskStep | undefined,
     steps: candidate.steps
   }
 }
