@@ -3,6 +3,7 @@ import type {
   ActionName,
   ActivityLogEntry,
   AutoTickSpeed,
+  CharacterRelationship,
   CharacterState,
   Intent,
   ItemOccupancy,
@@ -30,6 +31,12 @@ import { createTaskFromIntent, getActionDuration } from './taskLifecycle'
 import { progressActiveTask } from './taskProgression'
 import { executeTick as runTick } from './tickExecution'
 import { createSimulationDateTime } from './simulationCalendar'
+import {
+  recordRelationshipConversation,
+  recordRelationshipEncounter,
+  recordSharedMeal,
+  recordSharedViewingExperience
+} from './relationshipRuntime'
 
 export interface SimulationRuntimeRefs {
   currentTick: Ref<number>
@@ -52,6 +59,28 @@ export interface SimulationRuntimeDependencies {
     actionName: ActionName
     itemId?: string
     note?: string
+  }) => Promise<void>
+  persistCharacterRelationship: (input: {
+    id?: string
+    fromCharacterId: string
+    toCharacterId: string
+    shortTermScore?: number
+    longTermScore?: number
+    labels?: string[]
+    lastSeenAt?: string
+    lastSpokeAt?: string
+    isDeceasedTarget?: boolean
+  }) => Promise<CharacterRelationship>
+  createStructuredCharacterLongTermMemory: (input: {
+    characterId: string
+    content: string
+    relationshipIds?: string[]
+    eventType?: string
+    locationLotId?: string
+    locationLotName?: string
+    locationSpaceId?: string
+    locationSpaceName?: string
+    createdAt?: string
   }) => Promise<void>
 }
 
@@ -105,6 +134,109 @@ export function createSimulationRuntime(
         spaceId,
         spaceName
       })
+    }
+  }
+
+  async function syncArrivingCharacterRelationships({
+    characterId,
+    lotId,
+    lotName,
+    spaceId,
+    spaceName
+  }: {
+    characterId: string
+    lotId: string
+    lotName: string
+    spaceId: string
+    spaceName: string
+  }): Promise<void> {
+    const state = refs.characterStates.value[characterId]
+    if (!state) {
+      return
+    }
+
+    const timestamp = refs.simulationDateTime.value.iso
+
+    for (const [otherCharacterId, otherState] of Object.entries(refs.characterStates.value)) {
+      if (otherCharacterId === characterId || otherState.location.lotId !== lotId) {
+        continue
+      }
+
+      await recordRelationshipEncounter({
+        characterId,
+        targetCharacterId: otherCharacterId,
+        characterState: state,
+        targetState: otherState,
+        timestamp,
+        location: {
+          lotId,
+          lotName,
+          spaceId,
+          spaceName
+        },
+        dependencies: {
+          persistCharacterRelationship: dependencies.persistCharacterRelationship,
+          createStructuredCharacterLongTermMemory: dependencies.createStructuredCharacterLongTermMemory
+        }
+      })
+    }
+  }
+
+  async function recordSharedRelationshipEvents({
+    characterId,
+    intent
+  }: {
+    characterId: string
+    intent: Intent
+  }): Promise<void> {
+    const state = refs.characterStates.value[characterId]
+    if (!state || !state.location.lotId) {
+      return
+    }
+
+    const timestamp = refs.simulationDateTime.value.iso
+
+    for (const [otherCharacterId, otherState] of Object.entries(refs.characterStates.value)) {
+      if (otherCharacterId === characterId) {
+        continue
+      }
+
+      const isCoLocated = otherState.location.lotId === state.location.lotId
+        && otherState.location.spaceId === state.location.spaceId
+
+      if (!isCoLocated) {
+        continue
+      }
+
+      if (intent.action === 'eat' && otherState.currentAction === 'eat') {
+        await recordSharedMeal({
+          characterId,
+          targetCharacterId: otherCharacterId,
+          characterState: state,
+          targetState: otherState,
+          timestamp,
+          intent,
+          dependencies: {
+            persistCharacterRelationship: dependencies.persistCharacterRelationship,
+            createStructuredCharacterLongTermMemory: dependencies.createStructuredCharacterLongTermMemory
+          }
+        })
+      }
+
+      if (intent.action === 'view_art' && otherState.currentAction === 'view_art') {
+        await recordSharedViewingExperience({
+          characterId,
+          targetCharacterId: otherCharacterId,
+          characterState: state,
+          targetState: otherState,
+          timestamp,
+          intent,
+          dependencies: {
+            persistCharacterRelationship: dependencies.persistCharacterRelationship,
+            createStructuredCharacterLongTermMemory: dependencies.createStructuredCharacterLongTermMemory
+          }
+        })
+      }
     }
   }
 
@@ -169,6 +301,32 @@ export function createSimulationRuntime(
       setItemOccupancy(characterId, intent.itemId)
     }
 
+    if ((intent.action === 'chat_friend' || intent.action === 'date') && intent.socialTargetId) {
+      const state = refs.characterStates.value[characterId]
+      const targetState = refs.characterStates.value[intent.socialTargetId]
+      if (state && targetState) {
+        await recordRelationshipConversation({
+          characterId,
+          targetCharacterId: intent.socialTargetId,
+          characterState: state,
+          targetState,
+          timestamp: refs.simulationDateTime.value.iso,
+          intent,
+          dependencies: {
+            persistCharacterRelationship: dependencies.persistCharacterRelationship,
+            createStructuredCharacterLongTermMemory: dependencies.createStructuredCharacterLongTermMemory
+          }
+        })
+      }
+    }
+
+    if (intent.action === 'eat' || intent.action === 'view_art') {
+      await recordSharedRelationshipEvents({
+        characterId,
+        intent
+      })
+    }
+
     dependencies.recordShortTermMemory(characterId, intent)
   }
 
@@ -225,6 +383,13 @@ export function createSimulationRuntime(
         await performIntentMovement(characterId, state, movementPlan, {
           moveCharacterToLot: dependencies.moveCharacterToLot,
           updateCharacterLocation
+        })
+        await syncArrivingCharacterRelationships({
+          characterId,
+          lotId: movementPlan.targetLotId,
+          lotName: movementPlan.targetLotName,
+          spaceId: movementPlan.targetSpaceId,
+          spaceName: movementPlan.targetSpaceName
         })
 
         logger.logMoveSuccess(intent.targetLotName, intent.targetSpaceName)

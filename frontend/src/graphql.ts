@@ -668,12 +668,54 @@ export const mutations = {
     }
   `,
 
+  upsertCharacterRelationship: `
+    mutation UpsertCharacterRelationship($input: UpsertCharacterRelationshipInput!) {
+      upsertCharacterRelationship(input: $input) {
+        id
+        fromCharacterId
+        toCharacterId
+        shortTermScore
+        longTermScore
+        labels
+        lastSeenAt
+        lastSpokeAt
+        isDeceasedTarget
+      }
+    }
+  `,
+
   createCharacterLongTermMemory: `
-    mutation CreateCharacterLongTermMemory($characterId: ID!, $content: String!) {
-      createCharacterLongTermMemory(characterId: $characterId, content: $content) {
+    mutation CreateCharacterLongTermMemory(
+      $characterId: ID!,
+      $content: String!,
+      $relationshipIds: [ID!],
+      $eventType: String,
+      $locationLotId: ID,
+      $locationLotName: String,
+      $locationSpaceId: ID,
+      $locationSpaceName: String,
+      $createdAt: DateTime
+    ) {
+      createCharacterLongTermMemory(
+        characterId: $characterId,
+        content: $content,
+        relationshipIds: $relationshipIds,
+        eventType: $eventType,
+        locationLotId: $locationLotId,
+        locationLotName: $locationLotName,
+        locationSpaceId: $locationSpaceId,
+        locationSpaceName: $locationSpaceName,
+        createdAt: $createdAt
+      ) {
         id
         content
         createdAt
+        eventType
+        locationLotId
+        locationLotName
+        locationSpaceId
+        locationSpaceName
+        relationshipIds
       }
     }
   `,

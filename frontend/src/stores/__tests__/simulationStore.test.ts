@@ -6,6 +6,18 @@ import { createMockWorldData, mockConsole } from './mockData'
 const persistenceMocks = vi.hoisted(() => ({
   moveCharacterToLot: vi.fn(async () => {}),
   startCharacterActivity: vi.fn(async () => {}),
+  persistCharacterRelationship: vi.fn(async (input: Record<string, unknown>) => ({
+    id: String(input.id ?? `${input.fromCharacterId}-${input.toCharacterId}`),
+    fromCharacterId: String(input.fromCharacterId),
+    toCharacterId: String(input.toCharacterId),
+    shortTermScore: Number(input.shortTermScore ?? 0),
+    longTermScore: Number(input.longTermScore ?? 0),
+    labels: (input.labels as string[] | undefined) ?? [],
+    lastSeenAt: (input.lastSeenAt as string | undefined) ?? null,
+    lastSpokeAt: (input.lastSpokeAt as string | undefined) ?? null,
+    isDeceasedTarget: Boolean(input.isDeceasedTarget ?? false)
+  })),
+  createStructuredCharacterLongTermMemory: vi.fn(async () => {}),
   fetchCharacterDetails: vi.fn(async () => ({ character: { longTermMemories: [] } })),
   persistCharacterBio: vi.fn(async () => {}),
   createCharacterLongTermMemory: vi.fn(async () => {}),
@@ -22,6 +34,8 @@ describe('simulation store integration', () => {
     setActivePinia(createPinia())
     persistenceMocks.moveCharacterToLot.mockClear()
     persistenceMocks.startCharacterActivity.mockClear()
+    persistenceMocks.persistCharacterRelationship.mockClear()
+    persistenceMocks.createStructuredCharacterLongTermMemory.mockClear()
     persistenceMocks.fetchCharacterDetails.mockReset()
     persistenceMocks.persistCharacterBio.mockClear()
     persistenceMocks.createCharacterLongTermMemory.mockClear()
@@ -38,6 +52,15 @@ describe('simulation store integration', () => {
     return store
   }
 
+  function setupSecondCharacter(store: ReturnType<typeof useSimulationStore>, lotId: string, lotName: string, spaceId: string, spaceName: string) {
+    store.initializeCharacter({ id: 'char-2', name: 'Bob' })
+    store.updateCharacterLocation('char-2', 'region-1', lotId, lotName, spaceId, spaceName)
+    store.enqueueIntent('char-2', {
+      action: 'idle',
+      utility: 0
+    })
+  }
+
   function enqueueReadIntent(store: ReturnType<typeof useSimulationStore>) {
     store.enqueueIntent('char-1', {
       action: 'read',
@@ -47,6 +70,20 @@ describe('simulation store integration', () => {
       targetSpaceName: 'Living Room',
       targetLotId: 'lot-1',
       targetLotName: 'Test House',
+      utility: 10
+    })
+  }
+
+  function enqueueLibraryReadIntent(store: ReturnType<typeof useSimulationStore>) {
+    store.enqueueIntent('char-1', {
+      action: 'read',
+      itemId: 'item-4',
+      itemName: 'Bookshelf',
+      targetSpaceId: 'space-3',
+      targetSpaceName: 'Library',
+      targetLotId: 'lot-2',
+      targetLotName: 'Community Center',
+      travelCost: 2,
       utility: 10
     })
   }
@@ -62,6 +99,25 @@ describe('simulation store integration', () => {
       targetLotName: 'Test House',
       utility: 10
     })
+  }
+
+  function seedDirectionalRelationship(
+    store: ReturnType<typeof useSimulationStore>,
+    fromCharacterId: string,
+    toCharacterId: string,
+    lastSeenAt: string | null
+  ) {
+    store.characterStates[fromCharacterId].relationships = [{
+      id: `${fromCharacterId}-${toCharacterId}`,
+      fromCharacterId,
+      toCharacterId,
+      shortTermScore: 0,
+      longTermScore: 0,
+      labels: [],
+      lastSeenAt,
+      lastSpokeAt: null,
+      isDeceasedTarget: false
+    }]
   }
 
   it('drains the queued manual intents after execution', async () => {
@@ -215,6 +271,156 @@ describe('simulation store integration', () => {
       action: 'sleep',
       item: 'Bed'
     })
+  })
+
+  it('creates a directional relationship after first meeting on arrival', async () => {
+    const store = setupStore()
+    setupSecondCharacter(store, 'lot-2', 'Community Center', 'space-3', 'Library')
+    enqueueLibraryReadIntent(store)
+
+    await store.executeTick()
+
+    expect(store.characterStates['char-1'].relationships?.[0]?.toCharacterId).toBe('char-2')
+  })
+
+  it('creates a first_met memory when a relationship is first created', async () => {
+    const store = setupStore()
+    setupSecondCharacter(store, 'lot-2', 'Community Center', 'space-3', 'Library')
+    enqueueLibraryReadIntent(store)
+
+    await store.executeTick()
+
+    expect(persistenceMocks.createStructuredCharacterLongTermMemory).toHaveBeenCalledWith(expect.objectContaining({
+      characterId: 'char-1',
+      eventType: 'first_met'
+    }))
+  })
+
+  it('updates lastSpokeAt for accepted social interactions', async () => {
+    const store = setupStore()
+    setupSecondCharacter(store, 'lot-1', 'Test House', 'space-1', 'Living Room')
+    seedDirectionalRelationship(store, 'char-1', 'char-2', null)
+    seedDirectionalRelationship(store, 'char-2', 'char-1', null)
+    store.characterStates['char-2'].needs.friends = 0.1
+    store.enqueueIntent('char-1', {
+      action: 'chat_friend',
+      itemId: 'item-1',
+      itemName: 'Couch',
+      targetSpaceId: 'space-1',
+      targetSpaceName: 'Living Room',
+      targetLotId: 'lot-1',
+      targetLotName: 'Test House',
+      socialTargetId: 'char-2',
+      socialTargetName: 'Bob',
+      utility: 10
+    })
+
+    await store.executeTick()
+
+    expect(store.characterStates['char-1'].relationships?.[0]?.lastSpokeAt).toBe(store.simulationDateTime.iso)
+  })
+
+  it('creates a reunited_after_long_absence memory when characters meet again after hours apart', async () => {
+    const store = setupStore()
+    store.simulationDateTime = {
+      ...store.simulationDateTime,
+      iso: '2026-04-06T18:00:00.000Z',
+      hour: 18,
+      minute: 0
+    }
+    setupSecondCharacter(store, 'lot-2', 'Community Center', 'space-3', 'Library')
+    seedDirectionalRelationship(store, 'char-1', 'char-2', '2026-04-06T08:00:00.000Z')
+    seedDirectionalRelationship(store, 'char-2', 'char-1', '2026-04-06T08:00:00.000Z')
+    enqueueLibraryReadIntent(store)
+
+    await store.executeTick()
+
+    expect(persistenceMocks.createStructuredCharacterLongTermMemory).toHaveBeenCalledWith(expect.objectContaining({
+      characterId: 'char-1',
+      eventType: 'reunited_after_long_absence'
+    }))
+  })
+
+  it('creates an ate_lunch_together memory when characters eat lunch in the same space', async () => {
+    const store = setupStore()
+    store.simulationDateTime = {
+      ...store.simulationDateTime,
+      iso: '2026-04-06T19:00:00.000Z',
+      hour: 12,
+      minute: 0
+    }
+    setupSecondCharacter(store, 'lot-1', 'Test House', 'space-2', 'Kitchen')
+    store.updateCharacterLocation('char-1', 'region-1', 'lot-1', 'Test House', 'space-2', 'Kitchen')
+    store.characterStates['char-2'].queuedActions = []
+    seedDirectionalRelationship(store, 'char-1', 'char-2', null)
+    seedDirectionalRelationship(store, 'char-2', 'char-1', null)
+    store.enqueueIntent('char-1', {
+      action: 'eat',
+      itemId: 'item-3',
+      itemName: 'Fridge',
+      targetSpaceId: 'space-2',
+      targetSpaceName: 'Kitchen',
+      targetLotId: 'lot-1',
+      targetLotName: 'Test House',
+      utility: 10
+    })
+    store.enqueueIntent('char-2', {
+      action: 'eat',
+      itemId: 'item-3',
+      itemName: 'Fridge',
+      targetSpaceId: 'space-2',
+      targetSpaceName: 'Kitchen',
+      targetLotId: 'lot-1',
+      targetLotName: 'Test House',
+      utility: 10
+    })
+
+    await store.executeTick()
+
+    expect(persistenceMocks.createStructuredCharacterLongTermMemory).toHaveBeenCalledWith(expect.objectContaining({
+      eventType: 'ate_lunch_together'
+    }))
+  })
+
+  it('creates a watched_a_movie_together memory when characters view a movie together', async () => {
+    const store = setupStore()
+    store.worldData.items['item-1'] = {
+      ...store.worldData.items['item-1'],
+      name: 'Movie Screen',
+      allowedActivities: ['view_art'],
+      affordances: [{ action: 'view_art', weight: 1 }]
+    }
+    store.worldData.itemsByAffordance.view_art = ['item-1']
+    setupSecondCharacter(store, 'lot-1', 'Test House', 'space-1', 'Living Room')
+    store.characterStates['char-2'].queuedActions = []
+    seedDirectionalRelationship(store, 'char-1', 'char-2', null)
+    seedDirectionalRelationship(store, 'char-2', 'char-1', null)
+    store.enqueueIntent('char-1', {
+      action: 'view_art',
+      itemId: 'item-1',
+      itemName: 'Movie Screen',
+      targetSpaceId: 'space-1',
+      targetSpaceName: 'Living Room',
+      targetLotId: 'lot-1',
+      targetLotName: 'Test House',
+      utility: 10
+    })
+    store.enqueueIntent('char-2', {
+      action: 'view_art',
+      itemId: 'item-1',
+      itemName: 'Movie Screen',
+      targetSpaceId: 'space-1',
+      targetSpaceName: 'Living Room',
+      targetLotId: 'lot-1',
+      targetLotName: 'Test House',
+      utility: 10
+    })
+
+    await store.executeTick()
+
+    expect(persistenceMocks.createStructuredCharacterLongTermMemory).toHaveBeenCalledWith(expect.objectContaining({
+      eventType: 'watched_a_movie_together'
+    }))
   })
 
   it('falls back to idle when backend activity start fails', async () => {

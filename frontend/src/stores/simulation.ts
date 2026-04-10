@@ -13,7 +13,9 @@ import type {
   WorkShift
 } from './types'
 import {
+  createStructuredCharacterLongTermMemory,
   moveCharacterToLot,
+  persistCharacterRelationship,
   startCharacterActivity
 } from './simulationPersistence'
 import {
@@ -144,7 +146,9 @@ export const useSimulationStore = defineStore('simulation', () => {
     {
       recordShortTermMemory,
       moveCharacterToLot,
-      startCharacterActivity
+      startCharacterActivity,
+      persistCharacterRelationship,
+      createStructuredCharacterLongTermMemory
     }
   )
 

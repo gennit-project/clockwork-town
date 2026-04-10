@@ -49,6 +49,25 @@ export async function persistCharacterBio(characterId: string, bio: string): Pro
   await client.request(mutations.updateCharacterBio, { characterId, bio })
 }
 
+export async function persistCharacterRelationship(input: {
+  id?: string
+  fromCharacterId: string
+  toCharacterId: string
+  shortTermScore?: number
+  longTermScore?: number
+  labels?: string[]
+  lastSeenAt?: string
+  lastSpokeAt?: string
+  isDeceasedTarget?: boolean
+}): Promise<CharacterRelationship> {
+  const result = await client.request<{ upsertCharacterRelationship: CharacterRelationship }>(
+    mutations.upsertCharacterRelationship,
+    { input }
+  )
+
+  return result.upsertCharacterRelationship
+}
+
 export async function persistCharacterDetails(input: {
   id: string
   name?: string
@@ -89,6 +108,20 @@ export async function createCharacterDetails(input: {
 
 export async function createCharacterLongTermMemory(characterId: string, content: string): Promise<void> {
   await client.request(mutations.createCharacterLongTermMemory, { characterId, content })
+}
+
+export async function createStructuredCharacterLongTermMemory(input: {
+  characterId: string
+  content: string
+  relationshipIds?: string[]
+  eventType?: string
+  locationLotId?: string
+  locationLotName?: string
+  locationSpaceId?: string
+  locationSpaceName?: string
+  createdAt?: string
+}): Promise<void> {
+  await client.request(mutations.createCharacterLongTermMemory, input)
 }
 
 export async function updateCharacterLongTermMemory(memoryId: string, content: string): Promise<void> {

@@ -8,6 +8,8 @@ import type { LongTermMemory } from '../types'
 const persistenceMocks = vi.hoisted(() => ({
   moveCharacterToLot: vi.fn(async () => {}),
   startCharacterActivity: vi.fn(async () => {}),
+  persistCharacterRelationship: vi.fn(async () => null),
+  createStructuredCharacterLongTermMemory: vi.fn(async () => {}),
   fetchCharacterDetails: vi.fn<(characterId: string) => Promise<{ character: { longTermMemories: LongTermMemory[] } }>>(async () => ({ character: { longTermMemories: [] } })),
   persistCharacterBio: vi.fn(async () => {}),
   createCharacterLongTermMemory: vi.fn(async () => {}),
