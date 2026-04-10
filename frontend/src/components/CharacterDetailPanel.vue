@@ -89,6 +89,7 @@
       <CharacterRelationshipsTab
         v-else-if="activeTab === 'Relationships'"
         :character-name="character.name"
+        :character-id="character.id"
         :character-state="characterState"
         :available-characters="availableRomanceTargets"
       />

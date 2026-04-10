@@ -62,15 +62,55 @@
           </span>
         </div>
 
-        <div class="mt-4 grid grid-cols-2 gap-3">
-          <div class="rounded border border-gray-200 bg-white px-3 py-2 dark:border-gray-700 dark:bg-gray-900/40">
-            <p class="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">Long-term</p>
-            <p class="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">{{ formatScore(selectedRelationship.longTermScore) }}</p>
+        <div class="mt-4 grid gap-3 md:grid-cols-2">
+          <div class="rounded border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900/40">
+            <p class="text-xs font-semibold text-gray-900 dark:text-gray-100">
+              {{ characterName }} -> {{ getRelationshipTargetName(selectedRelationship) }}
+            </p>
+            <div class="mt-3 grid grid-cols-2 gap-3">
+              <div>
+                <p class="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">Long-term</p>
+                <p class="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">{{ formatScore(selectedRelationship.longTermScore) }}</p>
+              </div>
+              <div>
+                <p class="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">Short-term</p>
+                <p class="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">{{ formatScore(selectedRelationship.shortTermScore) }}</p>
+              </div>
+            </div>
           </div>
-          <div class="rounded border border-gray-200 bg-white px-3 py-2 dark:border-gray-700 dark:bg-gray-900/40">
-            <p class="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">Short-term</p>
-            <p class="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">{{ formatScore(selectedRelationship.shortTermScore) }}</p>
+
+          <div class="rounded border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900/40">
+            <p class="text-xs font-semibold text-gray-900 dark:text-gray-100">
+              {{ getRelationshipTargetName(selectedRelationship) }} -> {{ characterName }}
+            </p>
+            <template v-if="reverseRelationship">
+              <div class="mt-3 grid grid-cols-2 gap-3">
+                <div>
+                  <p class="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">Long-term</p>
+                  <p class="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">{{ formatScore(reverseRelationship.longTermScore) }}</p>
+                </div>
+                <div>
+                  <p class="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">Short-term</p>
+                  <p class="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">{{ formatScore(reverseRelationship.shortTermScore) }}</p>
+                </div>
+              </div>
+            </template>
+            <p v-else class="mt-3 text-sm text-gray-500 dark:text-gray-400">
+              No reverse relationship tracked yet.
+            </p>
           </div>
+        </div>
+
+        <div
+          v-if="reverseRelationship"
+          class="mt-4 rounded border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/20 dark:text-amber-200"
+        >
+          <p class="font-medium">Directional discrepancy</p>
+          <p class="mt-1">
+            {{ characterName }} currently values this relationship
+            {{ compareScoreDirection(selectedRelationship.longTermScore, reverseRelationship.longTermScore) }}
+            than {{ getRelationshipTargetName(selectedRelationship) }} does.
+          </p>
         </div>
 
         <div class="mt-4 space-y-2 text-sm text-gray-700 dark:text-gray-300">
@@ -127,6 +167,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { useSimulationStore } from '../stores/simulation'
 import type { CharacterRelationship, CharacterState, LongTermMemory } from '../stores/types'
 
 interface CharacterSummary {
@@ -136,10 +177,12 @@ interface CharacterSummary {
 
 const props = defineProps<{
   characterName: string
+  characterId?: string
   characterState: CharacterState | null
   availableCharacters?: CharacterSummary[]
 }>()
 
+const simulationStore = useSimulationStore()
 const selectedRelationshipId = ref<string | null>(null)
 
 const sortedRelationships = computed(() => {
@@ -173,6 +216,21 @@ const linkedMemories = computed<LongTermMemory[]>(() => {
   return (props.characterState?.longTermMemories || []).filter((memory) =>
     (memory.relationshipIds || []).includes(relationshipId)
   )
+})
+
+const reverseRelationship = computed<CharacterRelationship | null>(() => {
+  const relationship = selectedRelationship.value
+  const characterId = props.characterId
+  if (!relationship || !characterId) {
+    return null
+  }
+
+  const targetState = simulationStore.characterStates[relationship.toCharacterId]
+  if (!targetState?.relationships?.length) {
+    return null
+  }
+
+  return targetState.relationships.find((entry) => entry.toCharacterId === characterId) || null
 })
 
 watch(sortedRelationships, (relationships) => {
@@ -218,5 +276,17 @@ function formatMemoryLocation(memory: LongTermMemory): string {
   }
 
   return memory.locationLotName || memory.locationSpaceName || ''
+}
+
+function compareScoreDirection(left: number, right: number): string {
+  if (left > right) {
+    return 'more strongly'
+  }
+
+  if (left < right) {
+    return 'less strongly'
+  }
+
+  return 'about as strongly'
 }
 </script>

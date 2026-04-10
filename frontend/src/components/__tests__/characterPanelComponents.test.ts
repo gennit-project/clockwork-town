@@ -202,6 +202,7 @@ describe('character panel components', () => {
     setActivePinia(pinia)
     const simulationStore = useSimulationStore()
     simulationStore.initializeCharacter({ id: 'char-1', name: 'Alice' })
+    simulationStore.initializeCharacter({ id: 'char-2', name: 'Bob' })
     simulationStore.characterStates['char-1'].relationships = [{
       id: 'rel-1',
       fromCharacterId: 'char-1',
@@ -209,6 +210,17 @@ describe('character panel components', () => {
       shortTermScore: 4,
       longTermScore: 8,
       labels: ['best friend'],
+      lastSeenAt: '2026-04-01T12:00:00.000Z',
+      lastSpokeAt: '2026-04-01T18:00:00.000Z',
+      isDeceasedTarget: false
+    }]
+    simulationStore.characterStates['char-2'].relationships = [{
+      id: 'rel-2',
+      fromCharacterId: 'char-2',
+      toCharacterId: 'char-1',
+      shortTermScore: 2,
+      longTermScore: 3,
+      labels: [],
       lastSeenAt: '2026-04-01T12:00:00.000Z',
       lastSpokeAt: '2026-04-01T18:00:00.000Z',
       isDeceasedTarget: false
@@ -223,19 +235,27 @@ describe('character panel components', () => {
       relationshipIds: ['rel-1']
     }]
 
-    const { container, unmount } = mountComponent(CharacterRelationshipsTab, {
+    const container = document.createElement('div')
+    document.body.appendChild(container)
+    const app = createApp(CharacterRelationshipsTab, {
       characterName: 'Alice',
+      characterId: 'char-1',
       characterState: simulationStore.characterStates['char-1'],
       availableCharacters: [{ id: 'char-2', name: 'Bob' }]
     })
+    app.use(pinia)
+    app.mount(container)
 
     await nextTick()
 
     expect(container.textContent).toContain('Alice -> Bob')
+    expect(container.textContent).toContain('Bob -> Alice')
+    expect(container.textContent).toContain('Directional discrepancy')
     expect(container.textContent).toContain('best friend')
     expect(container.textContent).toContain('Met for lunch at the cafe.')
     expect(container.textContent).toContain('Main Street Cafe -> Patio')
 
-    unmount()
+    app.unmount()
+    container.remove()
   })
 })
