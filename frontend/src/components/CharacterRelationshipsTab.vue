@@ -202,8 +202,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useSimulationStore } from '../stores/simulation'
-import { getCharacterStatusText } from '../composables/useCharacterStatus'
 import type { ActionName, CharacterRelationship, CharacterState, Intent, LongTermMemory } from '../stores/types'
+import { canQueueRelationshipAction, evaluateRelationshipAvailability } from '../stores/utils/relationshipAvailability'
 
 interface CharacterSummary {
   id: string
@@ -277,50 +277,20 @@ const selectedRelationshipTargetState = computed<CharacterState | null>(() => {
   return simulationStore.characterStates[relationship.toCharacterId] || null
 })
 
+const selectedRelationshipAvailability = computed(() => {
+  return evaluateRelationshipAvailability({
+    relationship: selectedRelationship.value,
+    targetState: selectedRelationshipTargetState.value
+  })
+})
+
 const canContactSelectedRelationship = computed(() => {
-  const relationship = selectedRelationship.value
-  const targetState = selectedRelationshipTargetState.value
-  if (!relationship || !targetState || relationship.isDeceasedTarget) {
-    return false
-  }
-
-  return !targetState.currentTask
+  return selectedRelationshipAvailability.value.canText || selectedRelationshipAvailability.value.canCall
 })
 
-const canInviteSelectedRelationship = computed(() => {
-  if (!canContactSelectedRelationship.value) {
-    return false
-  }
+const canInviteSelectedRelationship = computed(() => selectedRelationshipAvailability.value.canInviteOver)
 
-  const targetState = selectedRelationshipTargetState.value
-  if (!targetState) {
-    return false
-  }
-
-  return targetState.currentAction !== 'sleep' && targetState.currentAction !== 'work'
-})
-
-const relationshipAvailability = computed(() => {
-  const relationship = selectedRelationship.value
-  const targetState = selectedRelationshipTargetState.value
-  if (!relationship) {
-    return 'Unknown'
-  }
-
-  if (relationship.isDeceasedTarget) {
-    return 'Unavailable (deceased)'
-  }
-
-  if (!targetState) {
-    return 'Unavailable (not loaded in simulation)'
-  }
-
-  if (targetState.currentTask) {
-    return `Busy: ${getCharacterStatusText(targetState)}`
-  }
-
-  return `Available: ${getCharacterStatusText(targetState)}`
-})
+const relationshipAvailability = computed(() => selectedRelationshipAvailability.value.summary)
 
 watch(sortedRelationships, (relationships) => {
   if (!relationships.length) {
@@ -381,7 +351,10 @@ function compareScoreDirection(left: number, right: number): string {
 
 function queueRelationshipContactAction(action: Extract<ActionName, 'text_romance' | 'call_romance' | 'invite_over'>) {
   const relationship = selectedRelationship.value
-  if (!relationship) {
+  if (!relationship || !canQueueRelationshipAction({
+    action,
+    availability: selectedRelationshipAvailability.value
+  })) {
     return
   }
 

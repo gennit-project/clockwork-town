@@ -301,4 +301,42 @@ describe('character panel components', () => {
     app.unmount()
     container.remove()
   })
+
+  it('CharacterRelationshipsTab disables invite over when the target is sleeping', async () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const simulationStore = useSimulationStore()
+    simulationStore.initializeCharacter({ id: 'char-1', name: 'Alice' })
+    simulationStore.initializeCharacter({ id: 'char-2', name: 'Bob' })
+    simulationStore.characterStates['char-1'].relationships = [{
+      id: 'rel-1',
+      fromCharacterId: 'char-1',
+      toCharacterId: 'char-2',
+      shortTermScore: 0.4,
+      longTermScore: 0.6,
+      labels: [],
+      lastSeenAt: null,
+      lastSpokeAt: null,
+      isDeceasedTarget: false
+    }]
+    simulationStore.characterStates['char-2'].currentAction = 'sleep'
+
+    const container = document.createElement('div')
+    document.body.appendChild(container)
+    const app = createApp(CharacterRelationshipsTab, {
+      characterName: 'Alice',
+      characterId: 'char-1',
+      characterState: simulationStore.characterStates['char-1'],
+      availableCharacters: [{ id: 'char-2', name: 'Bob' }]
+    })
+    app.use(pinia)
+    app.mount(container)
+
+    await nextTick()
+
+    expect(findButtonByText(container, 'Invite Over').hasAttribute('disabled')).toBe(true)
+
+    app.unmount()
+    container.remove()
+  })
 })
