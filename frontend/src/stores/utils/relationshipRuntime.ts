@@ -7,6 +7,14 @@ const MIN_RELATIONSHIP_SCORE = 0
 const MAX_RELATIONSHIP_SCORE = 1
 const SHORT_TERM_DECAY_PER_TICK = 0.01
 const LONG_TERM_DECAY_PER_TICK = 0.002
+const MILESTONE_LABELS = ['best friend', 'attracted to', 'casual relationship'] as const
+const ROMANTIC_EVENT_TYPES = new Set(['date', 'text_romance', 'call_romance', 'invite_over'])
+const SHARED_EXPERIENCE_EVENT_TYPES = new Set([
+  'ate_lunch_together',
+  'watched_a_movie_together',
+  'reunited_after_long_absence',
+  'invite_over'
+])
 
 const RELATIONSHIP_EVENT_SCORES: Record<string, { shortTerm: number; longTerm: number }> = {
   first_met: { shortTerm: 0.08, longTerm: 0.03 },
@@ -50,6 +58,106 @@ interface RelationshipLocation {
   lotName?: string | null
   spaceId?: string | null
   spaceName?: string | null
+}
+
+function haveSameLabels({
+  left,
+  right
+}: {
+  left: string[]
+  right: string[]
+}): boolean {
+  if (left.length !== right.length) {
+    return false
+  }
+
+  return left.every((label, index) => label === right[index])
+}
+
+function buildRelationshipMilestoneLabels({
+  relationship,
+  memories
+}: {
+  relationship: CharacterRelationship
+  memories: CharacterState['longTermMemories']
+}): string[] {
+  const relationshipMemories = (memories || []).filter((memory) =>
+    (memory.relationshipIds || []).includes(relationship.id)
+  )
+  const eventTypes = new Set(
+    relationshipMemories
+      .map((memory) => memory.eventType)
+      .filter((eventType): eventType is string => Boolean(eventType))
+  )
+
+  const romanticEventTypes = [...eventTypes].filter((eventType) => ROMANTIC_EVENT_TYPES.has(eventType))
+  const sharedExperienceEventTypes = [...eventTypes].filter((eventType) => SHARED_EXPERIENCE_EVENT_TYPES.has(eventType))
+  const nextLabels: string[] = []
+
+  if (
+    relationship.longTermScore >= 0.55
+    && eventTypes.has('first_met')
+    && sharedExperienceEventTypes.length >= 2
+  ) {
+    nextLabels.push('best friend')
+  }
+
+  if (
+    relationship.longTermScore >= 0.35
+    && relationship.shortTermScore >= 0.15
+    && romanticEventTypes.length >= 1
+  ) {
+    nextLabels.push('attracted to')
+  }
+
+  if (
+    relationship.longTermScore >= 0.5
+    && relationship.shortTermScore >= 0.3
+    && romanticEventTypes.length >= 2
+    && (eventTypes.has('invite_over') || eventTypes.has('date'))
+  ) {
+    nextLabels.push('casual relationship')
+  }
+
+  return nextLabels
+}
+
+async function syncRelationshipMilestoneLabels({
+  characterState,
+  relationshipId,
+  dependencies
+}: {
+  characterState: CharacterState
+  relationshipId: string
+  dependencies: RelationshipRuntimeDependencies
+}): Promise<void> {
+  const relationship = (characterState.relationships || []).find((entry) => entry.id === relationshipId)
+  if (!relationship) {
+    return
+  }
+
+  const preservedLabels = relationship.labels.filter((label) => !MILESTONE_LABELS.includes(label as typeof MILESTONE_LABELS[number]))
+  const milestoneLabels = buildRelationshipMilestoneLabels({
+    relationship,
+    memories: characterState.longTermMemories
+  })
+  const nextLabels = [...preservedLabels, ...milestoneLabels]
+
+  if (haveSameLabels({
+    left: relationship.labels,
+    right: nextLabels
+  })) {
+    return
+  }
+
+  await persistUpdatedRelationship({
+    fromState: characterState,
+    relationship: {
+      ...relationship,
+      labels: nextLabels
+    },
+    dependencies
+  })
 }
 
 function clampRelationshipScore(score: number): number {
@@ -369,6 +477,11 @@ export async function decayCharacterRelationships({
       relationship: decayedRelationship,
       dependencies
     })
+    await syncRelationshipMilestoneLabels({
+      characterState,
+      relationshipId: relationship.id,
+      dependencies
+    })
   }
 }
 
@@ -427,7 +540,7 @@ export async function recordRelationshipEncounter({
       location,
       dependencies
     })
-    await applyRelationshipEventDelta({
+    forwardRelationship = await applyRelationshipEventDelta({
       relationship: forward.relationship,
       fromState: characterState,
       eventType: 'first_met',
@@ -444,7 +557,7 @@ export async function recordRelationshipEncounter({
       location,
       dependencies
     })
-    await applyRelationshipEventDelta({
+    reverseRelationship = await applyRelationshipEventDelta({
       relationship: reverse.relationship,
       fromState: targetState,
       eventType: 'first_met',
@@ -473,13 +586,13 @@ export async function recordRelationshipEncounter({
         buildReverseContent: () => `Saw ${characterState.name} again after ${elapsedText} apart.`,
         dependencies
       })
-      await applyRelationshipEventDelta({
+      forwardRelationship = await applyRelationshipEventDelta({
         relationship: forward.relationship,
         fromState: characterState,
         eventType: 'reunited_after_long_absence',
         dependencies
       })
-      await applyRelationshipEventDelta({
+      reverseRelationship = await applyRelationshipEventDelta({
         relationship: reverse.relationship,
         fromState: targetState,
         eventType: 'reunited_after_long_absence',
@@ -487,6 +600,17 @@ export async function recordRelationshipEncounter({
       })
     }
   }
+
+  await syncRelationshipMilestoneLabels({
+    characterState,
+    relationshipId: forwardRelationship.id,
+    dependencies
+  })
+  await syncRelationshipMilestoneLabels({
+    characterState: targetState,
+    relationshipId: reverseRelationship.id,
+    dependencies
+  })
 }
 
 export async function recordRelationshipConversation({
@@ -566,7 +690,7 @@ export async function recordRelationshipConversation({
     })
   }
 
-  await applyRelationshipEventDelta({
+  forwardRelationship = await applyRelationshipEventDelta({
     relationship: buildUpdatedRelationship({
       relationship: forwardRelationship,
       lastSeenAt: timestamp,
@@ -576,7 +700,7 @@ export async function recordRelationshipConversation({
     eventType: intent.action,
     dependencies
   })
-  await applyRelationshipEventDelta({
+  reverseRelationship = await applyRelationshipEventDelta({
     relationship: buildUpdatedRelationship({
       relationship: reverseRelationship,
       lastSeenAt: timestamp,
@@ -584,6 +708,17 @@ export async function recordRelationshipConversation({
     }),
     fromState: targetState,
     eventType: intent.action,
+    dependencies
+  })
+
+  await syncRelationshipMilestoneLabels({
+    characterState,
+    relationshipId: forwardRelationship.id,
+    dependencies
+  })
+  await syncRelationshipMilestoneLabels({
+    characterState: targetState,
+    relationshipId: reverseRelationship.id,
     dependencies
   })
 }
@@ -661,6 +796,17 @@ export async function recordRelationshipDirectContact({
     }),
     dependencies
   })
+
+  await syncRelationshipMilestoneLabels({
+    characterState,
+    relationshipId: forwardRelationship.id,
+    dependencies
+  })
+  await syncRelationshipMilestoneLabels({
+    characterState: targetState,
+    relationshipId: reverseRelationship.id,
+    dependencies
+  })
 }
 
 export async function recordSharedMeal({
@@ -718,16 +864,27 @@ export async function recordSharedMeal({
     buildReverseContent: () => `Ate lunch with ${characterState.name}.`,
     dependencies
   })
-  await applyRelationshipEventDelta({
+  const updatedForwardRelationship = await applyRelationshipEventDelta({
     relationship: forward.relationship,
     fromState: characterState,
     eventType: 'ate_lunch_together',
     dependencies
   })
-  await applyRelationshipEventDelta({
+  const updatedReverseRelationship = await applyRelationshipEventDelta({
     relationship: reverse.relationship,
     fromState: targetState,
     eventType: 'ate_lunch_together',
+    dependencies
+  })
+
+  await syncRelationshipMilestoneLabels({
+    characterState,
+    relationshipId: updatedForwardRelationship.id,
+    dependencies
+  })
+  await syncRelationshipMilestoneLabels({
+    characterState: targetState,
+    relationshipId: updatedReverseRelationship.id,
     dependencies
   })
 }
@@ -787,16 +944,27 @@ export async function recordSharedViewingExperience({
     buildReverseContent: () => `Watched a movie with ${characterState.name}.`,
     dependencies
   })
-  await applyRelationshipEventDelta({
+  const updatedForwardRelationship = await applyRelationshipEventDelta({
     relationship: forward.relationship,
     fromState: characterState,
     eventType: 'watched_a_movie_together',
     dependencies
   })
-  await applyRelationshipEventDelta({
+  const updatedReverseRelationship = await applyRelationshipEventDelta({
     relationship: reverse.relationship,
     fromState: targetState,
     eventType: 'watched_a_movie_together',
+    dependencies
+  })
+
+  await syncRelationshipMilestoneLabels({
+    characterState,
+    relationshipId: updatedForwardRelationship.id,
+    dependencies
+  })
+  await syncRelationshipMilestoneLabels({
+    characterState: targetState,
+    relationshipId: updatedReverseRelationship.id,
     dependencies
   })
 }

@@ -144,6 +144,28 @@ describe('simulation store integration', () => {
     }
   }
 
+  function createLongTermMemorySeed({
+    id,
+    content,
+    createdAt,
+    relationshipId,
+    eventType
+  }: {
+    id: string
+    content: string
+    createdAt: string
+    relationshipId: string
+    eventType: string
+  }) {
+    return {
+      id,
+      content,
+      createdAt,
+      eventType,
+      relationshipIds: [relationshipId]
+    }
+  }
+
   it('drains the queued manual intents after execution', async () => {
     const store = setupStore()
     enqueueReadIntent(store)
@@ -771,6 +793,151 @@ describe('simulation store integration', () => {
     expect(persistenceMocks.createStructuredCharacterLongTermMemory).toHaveBeenCalledWith(expect.objectContaining({
       eventType: 'watched_a_movie_together'
     }))
+  })
+
+  it('adds a best friend label after enough shared milestone memories accrue', async () => {
+    const store = setupStore()
+    store.simulationDateTime = {
+      ...store.simulationDateTime,
+      iso: '2026-04-06T19:00:00.000Z',
+      hour: 12,
+      minute: 0
+    }
+    setupSecondCharacter(store, 'lot-1', 'Test House', 'space-2', 'Kitchen')
+    store.updateCharacterLocation('char-1', 'region-1', 'lot-1', 'Test House', 'space-2', 'Kitchen')
+    store.characterStates['char-2'].queuedActions = []
+    seedDirectionalRelationship(store, 'char-1', 'char-2', null, {
+      shortTermScore: 0.4,
+      longTermScore: 0.62
+    })
+    seedDirectionalRelationship(store, 'char-2', 'char-1', null, {
+      shortTermScore: 0.4,
+      longTermScore: 0.62
+    })
+    store.characterStates['char-1'].longTermMemories = [
+      createLongTermMemorySeed({
+        id: 'mem-1',
+        content: 'Met Bob for the first time.',
+        createdAt: '2026-04-01T10:00:00.000Z',
+        relationshipId: 'char-1-char-2',
+        eventType: 'first_met'
+      }),
+      createLongTermMemorySeed({
+        id: 'mem-2',
+        content: 'Watched a movie with Bob.',
+        createdAt: '2026-04-03T19:00:00.000Z',
+        relationshipId: 'char-1-char-2',
+        eventType: 'watched_a_movie_together'
+      })
+    ]
+    store.characterStates['char-2'].longTermMemories = [
+      createLongTermMemorySeed({
+        id: 'mem-3',
+        content: 'Met Alice for the first time.',
+        createdAt: '2026-04-01T10:00:00.000Z',
+        relationshipId: 'char-2-char-1',
+        eventType: 'first_met'
+      }),
+      createLongTermMemorySeed({
+        id: 'mem-4',
+        content: 'Watched a movie with Alice.',
+        createdAt: '2026-04-03T19:00:00.000Z',
+        relationshipId: 'char-2-char-1',
+        eventType: 'watched_a_movie_together'
+      })
+    ]
+    store.enqueueIntent('char-1', {
+      action: 'eat',
+      itemId: 'item-3',
+      itemName: 'Fridge',
+      targetSpaceId: 'space-2',
+      targetSpaceName: 'Kitchen',
+      targetLotId: 'lot-1',
+      targetLotName: 'Test House',
+      utility: 10
+    })
+    store.enqueueIntent('char-2', {
+      action: 'eat',
+      itemId: 'item-3',
+      itemName: 'Fridge',
+      targetSpaceId: 'space-2',
+      targetSpaceName: 'Kitchen',
+      targetLotId: 'lot-1',
+      targetLotName: 'Test House',
+      utility: 10
+    })
+
+    await store.executeTick()
+
+    expect(store.characterStates['char-1'].relationships?.[0]?.labels).toContain('best friend')
+  })
+
+  it('adds an attracted to label after romantic contact milestones', async () => {
+    const store = setupStore()
+    setupSecondCharacter(store, 'lot-2', 'Community Center', 'space-3', 'Library')
+    seedDirectionalRelationship(store, 'char-1', 'char-2', null, {
+      shortTermScore: 0.2,
+      longTermScore: 0.42
+    })
+    seedDirectionalRelationship(store, 'char-2', 'char-1', null, {
+      shortTermScore: 0.2,
+      longTermScore: 0.2
+    })
+    store.enqueueIntent('char-1', {
+      action: 'text_romance',
+      utility: 1,
+      socialTargetId: 'char-2',
+      socialTargetName: 'Bob'
+    })
+
+    await store.executeTick()
+
+    expect(store.characterStates['char-1'].relationships?.[0]?.labels).toContain('attracted to')
+  })
+
+  it('adds a casual relationship label after multiple romantic milestone types', async () => {
+    const store = setupStore()
+    setupSecondCharacter(store, 'lot-2', 'Community Center', 'space-3', 'Library')
+    seedDirectionalRelationship(store, 'char-1', 'char-2', null, {
+      shortTermScore: 0.32,
+      longTermScore: 0.56
+    })
+    seedDirectionalRelationship(store, 'char-2', 'char-1', null, {
+      shortTermScore: 0.22,
+      longTermScore: 0.3
+    })
+    store.characterStates['char-1'].longTermMemories = [
+      createLongTermMemorySeed({
+        id: 'mem-5',
+        content: 'Texted Bob.',
+        createdAt: '2026-04-04T10:00:00.000Z',
+        relationshipId: 'char-1-char-2',
+        eventType: 'text_romance'
+      })
+    ]
+    store.characterStates['char-2'].longTermMemories = [
+      createLongTermMemorySeed({
+        id: 'mem-6',
+        content: 'Texted Alice.',
+        createdAt: '2026-04-04T10:00:00.000Z',
+        relationshipId: 'char-2-char-1',
+        eventType: 'text_romance'
+      })
+    ]
+    store.enqueueIntent('char-1', {
+      action: 'invite_over',
+      utility: 1,
+      socialTargetId: 'char-2',
+      socialTargetName: 'Bob',
+      targetLotId: 'lot-1',
+      targetLotName: 'Test House',
+      targetSpaceId: 'space-1',
+      targetSpaceName: 'Living Room'
+    })
+
+    await store.executeTick()
+
+    expect(store.characterStates['char-1'].relationships?.[0]?.labels).toContain('casual relationship')
   })
 
   it('falls back to idle when backend activity start fails', async () => {

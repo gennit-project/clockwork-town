@@ -19,6 +19,7 @@ import {
   startCharacterActivity
 } from './simulationPersistence'
 import {
+  appendStructuredLongTermMemory,
   appendShortTermMemory,
   createCharacterState,
   enqueueManualIntent
@@ -130,6 +131,30 @@ export const useSimulationStore = defineStore('simulation', () => {
     appendShortTermMemory(state, currentTick.value, intent)
   }
 
+  async function createStructuredLongTermMemory(input: {
+    characterId: string
+    content: string
+    relationshipIds?: string[]
+    eventType?: string
+    locationLotId?: string
+    locationLotName?: string
+    locationSpaceId?: string
+    locationSpaceName?: string
+    createdAt?: string
+  }): Promise<void> {
+    await createStructuredCharacterLongTermMemory(input)
+
+    const state = characterStates.value[input.characterId]
+    if (!state) {
+      return
+    }
+
+    appendStructuredLongTermMemory({
+      state,
+      input
+    })
+  }
+
   const runtime = createSimulationRuntime(
     {
       currentTick,
@@ -148,7 +173,7 @@ export const useSimulationStore = defineStore('simulation', () => {
       moveCharacterToLot,
       startCharacterActivity,
       persistCharacterRelationship,
-      createStructuredCharacterLongTermMemory
+      createStructuredCharacterLongTermMemory: createStructuredLongTermMemory
     }
   )
 

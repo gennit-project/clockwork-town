@@ -1,4 +1,4 @@
-import type { ActivityLogEntry, CharacterLocation, CharacterState, Intent, Memory } from '../types'
+import type { ActivityLogEntry, CharacterLocation, CharacterState, Intent, LongTermMemory, Memory } from '../types'
 import { INITIAL_COOLDOWNS, INITIAL_NEEDS } from '../config/needs'
 
 const MAX_SHORT_TERM_MEMORIES = 20
@@ -88,6 +88,45 @@ export function appendShortTermMemory(
   if (state.memories.length > MAX_SHORT_TERM_MEMORIES) {
     state.memories = state.memories.slice(-MAX_SHORT_TERM_MEMORIES)
   }
+
+  return state
+}
+
+export function appendStructuredLongTermMemory({
+  state,
+  input
+}: {
+  state: CharacterState
+  input: {
+    content: string
+    relationshipIds?: string[]
+    eventType?: string
+    locationLotId?: string
+    locationLotName?: string
+    locationSpaceId?: string
+    locationSpaceName?: string
+    createdAt?: string
+  }
+}): CharacterState {
+  const memory: LongTermMemory = {
+    id: crypto.randomUUID(),
+    content: input.content,
+    createdAt: input.createdAt || new Date().toISOString(),
+    eventType: input.eventType ?? null,
+    locationLotId: input.locationLotId ?? null,
+    locationLotName: input.locationLotName ?? null,
+    locationSpaceId: input.locationSpaceId ?? null,
+    locationSpaceName: input.locationSpaceName ?? null,
+    relationshipIds: input.relationshipIds ?? []
+  }
+
+  if (!state.longTermMemories) {
+    state.longTermMemories = []
+  }
+
+  state.longTermMemories = [...state.longTermMemories, memory].sort((left, right) =>
+    left.createdAt.localeCompare(right.createdAt)
+  )
 
   return state
 }
