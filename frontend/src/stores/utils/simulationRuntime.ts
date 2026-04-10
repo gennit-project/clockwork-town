@@ -32,6 +32,7 @@ import { progressActiveTask } from './taskProgression'
 import { executeTick as runTick } from './tickExecution'
 import { createSimulationDateTime } from './simulationCalendar'
 import {
+  decayCharacterRelationships,
   recordRelationshipConversation,
   recordRelationshipEncounter,
   recordSharedMeal,
@@ -434,6 +435,15 @@ export function createSimulationRuntime(
       itemOccupancy: refs.itemOccupancy,
       activityLog: refs.activityLog,
       executeAction,
+      decayRelationships: async ({ characterState }) => {
+        await decayCharacterRelationships({
+          characterState,
+          dependencies: {
+            persistCharacterRelationship: dependencies.persistCharacterRelationship,
+            createStructuredCharacterLongTermMemory: dependencies.createStructuredCharacterLongTermMemory
+          }
+        })
+      },
       progressTask
     })
   }

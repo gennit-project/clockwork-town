@@ -4,6 +4,19 @@ const REUNION_ABSENCE_THRESHOLD_MINUTES = 6 * 60
 const LUNCH_START_HOUR = 11
 const LUNCH_END_HOUR = 14
 const MOVIE_ITEM_PATTERN = /movie|tv|television|screen|projector/i
+const MIN_RELATIONSHIP_SCORE = 0
+const MAX_RELATIONSHIP_SCORE = 1
+const SHORT_TERM_DECAY_PER_TICK = 0.01
+const LONG_TERM_DECAY_PER_TICK = 0.002
+
+const RELATIONSHIP_EVENT_SCORES: Record<string, { shortTerm: number; longTerm: number }> = {
+  first_met: { shortTerm: 0.08, longTerm: 0.03 },
+  chat_friend: { shortTerm: 0.12, longTerm: 0.03 },
+  date: { shortTerm: 0.18, longTerm: 0.06 },
+  ate_lunch_together: { shortTerm: 0.07, longTerm: 0.025 },
+  watched_a_movie_together: { shortTerm: 0.06, longTerm: 0.02 },
+  reunited_after_long_absence: { shortTerm: 0.05, longTerm: 0.015 }
+}
 
 export interface RelationshipRuntimeDependencies {
   persistCharacterRelationship: (input: {
@@ -35,6 +48,40 @@ interface RelationshipLocation {
   lotName?: string | null
   spaceId?: string | null
   spaceName?: string | null
+}
+
+function clampRelationshipScore(score: number): number {
+  return Math.min(MAX_RELATIONSHIP_SCORE, Math.max(MIN_RELATIONSHIP_SCORE, score))
+}
+
+function roundRelationshipScore(score: number): number {
+  return Math.round(score * 1000) / 1000
+}
+
+function getRelationshipEventDelta(eventType: string): { shortTerm: number; longTerm: number } {
+  return RELATIONSHIP_EVENT_SCORES[eventType] || { shortTerm: 0, longTerm: 0 }
+}
+
+function buildUpdatedRelationship({
+  relationship,
+  shortTermScore,
+  longTermScore,
+  lastSeenAt,
+  lastSpokeAt
+}: {
+  relationship: CharacterRelationship
+  shortTermScore?: number
+  longTermScore?: number
+  lastSeenAt?: string
+  lastSpokeAt?: string
+}): CharacterRelationship {
+  return {
+    ...relationship,
+    shortTermScore: roundRelationshipScore(clampRelationshipScore(shortTermScore ?? relationship.shortTermScore)),
+    longTermScore: roundRelationshipScore(clampRelationshipScore(longTermScore ?? relationship.longTermScore)),
+    lastSeenAt: lastSeenAt ?? relationship.lastSeenAt ?? null,
+    lastSpokeAt: lastSpokeAt ?? relationship.lastSpokeAt ?? null
+  }
 }
 
 function upsertLocalRelationship(state: CharacterState, relationship: CharacterRelationship): void {
@@ -82,6 +129,56 @@ async function ensureDirectionalRelationship({
     relationship,
     created: !existing
   }
+}
+
+async function persistUpdatedRelationship({
+  fromState,
+  relationship,
+  dependencies
+}: {
+  fromState: CharacterState
+  relationship: CharacterRelationship
+  dependencies: RelationshipRuntimeDependencies
+}): Promise<CharacterRelationship> {
+  const persistedRelationship = await dependencies.persistCharacterRelationship({
+    id: relationship.id,
+    fromCharacterId: relationship.fromCharacterId,
+    toCharacterId: relationship.toCharacterId,
+    shortTermScore: relationship.shortTermScore,
+    longTermScore: relationship.longTermScore,
+    labels: relationship.labels,
+    lastSeenAt: relationship.lastSeenAt ?? undefined,
+    lastSpokeAt: relationship.lastSpokeAt ?? undefined,
+    isDeceasedTarget: relationship.isDeceasedTarget
+  })
+
+  upsertLocalRelationship(fromState, persistedRelationship)
+  return persistedRelationship
+}
+
+async function applyRelationshipEventDelta({
+  relationship,
+  fromState,
+  eventType,
+  dependencies
+}: {
+  relationship: CharacterRelationship
+  fromState: CharacterState
+  eventType: string
+  dependencies: RelationshipRuntimeDependencies
+}): Promise<CharacterRelationship> {
+  const delta = getRelationshipEventDelta(eventType)
+  const updatedRelationship = buildUpdatedRelationship({
+    relationship,
+    shortTermScore: relationship.shortTermScore + delta.shortTerm,
+    longTermScore: relationship.longTermScore + delta.longTerm
+  })
+
+  return persistUpdatedRelationship({
+    fromState,
+    relationship: updatedRelationship,
+    dependencies
+  })
 }
 
 async function createFirstMetMemory({
@@ -224,6 +321,37 @@ async function createPairedRelationshipMemories({
   })
 }
 
+export async function decayCharacterRelationships({
+  characterState,
+  dependencies
+}: {
+  characterState: CharacterState
+  dependencies: RelationshipRuntimeDependencies
+}): Promise<void> {
+  const relationships = characterState.relationships || []
+
+  for (const relationship of relationships) {
+    const decayedRelationship = buildUpdatedRelationship({
+      relationship,
+      shortTermScore: relationship.shortTermScore - SHORT_TERM_DECAY_PER_TICK,
+      longTermScore: relationship.longTermScore - LONG_TERM_DECAY_PER_TICK
+    })
+
+    const scoreChanged = decayedRelationship.shortTermScore !== relationship.shortTermScore
+      || decayedRelationship.longTermScore !== relationship.longTermScore
+
+    if (!scoreChanged) {
+      continue
+    }
+
+    await persistUpdatedRelationship({
+      fromState: characterState,
+      relationship: decayedRelationship,
+      dependencies
+    })
+  }
+}
+
 export async function recordRelationshipEncounter({
   characterId,
   targetCharacterId,
@@ -267,6 +395,9 @@ export async function recordRelationshipEncounter({
     dependencies
   })
 
+  let forwardRelationship = forward.relationship
+  let reverseRelationship = reverse.relationship
+
   if (forward.created) {
     await createFirstMetMemory({
       characterId,
@@ -274,6 +405,12 @@ export async function recordRelationshipEncounter({
       relationshipId: forward.relationship.id,
       timestamp,
       location,
+      dependencies
+    })
+    await applyRelationshipEventDelta({
+      relationship: forward.relationship,
+      fromState: characterState,
+      eventType: 'first_met',
       dependencies
     })
   }
@@ -285,6 +422,12 @@ export async function recordRelationshipEncounter({
       relationshipId: reverse.relationship.id,
       timestamp,
       location,
+      dependencies
+    })
+    await applyRelationshipEventDelta({
+      relationship: reverse.relationship,
+      fromState: targetState,
+      eventType: 'first_met',
       dependencies
     })
   }
@@ -308,6 +451,18 @@ export async function recordRelationshipEncounter({
         eventType: 'reunited_after_long_absence',
         buildForwardContent: () => `Saw ${targetState.name} again after ${elapsedText} apart.`,
         buildReverseContent: () => `Saw ${characterState.name} again after ${elapsedText} apart.`,
+        dependencies
+      })
+      await applyRelationshipEventDelta({
+        relationship: forward.relationship,
+        fromState: characterState,
+        eventType: 'reunited_after_long_absence',
+        dependencies
+      })
+      await applyRelationshipEventDelta({
+        relationship: reverse.relationship,
+        fromState: targetState,
+        eventType: 'reunited_after_long_absence',
         dependencies
       })
     }
@@ -354,6 +509,8 @@ export async function recordRelationshipConversation({
     spaceId: intent.targetSpaceId,
     spaceName: intent.targetSpaceName
   }
+  let forwardRelationship = forward.relationship
+  let reverseRelationship = reverse.relationship
 
   if (forward.created) {
     await createFirstMetMemory({
@@ -362,6 +519,12 @@ export async function recordRelationshipConversation({
       relationshipId: forward.relationship.id,
       timestamp,
       location,
+      dependencies
+    })
+    forwardRelationship = await applyRelationshipEventDelta({
+      relationship: forwardRelationship,
+      fromState: characterState,
+      eventType: 'first_met',
       dependencies
     })
   }
@@ -375,7 +538,34 @@ export async function recordRelationshipConversation({
       location,
       dependencies
     })
+    reverseRelationship = await applyRelationshipEventDelta({
+      relationship: reverseRelationship,
+      fromState: targetState,
+      eventType: 'first_met',
+      dependencies
+    })
   }
+
+  await applyRelationshipEventDelta({
+    relationship: buildUpdatedRelationship({
+      relationship: forwardRelationship,
+      lastSeenAt: timestamp,
+      lastSpokeAt: timestamp
+    }),
+    fromState: characterState,
+    eventType: intent.action,
+    dependencies
+  })
+  await applyRelationshipEventDelta({
+    relationship: buildUpdatedRelationship({
+      relationship: reverseRelationship,
+      lastSeenAt: timestamp,
+      lastSpokeAt: timestamp
+    }),
+    fromState: targetState,
+    eventType: intent.action,
+    dependencies
+  })
 }
 
 export async function recordSharedMeal({
@@ -433,6 +623,18 @@ export async function recordSharedMeal({
     buildReverseContent: () => `Ate lunch with ${characterState.name}.`,
     dependencies
   })
+  await applyRelationshipEventDelta({
+    relationship: forward.relationship,
+    fromState: characterState,
+    eventType: 'ate_lunch_together',
+    dependencies
+  })
+  await applyRelationshipEventDelta({
+    relationship: reverse.relationship,
+    fromState: targetState,
+    eventType: 'ate_lunch_together',
+    dependencies
+  })
 }
 
 export async function recordSharedViewingExperience({
@@ -488,6 +690,18 @@ export async function recordSharedViewingExperience({
     eventType: 'watched_a_movie_together',
     buildForwardContent: () => `Watched a movie with ${targetState.name}.`,
     buildReverseContent: () => `Watched a movie with ${characterState.name}.`,
+    dependencies
+  })
+  await applyRelationshipEventDelta({
+    relationship: forward.relationship,
+    fromState: characterState,
+    eventType: 'watched_a_movie_together',
+    dependencies
+  })
+  await applyRelationshipEventDelta({
+    relationship: reverse.relationship,
+    fromState: targetState,
+    eventType: 'watched_a_movie_together',
     dependencies
   })
 }

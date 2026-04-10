@@ -367,6 +367,7 @@ export interface ExecuteTickParams {
   itemOccupancy: Ref<ItemOccupancy>
   activityLog: Ref<ActivityLogEntry[]>
   executeAction: (characterId: string, intent: Intent) => Promise<void>
+  decayRelationships?: (params: { characterState: CharacterState }) => Promise<void>
   progressTask?: (characterId: string) => Promise<boolean>
 }
 
@@ -384,6 +385,7 @@ export async function executeTick({
   itemOccupancy,
   activityLog,
   executeAction,
+  decayRelationships,
   progressTask
 }: ExecuteTickParams): Promise<void> {
   currentTick.value++
@@ -398,6 +400,10 @@ export async function executeTick({
     const state = characterStates.value[characterId]
     state.incomingSocialInvitations = []
     state.outgoingSocialInvitations = []
+
+    if (decayRelationships) {
+      await decayRelationships({ characterState: state })
+    }
 
     // Decay needs using constants from config
     state.needs.food = Math.max(0, state.needs.food - NEED_DECAY_RATES.food)

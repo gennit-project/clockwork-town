@@ -105,19 +105,43 @@ describe('simulation store integration', () => {
     store: ReturnType<typeof useSimulationStore>,
     fromCharacterId: string,
     toCharacterId: string,
-    lastSeenAt: string | null
+    lastSeenAt: string | null,
+    overrides: Partial<ReturnType<typeof createRelationshipSeed>> = {}
   ) {
-    store.characterStates[fromCharacterId].relationships = [{
+    store.characterStates[fromCharacterId].relationships = [createRelationshipSeed({
+      fromCharacterId,
+      toCharacterId,
+      lastSeenAt,
+      ...overrides
+    })]
+  }
+
+  function createRelationshipSeed({
+    fromCharacterId,
+    toCharacterId,
+    lastSeenAt,
+    shortTermScore = 0,
+    longTermScore = 0,
+    lastSpokeAt = null
+  }: {
+    fromCharacterId: string
+    toCharacterId: string
+    lastSeenAt: string | null
+    shortTermScore?: number
+    longTermScore?: number
+    lastSpokeAt?: string | null
+  }) {
+    return {
       id: `${fromCharacterId}-${toCharacterId}`,
       fromCharacterId,
       toCharacterId,
-      shortTermScore: 0,
-      longTermScore: 0,
+      shortTermScore,
+      longTermScore,
       labels: [],
       lastSeenAt,
-      lastSpokeAt: null,
+      lastSpokeAt,
       isDeceasedTarget: false
-    }]
+    }
   }
 
   it('drains the queued manual intents after execution', async () => {
@@ -320,6 +344,88 @@ describe('simulation store integration', () => {
     expect(store.characterStates['char-1'].relationships?.[0]?.lastSpokeAt).toBe(store.simulationDateTime.iso)
   })
 
+  it('decays short-term relationship score faster than long-term score on each tick', async () => {
+    const store = setupStore()
+    setupSecondCharacter(store, 'lot-1', 'Test House', 'space-1', 'Living Room')
+    seedDirectionalRelationship(store, 'char-1', 'char-2', null, {
+      shortTermScore: 0.5,
+      longTermScore: 0.5
+    })
+    store.enqueueIntent('char-1', {
+      action: 'idle',
+      utility: 0
+    })
+
+    await store.executeTick()
+
+    expect(
+      (store.characterStates['char-1'].relationships?.[0]?.shortTermScore ?? 0)
+      < (store.characterStates['char-1'].relationships?.[0]?.longTermScore ?? 0)
+    ).toBe(true)
+  })
+
+  it('increases short-term relationship score after an accepted chat interaction', async () => {
+    const store = setupStore()
+    setupSecondCharacter(store, 'lot-1', 'Test House', 'space-1', 'Living Room')
+    seedDirectionalRelationship(store, 'char-1', 'char-2', null, {
+      shortTermScore: 0.2,
+      longTermScore: 0.1
+    })
+    seedDirectionalRelationship(store, 'char-2', 'char-1', null, {
+      shortTermScore: 0.05,
+      longTermScore: 0.02
+    })
+    store.characterStates['char-2'].needs.friends = 0.1
+    store.enqueueIntent('char-1', {
+      action: 'chat_friend',
+      itemId: 'item-1',
+      itemName: 'Couch',
+      targetSpaceId: 'space-1',
+      targetSpaceName: 'Living Room',
+      targetLotId: 'lot-1',
+      targetLotName: 'Test House',
+      socialTargetId: 'char-2',
+      socialTargetName: 'Bob',
+      utility: 10
+    })
+
+    await store.executeTick()
+
+    expect(store.characterStates['char-1'].relationships?.[0]?.shortTermScore).toBeGreaterThan(0.2)
+  })
+
+  it('preserves directional relationship differences after a shared interaction', async () => {
+    const store = setupStore()
+    setupSecondCharacter(store, 'lot-1', 'Test House', 'space-1', 'Living Room')
+    seedDirectionalRelationship(store, 'char-1', 'char-2', null, {
+      shortTermScore: 0.2,
+      longTermScore: 0.1
+    })
+    seedDirectionalRelationship(store, 'char-2', 'char-1', null, {
+      shortTermScore: 0.05,
+      longTermScore: 0.02
+    })
+    store.characterStates['char-2'].needs.friends = 0.1
+    store.enqueueIntent('char-1', {
+      action: 'chat_friend',
+      itemId: 'item-1',
+      itemName: 'Couch',
+      targetSpaceId: 'space-1',
+      targetSpaceName: 'Living Room',
+      targetLotId: 'lot-1',
+      targetLotName: 'Test House',
+      socialTargetId: 'char-2',
+      socialTargetName: 'Bob',
+      utility: 10
+    })
+
+    await store.executeTick()
+
+    expect(store.characterStates['char-1'].relationships?.[0]?.shortTermScore).not.toBe(
+      store.characterStates['char-2'].relationships?.[0]?.shortTermScore
+    )
+  })
+
   it('creates a reunited_after_long_absence memory when characters meet again after hours apart', async () => {
     const store = setupStore()
     store.simulationDateTime = {
@@ -380,6 +486,51 @@ describe('simulation store integration', () => {
     expect(persistenceMocks.createStructuredCharacterLongTermMemory).toHaveBeenCalledWith(expect.objectContaining({
       eventType: 'ate_lunch_together'
     }))
+  })
+
+  it('increases long-term relationship score after a shared lunch', async () => {
+    const store = setupStore()
+    store.simulationDateTime = {
+      ...store.simulationDateTime,
+      iso: '2026-04-06T19:00:00.000Z',
+      hour: 12,
+      minute: 0
+    }
+    setupSecondCharacter(store, 'lot-1', 'Test House', 'space-2', 'Kitchen')
+    store.updateCharacterLocation('char-1', 'region-1', 'lot-1', 'Test House', 'space-2', 'Kitchen')
+    store.characterStates['char-2'].queuedActions = []
+    seedDirectionalRelationship(store, 'char-1', 'char-2', null, {
+      shortTermScore: 0.1,
+      longTermScore: 0.1
+    })
+    seedDirectionalRelationship(store, 'char-2', 'char-1', null, {
+      shortTermScore: 0.1,
+      longTermScore: 0.1
+    })
+    store.enqueueIntent('char-1', {
+      action: 'eat',
+      itemId: 'item-3',
+      itemName: 'Fridge',
+      targetSpaceId: 'space-2',
+      targetSpaceName: 'Kitchen',
+      targetLotId: 'lot-1',
+      targetLotName: 'Test House',
+      utility: 10
+    })
+    store.enqueueIntent('char-2', {
+      action: 'eat',
+      itemId: 'item-3',
+      itemName: 'Fridge',
+      targetSpaceId: 'space-2',
+      targetSpaceName: 'Kitchen',
+      targetLotId: 'lot-1',
+      targetLotName: 'Test House',
+      utility: 10
+    })
+
+    await store.executeTick()
+
+    expect(store.characterStates['char-1'].relationships?.[0]?.longTermScore).toBeGreaterThan(0.1)
   })
 
   it('creates a watched_a_movie_together memory when characters view a movie together', async () => {
