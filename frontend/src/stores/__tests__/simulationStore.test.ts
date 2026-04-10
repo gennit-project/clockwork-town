@@ -506,6 +506,125 @@ describe('simulation store integration', () => {
     expect(store.characterStates['char-2'].location.lotId).toBe('lot-1')
   })
 
+  it('executes the hosted hang out follow-up on the tick after arrival', async () => {
+    const store = setupStore()
+    setupSecondCharacter(store, 'lot-2', 'Community Center', 'space-3', 'Library')
+    seedDirectionalRelationship(store, 'char-1', 'char-2', null)
+    seedDirectionalRelationship(store, 'char-2', 'char-1', null)
+    store.characterStates['char-2'].needs.friends = 0.1
+    store.enqueueIntent('char-1', {
+      action: 'invite_over',
+      inviteContextType: 'hang_out',
+      utility: 1,
+      socialTargetId: 'char-2',
+      socialTargetName: 'Bob',
+      targetLotId: 'lot-1',
+      targetLotName: 'Test House',
+      targetSpaceId: 'space-1',
+      targetSpaceName: 'Living Room',
+      hostedFollowUp: {
+        action: 'chat_friend',
+        itemId: 'item-1',
+        itemName: 'Couch',
+        targetLotId: 'lot-1',
+        targetLotName: 'Test House',
+        targetSpaceId: 'space-1',
+        targetSpaceName: 'Living Room',
+        totalTicks: 1,
+        remainingTicks: 0,
+        socialTargetId: 'char-2',
+        socialTargetName: 'Bob'
+      }
+    })
+
+    await store.executeTick()
+    await store.executeTick()
+
+    expect(store.characterStates['char-1'].currentAction).toBe('chat_friend')
+  })
+
+  it('executes the hosted watch movie follow-up on the tick after arrival', async () => {
+    const store = setupStore()
+    store.worldData.items['item-1'] = {
+      ...store.worldData.items['item-1'],
+      name: 'Movie Screen',
+      allowedActivities: ['chat_friend', 'view_movie'],
+      affordances: [
+        { action: 'chat_friend', weight: 1 },
+        { action: 'view_movie', weight: 1 }
+      ]
+    }
+    store.worldData.itemsByAffordance.view_movie = ['item-1']
+    setupSecondCharacter(store, 'lot-2', 'Community Center', 'space-3', 'Library')
+    seedDirectionalRelationship(store, 'char-1', 'char-2', null)
+    seedDirectionalRelationship(store, 'char-2', 'char-1', null)
+    store.enqueueIntent('char-1', {
+      action: 'invite_over',
+      inviteContextType: 'watch_movie',
+      utility: 1,
+      socialTargetId: 'char-2',
+      socialTargetName: 'Bob',
+      targetLotId: 'lot-1',
+      targetLotName: 'Test House',
+      targetSpaceId: 'space-1',
+      targetSpaceName: 'Living Room',
+      hostedFollowUp: {
+        action: 'view_movie',
+        itemId: 'item-1',
+        itemName: 'Movie Screen',
+        targetLotId: 'lot-1',
+        targetLotName: 'Test House',
+        targetSpaceId: 'space-1',
+        targetSpaceName: 'Living Room',
+        totalTicks: 1,
+        remainingTicks: 0,
+        socialTargetId: 'char-2',
+        socialTargetName: 'Bob'
+      }
+    })
+
+    await store.executeTick()
+    await store.executeTick()
+
+    expect(store.characterStates['char-1'].currentAction).toBe('view_movie')
+  })
+
+  it('executes the hosted have dinner follow-up on the tick after arrival', async () => {
+    const store = setupStore()
+    setupSecondCharacter(store, 'lot-2', 'Community Center', 'space-3', 'Library')
+    seedDirectionalRelationship(store, 'char-1', 'char-2', null)
+    seedDirectionalRelationship(store, 'char-2', 'char-1', null)
+    store.enqueueIntent('char-1', {
+      action: 'invite_over',
+      inviteContextType: 'have_dinner',
+      utility: 1,
+      socialTargetId: 'char-2',
+      socialTargetName: 'Bob',
+      targetLotId: 'lot-1',
+      targetLotName: 'Test House',
+      targetSpaceId: 'space-1',
+      targetSpaceName: 'Living Room',
+      hostedFollowUp: {
+        action: 'eat',
+        itemId: 'item-3',
+        itemName: 'Fridge',
+        targetLotId: 'lot-1',
+        targetLotName: 'Test House',
+        targetSpaceId: 'space-2',
+        targetSpaceName: 'Kitchen',
+        totalTicks: 1,
+        remainingTicks: 0,
+        socialTargetId: 'char-2',
+        socialTargetName: 'Bob'
+      }
+    })
+
+    await store.executeTick()
+    await store.executeTick()
+
+    expect(store.characterStates['char-1'].currentAction).toBe('eat')
+  })
+
   it('creates a reunited_after_long_absence memory when characters meet again after hours apart', async () => {
     const store = setupStore()
     store.simulationDateTime = {
