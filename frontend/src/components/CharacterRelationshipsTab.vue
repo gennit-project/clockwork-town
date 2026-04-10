@@ -115,6 +115,10 @@
 
         <div class="mt-4 space-y-2 text-sm text-gray-700 dark:text-gray-300">
           <p>
+            <span class="font-medium text-gray-900 dark:text-gray-100">Availability:</span>
+            {{ relationshipAvailability }}
+          </p>
+          <p>
             <span class="font-medium text-gray-900 dark:text-gray-100">Last seen:</span>
             {{ formatDateTime(selectedRelationship.lastSeenAt) }}
           </p>
@@ -122,6 +126,36 @@
             <span class="font-medium text-gray-900 dark:text-gray-100">Last spoke:</span>
             {{ formatDateTime(selectedRelationship.lastSpokeAt) }}
           </p>
+        </div>
+
+        <div class="mt-4">
+          <p class="text-sm font-medium text-gray-900 dark:text-gray-100">Contact</p>
+          <div class="mt-2 flex flex-wrap gap-2">
+            <button
+              type="button"
+              class="rounded border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-900/40 dark:text-gray-200 dark:hover:bg-gray-800"
+              :disabled="!canContactSelectedRelationship"
+              @click="queueRelationshipContactAction('text_romance')"
+            >
+              Text
+            </button>
+            <button
+              type="button"
+              class="rounded border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-900/40 dark:text-gray-200 dark:hover:bg-gray-800"
+              :disabled="!canContactSelectedRelationship"
+              @click="queueRelationshipContactAction('call_romance')"
+            >
+              Call
+            </button>
+            <button
+              type="button"
+              class="rounded border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-900/40 dark:text-gray-200 dark:hover:bg-gray-800"
+              :disabled="!canInviteSelectedRelationship"
+              @click="queueRelationshipContactAction('invite_over')"
+            >
+              Invite Over
+            </button>
+          </div>
         </div>
 
         <div class="mt-4">
@@ -168,7 +202,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useSimulationStore } from '../stores/simulation'
-import type { CharacterRelationship, CharacterState, LongTermMemory } from '../stores/types'
+import { getCharacterStatusText } from '../composables/useCharacterStatus'
+import type { ActionName, CharacterRelationship, CharacterState, Intent, LongTermMemory } from '../stores/types'
 
 interface CharacterSummary {
   id: string
@@ -233,6 +268,60 @@ const reverseRelationship = computed<CharacterRelationship | null>(() => {
   return targetState.relationships.find((entry) => entry.toCharacterId === characterId) || null
 })
 
+const selectedRelationshipTargetState = computed<CharacterState | null>(() => {
+  const relationship = selectedRelationship.value
+  if (!relationship) {
+    return null
+  }
+
+  return simulationStore.characterStates[relationship.toCharacterId] || null
+})
+
+const canContactSelectedRelationship = computed(() => {
+  const relationship = selectedRelationship.value
+  const targetState = selectedRelationshipTargetState.value
+  if (!relationship || !targetState || relationship.isDeceasedTarget) {
+    return false
+  }
+
+  return !targetState.currentTask
+})
+
+const canInviteSelectedRelationship = computed(() => {
+  if (!canContactSelectedRelationship.value) {
+    return false
+  }
+
+  const targetState = selectedRelationshipTargetState.value
+  if (!targetState) {
+    return false
+  }
+
+  return targetState.currentAction !== 'sleep' && targetState.currentAction !== 'work'
+})
+
+const relationshipAvailability = computed(() => {
+  const relationship = selectedRelationship.value
+  const targetState = selectedRelationshipTargetState.value
+  if (!relationship) {
+    return 'Unknown'
+  }
+
+  if (relationship.isDeceasedTarget) {
+    return 'Unavailable (deceased)'
+  }
+
+  if (!targetState) {
+    return 'Unavailable (not loaded in simulation)'
+  }
+
+  if (targetState.currentTask) {
+    return `Busy: ${getCharacterStatusText(targetState)}`
+  }
+
+  return `Available: ${getCharacterStatusText(targetState)}`
+})
+
 watch(sortedRelationships, (relationships) => {
   if (!relationships.length) {
     selectedRelationshipId.value = null
@@ -288,5 +377,22 @@ function compareScoreDirection(left: number, right: number): string {
   }
 
   return 'about as strongly'
+}
+
+function queueRelationshipContactAction(action: Extract<ActionName, 'text_romance' | 'call_romance' | 'invite_over'>) {
+  const relationship = selectedRelationship.value
+  if (!relationship) {
+    return
+  }
+
+  const intent: Intent = {
+    action,
+    utility: 1,
+    source: 'manual',
+    socialTargetId: relationship.toCharacterId,
+    socialTargetName: getRelationshipTargetName(relationship)
+  }
+
+  simulationStore.enqueueIntent(props.characterId || relationship.fromCharacterId, intent)
 }
 </script>

@@ -13,6 +13,9 @@ const RELATIONSHIP_EVENT_SCORES: Record<string, { shortTerm: number; longTerm: n
   first_met: { shortTerm: 0.08, longTerm: 0.03 },
   chat_friend: { shortTerm: 0.12, longTerm: 0.03 },
   date: { shortTerm: 0.18, longTerm: 0.06 },
+  text_romance: { shortTerm: 0.05, longTerm: 0.01 },
+  call_romance: { shortTerm: 0.08, longTerm: 0.02 },
+  invite_over: { shortTerm: 0.1, longTerm: 0.025 },
   ate_lunch_together: { shortTerm: 0.07, longTerm: 0.025 },
   watched_a_movie_together: { shortTerm: 0.06, longTerm: 0.02 },
   reunited_after_long_absence: { shortTerm: 0.05, longTerm: 0.015 }
@@ -241,6 +244,28 @@ function isLunchTime(timestamp: string): boolean {
 
 function isMovieViewingIntent(intent: Intent): boolean {
   return intent.action === 'view_art' && MOVIE_ITEM_PATTERN.test(intent.itemName || '')
+}
+
+function getDirectContactMemoryContent({
+  action,
+  targetName
+}: {
+  action: Intent['action']
+  targetName: string
+}): string {
+  if (action === 'text_romance') {
+    return `Texted ${targetName}.`
+  }
+
+  if (action === 'call_romance') {
+    return `Called ${targetName}.`
+  }
+
+  if (action === 'invite_over') {
+    return `Invited ${targetName} over.`
+  }
+
+  return `Contacted ${targetName}.`
 }
 
 async function createLinkedRelationshipMemory({
@@ -564,6 +589,81 @@ export async function recordRelationshipConversation({
     }),
     fromState: targetState,
     eventType: intent.action,
+    dependencies
+  })
+}
+
+export async function recordRelationshipDirectContact({
+  characterId,
+  targetCharacterId,
+  characterState,
+  targetState,
+  timestamp,
+  intent,
+  dependencies
+}: {
+  characterId: string
+  targetCharacterId: string
+  characterState: CharacterState
+  targetState: CharacterState
+  timestamp: string
+  intent: Intent
+  dependencies: RelationshipRuntimeDependencies
+}): Promise<void> {
+  let forwardRelationship = (
+    characterState.relationships || []
+  ).find((entry) => entry.toCharacterId === targetCharacterId)
+  let reverseRelationship = (
+    targetState.relationships || []
+  ).find((entry) => entry.toCharacterId === characterId)
+
+  if (!forwardRelationship || !reverseRelationship) {
+    return
+  }
+
+  forwardRelationship = await applyRelationshipEventDelta({
+    relationship: buildUpdatedRelationship({
+      relationship: forwardRelationship,
+      lastSpokeAt: timestamp
+    }),
+    fromState: characterState,
+    eventType: intent.action,
+    dependencies
+  })
+
+  reverseRelationship = await applyRelationshipEventDelta({
+    relationship: buildUpdatedRelationship({
+      relationship: reverseRelationship,
+      lastSpokeAt: timestamp
+    }),
+    fromState: targetState,
+    eventType: intent.action,
+    dependencies
+  })
+
+  await createPairedRelationshipMemories({
+    forwardRelationship,
+    reverseRelationship,
+    characterId,
+    targetCharacterId,
+    characterState,
+    targetState,
+    timestamp,
+    location: {
+      lotId: intent.targetLotId,
+      lotName: intent.targetLotName,
+      spaceId: intent.targetSpaceId,
+      spaceName: intent.targetSpaceName
+    },
+    eventType: intent.action,
+    buildForwardContent: () => getDirectContactMemoryContent({
+      action: intent.action,
+      targetName: targetState.name
+    }),
+    buildReverseContent: () => getDirectContactMemoryContent({
+      action: intent.action,
+      targetName: characterState.name
+    }),
     dependencies
   })
 }

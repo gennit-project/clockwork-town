@@ -5,6 +5,7 @@ export const ActivityResolvers = {
   Mutation: {
     startActivity: async (_: any, { input }: { input: { characterId: string, activityTypeId?: string, actionName?: string, itemId?: string, note?: string } }) =>
       batch(async () => {
+        const REMOTE_CONTACT_ACTIONS = new Set(["text_romance", "call_romance", "invite_over", "call_mom"]);
         let activityType: any;
         let activityTypeId: string;
 
@@ -86,7 +87,7 @@ export const ActivityResolvers = {
           `, { lotId: currentLot.lotId, activityName: activityType.name });
         }
 
-        if (items.length === 0) {
+        if (items.length === 0 && !REMOTE_CONTACT_ACTIONS.has(activityType.name)) {
           throw new Error(input.itemId
             ? `Requested item is unavailable for ${activityType.name} at this location`
             : `No items available for ${activityType.name} at this location`);
@@ -110,7 +111,7 @@ export const ActivityResolvers = {
           }
         }
 
-        if (!selectedItem) {
+        if (!selectedItem && !REMOTE_CONTACT_ACTIONS.has(activityType.name)) {
           throw new Error(`All ${activityType.name} items are currently in use`);
         }
 
@@ -125,10 +126,12 @@ export const ActivityResolvers = {
         `, { cid: input.characterId, tid: activityTypeId, aid });
 
         // Create USING edge (required - we validated item availability above)
-        await q(`
-          MATCH (c:Character {id:$cid}), (i:Item {id:$itemId})
-          CREATE (c)-[:USING {since: $since}]->(i)
-        `, { cid: input.characterId, itemId: selectedItem.id, since: startedAt });
+        if (selectedItem) {
+          await q(`
+            MATCH (c:Character {id:$cid}), (i:Item {id:$itemId})
+            CREATE (c)-[:USING {since: $since}]->(i)
+          `, { cid: input.characterId, itemId: selectedItem.id, since: startedAt });
+        }
 
         return true;
       }),

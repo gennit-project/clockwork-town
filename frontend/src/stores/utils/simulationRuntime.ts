@@ -34,6 +34,7 @@ import { createSimulationDateTime } from './simulationCalendar'
 import {
   decayCharacterRelationships,
   recordRelationshipConversation,
+  recordRelationshipDirectContact,
   recordRelationshipEncounter,
   recordSharedMeal,
   recordSharedViewingExperience
@@ -307,6 +308,28 @@ export function createSimulationRuntime(
       const targetState = refs.characterStates.value[intent.socialTargetId]
       if (state && targetState) {
         await recordRelationshipConversation({
+          characterId,
+          targetCharacterId: intent.socialTargetId,
+          characterState: state,
+          targetState,
+          timestamp: refs.simulationDateTime.value.iso,
+          intent,
+          dependencies: {
+            persistCharacterRelationship: dependencies.persistCharacterRelationship,
+            createStructuredCharacterLongTermMemory: dependencies.createStructuredCharacterLongTermMemory
+          }
+        })
+      }
+    }
+
+    if (
+      (intent.action === 'text_romance' || intent.action === 'call_romance' || intent.action === 'invite_over')
+      && intent.socialTargetId
+    ) {
+      const state = refs.characterStates.value[characterId]
+      const targetState = refs.characterStates.value[intent.socialTargetId]
+      if (state && targetState) {
+        await recordRelationshipDirectContact({
           characterId,
           targetCharacterId: intent.socialTargetId,
           characterState: state,

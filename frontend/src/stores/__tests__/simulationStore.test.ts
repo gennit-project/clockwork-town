@@ -426,6 +426,31 @@ describe('simulation store integration', () => {
     )
   })
 
+  it('records a text contact memory for direct relationship actions', async () => {
+    const store = setupStore()
+    setupSecondCharacter(store, 'lot-2', 'Community Center', 'space-3', 'Library')
+    seedDirectionalRelationship(store, 'char-1', 'char-2', null, {
+      shortTermScore: 0.2,
+      longTermScore: 0.1
+    })
+    seedDirectionalRelationship(store, 'char-2', 'char-1', null, {
+      shortTermScore: 0.1,
+      longTermScore: 0.05
+    })
+    store.enqueueIntent('char-1', {
+      action: 'text_romance',
+      utility: 1,
+      socialTargetId: 'char-2',
+      socialTargetName: 'Bob'
+    })
+
+    await store.executeTick()
+
+    expect(persistenceMocks.createStructuredCharacterLongTermMemory).toHaveBeenCalledWith(expect.objectContaining({
+      eventType: 'text_romance'
+    }))
+  })
+
   it('creates a reunited_after_long_absence memory when characters meet again after hours apart', async () => {
     const store = setupStore()
     store.simulationDateTime = {
