@@ -94,6 +94,12 @@ export const ACTION_EFFECTS: ActionEffects = {
     secondaryEffects: { friends: 0.05 },
     cooldownTicks: 6  // 30 minutes
   },
+  view_movie: {
+    primaryNeed: 'fulfillment',
+    primaryEffect: 0.24,
+    secondaryEffects: { friends: 0.08 },
+    cooldownTicks: 8
+  },
   volunteer: {
     primaryNeed: 'fulfillment',
     primaryEffect: 0.30,
@@ -116,8 +122,7 @@ export const ACTION_EFFECTS: ActionEffects = {
 
 export const ACTION_DURATIONS = {
   sleep: 3,
-  shower: 2,
-  invite_over: 2
+  shower: 2
 } as const
 
 /**

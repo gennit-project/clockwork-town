@@ -15,6 +15,7 @@ const ACTION_VERBS: Record<ActionName, string> = {
   read: 'reading',
   write: 'writing',
   view_art: 'looking at',
+  view_movie: 'watching',
   volunteer: 'volunteering',
   work: 'working',
   idle: 'idle'
@@ -50,7 +51,7 @@ export function getCharacterStatusText(state: CharacterState | null | undefined)
       return `${verb} with ${targetName}`
     }
 
-    if (activeAction === 'view_art') {
+    if (activeAction === 'view_art' || activeAction === 'view_movie') {
       return `${verb} ${targetName}`
     }
 

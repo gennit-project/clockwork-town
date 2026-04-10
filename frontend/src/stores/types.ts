@@ -21,6 +21,7 @@ export type ActionName =
   | 'read'
   | 'write'
   | 'view_art'
+  | 'view_movie'
   | 'volunteer'
   | 'work'
   | 'idle'
@@ -63,9 +64,12 @@ export interface Cooldowns {
   read: number
   write: number
   view_art: number
+  view_movie: number
   volunteer: number
   work: number
 }
+
+export type InviteOverContext = 'hang_out' | 'watch_movie' | 'have_dinner'
 
 export interface CharacterLocation {
   regionId: string | null
@@ -108,7 +112,8 @@ export type SocialInvitationStatus = 'pending' | 'accepted' | 'rejected'
 
 export interface SocialInvitation {
   id: string
-  action: Extract<ActionName, 'chat_friend' | 'date'>
+  action: Extract<ActionName, 'chat_friend' | 'date' | 'invite_over'>
+  inviteContextType?: InviteOverContext
   fromCharacterId: string
   fromCharacterName: string
   toCharacterId: string
@@ -302,6 +307,8 @@ export interface Intent {
   source?: 'auto' | 'manual'
   socialTargetId?: string
   socialTargetName?: string
+  inviteContextType?: InviteOverContext
+  hostedFollowUp?: TaskStep
   steps?: TaskStep[]
 }
 
@@ -318,6 +325,8 @@ export interface TaskStep {
   remainingTicks: number
   socialTargetId?: string
   socialTargetName?: string
+  inviteContextType?: InviteOverContext
+  hostedFollowUp?: Omit<TaskStep, 'hostedFollowUp'>
 }
 
 export interface PlanCandidate {

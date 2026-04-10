@@ -552,6 +552,7 @@ const affordanceOptions: Array<{ action: ActionName; label: string }> = [
   { action: 'read', label: 'Read' },
   { action: 'write', label: 'Write' },
   { action: 'view_art', label: 'View Art' },
+  { action: 'view_movie', label: 'View Movie' },
   { action: 'volunteer', label: 'Volunteer' }
 ]
 

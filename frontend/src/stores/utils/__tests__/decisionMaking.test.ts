@@ -192,6 +192,7 @@ describe('selectBestIntent', () => {
       read: 5,
       write: 5,
       view_art: 5,
+      view_movie: 5,
       volunteer: 5,
       work: 5
     }

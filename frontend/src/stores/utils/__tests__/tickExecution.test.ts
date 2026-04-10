@@ -50,6 +50,7 @@ describe('executeTick', () => {
             read: 0,
             write: 0,
             view_art: 0,
+            view_movie: 0,
             volunteer: 0,
             work: 0
           }
@@ -276,6 +277,7 @@ describe('executeTick', () => {
         read: 5,
         write: 5,
         view_art: 5,
+        view_movie: 5,
         volunteer: 5,
         work: 5
       }
@@ -356,6 +358,63 @@ describe('executeTick', () => {
       await executeTick(params)
 
       expect(params.characterStates.value['char-2'].incomingSocialInvitations[0]?.status).toBe('accepted')
+    })
+
+    it('accepts an invite_over intent and schedules a mirrored arrival action', async () => {
+      params.characterStates.value['char-2'] = createMockCharacterState({
+        name: 'Alex',
+        currentAction: 'idle',
+        location: {
+          regionId: 'region-1',
+          lotId: 'lot-1',
+          lotName: 'Test House',
+          spaceId: 'space-1',
+          spaceName: 'Living Room'
+        }
+      })
+      params.characterStates.value['char-1'].queuedActions = [{
+        action: 'invite_over',
+        utility: 1,
+        source: 'manual',
+        socialTargetId: 'char-2',
+        socialTargetName: 'Alex',
+        targetLotId: 'lot-1',
+        targetLotName: 'Test House',
+        targetSpaceId: 'space-1',
+        targetSpaceName: 'Living Room'
+      }]
+
+      await executeTick(params)
+
+      expect(params.executeAction).toHaveBeenCalledWith('char-2', expect.objectContaining({
+        action: 'invite_over',
+        strategy: 'invite_over:arrival'
+      }))
+    })
+
+    it('rejects invite_over when the recipient is sleeping', async () => {
+      params.characterStates.value['char-2'] = createMockCharacterState({
+        name: 'Alex',
+        currentAction: 'sleep',
+        location: {
+          regionId: 'region-1',
+          lotId: 'lot-1',
+          lotName: 'Test House',
+          spaceId: 'space-1',
+          spaceName: 'Living Room'
+        }
+      })
+      params.characterStates.value['char-1'].queuedActions = [{
+        action: 'invite_over',
+        utility: 1,
+        source: 'manual',
+        socialTargetId: 'char-2',
+        socialTargetName: 'Alex'
+      }]
+
+      await executeTick(params)
+
+      expect(params.executeAction).toHaveBeenCalledWith('char-1', expect.objectContaining({ action: 'idle' }))
     })
   })
 

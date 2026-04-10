@@ -58,7 +58,12 @@ const AFFORDANCE_RULES: Array<{ action: ItemAffordance["action"]; patterns: RegE
   },
   {
     action: "view_art",
-    patterns: [/\bart\b/, /\bpainting\b/, /\bsculpture\b/, /\bmural\b/, /\btelevision\b/, /\btv\b/, /\bmovie\b/, /\bposter\b/, /\bplant\b/, /\bfireplace\b/],
+    patterns: [/\bart\b/, /\bpainting\b/, /\bsculpture\b/, /\bmural\b/, /\bposter\b/, /\bplant\b/, /\bfireplace\b/],
+    weight: 1
+  },
+  {
+    action: "view_movie",
+    patterns: [/\btelevision\b/, /\btv\b/, /\bmovie\b/, /\bscreen\b/, /\bprojector\b/],
     weight: 1
   },
   {

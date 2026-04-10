@@ -147,13 +147,35 @@
             >
               Call
             </button>
+          </div>
+        </div>
+
+        <div class="mt-4">
+          <p class="text-sm font-medium text-gray-900 dark:text-gray-100">Invite Over</p>
+          <div class="mt-2 flex flex-wrap gap-2">
             <button
               type="button"
               class="rounded border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-900/40 dark:text-gray-200 dark:hover:bg-gray-800"
-              :disabled="!canInviteSelectedRelationship"
-              @click="queueRelationshipContactAction('invite_over')"
+              :disabled="!canQueueHostedInvite('hang_out')"
+              @click="queueHostedInvite('hang_out')"
             >
-              Invite Over
+              Hang Out
+            </button>
+            <button
+              type="button"
+              class="rounded border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-900/40 dark:text-gray-200 dark:hover:bg-gray-800"
+              :disabled="!canQueueHostedInvite('watch_movie')"
+              @click="queueHostedInvite('watch_movie')"
+            >
+              Watch Movie
+            </button>
+            <button
+              type="button"
+              class="rounded border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-900/40 dark:text-gray-200 dark:hover:bg-gray-800"
+              :disabled="!canQueueHostedInvite('have_dinner')"
+              @click="queueHostedInvite('have_dinner')"
+            >
+              Have Dinner
             </button>
           </div>
         </div>
@@ -202,8 +224,9 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useSimulationStore } from '../stores/simulation'
-import type { ActionName, CharacterRelationship, CharacterState, Intent, LongTermMemory } from '../stores/types'
+import type { ActionName, CharacterRelationship, CharacterState, Intent, InviteOverContext, LongTermMemory, TaskStep } from '../stores/types'
 import { canQueueRelationshipAction, evaluateRelationshipAvailability } from '../stores/utils/relationshipAvailability'
+import { findItemsWithAffordance } from '../stores/utils/pathfinding'
 
 interface CharacterSummary {
   id: string
@@ -288,8 +311,6 @@ const canContactSelectedRelationship = computed(() => {
   return selectedRelationshipAvailability.value.canText || selectedRelationshipAvailability.value.canCall
 })
 
-const canInviteSelectedRelationship = computed(() => selectedRelationshipAvailability.value.canInviteOver)
-
 const relationshipAvailability = computed(() => selectedRelationshipAvailability.value.summary)
 
 watch(sortedRelationships, (relationships) => {
@@ -349,7 +370,7 @@ function compareScoreDirection(left: number, right: number): string {
   return 'about as strongly'
 }
 
-function queueRelationshipContactAction(action: Extract<ActionName, 'text_romance' | 'call_romance' | 'invite_over'>) {
+function queueRelationshipContactAction(action: Extract<ActionName, 'text_romance' | 'call_romance'>) {
   const relationship = selectedRelationship.value
   if (!relationship || !canQueueRelationshipAction({
     action,
@@ -357,7 +378,6 @@ function queueRelationshipContactAction(action: Extract<ActionName, 'text_romanc
   })) {
     return
   }
-
   const intent: Intent = {
     action,
     utility: 1,
@@ -367,5 +387,91 @@ function queueRelationshipContactAction(action: Extract<ActionName, 'text_romanc
   }
 
   simulationStore.enqueueIntent(props.characterId || relationship.fromCharacterId, intent)
+}
+
+function getHostedFollowUpAction(contextType: InviteOverContext): Extract<ActionName, 'chat_friend' | 'view_movie' | 'eat'> {
+  if (contextType === 'watch_movie') {
+    return 'view_movie'
+  }
+
+  if (contextType === 'have_dinner') {
+    return 'eat'
+  }
+
+  return 'chat_friend'
+}
+
+function getHostedFollowUpStep(contextType: InviteOverContext): TaskStep | null {
+  const relationship = selectedRelationship.value
+  const currentState = props.characterState
+  const currentLocation = currentState?.location
+  const characterId = props.characterId
+  if (!relationship || !currentState || !currentLocation.lotId || !characterId) {
+    return null
+  }
+
+  const followUpAction = getHostedFollowUpAction(contextType)
+  const options = findItemsWithAffordance({
+    characterId,
+    action: followUpAction,
+    characterContext: currentState,
+    worldData: simulationStore.worldData,
+    itemOccupancy: {}
+  }).filter((option) => option.lotId === currentLocation.lotId)
+
+  const option = options.find((candidate) => {
+    if (contextType === 'hang_out' || contextType === 'watch_movie') {
+      const maxUsers = simulationStore.worldData.items[candidate.itemId]?.maxSimultaneousUsers
+      return maxUsers === null || maxUsers === undefined || maxUsers >= 2
+    }
+
+    return true
+  }) || options[0]
+
+  if (!option) {
+    return null
+  }
+
+  return {
+    action: followUpAction,
+    label: `${contextType}:${option.itemName}`,
+    itemId: option.itemId,
+    itemName: option.itemName,
+    targetSpaceId: option.spaceId,
+    targetSpaceName: option.spaceName,
+    targetLotId: option.lotId,
+    targetLotName: option.lotName,
+    totalTicks: 1,
+    remainingTicks: 0,
+    socialTargetId: relationship.toCharacterId,
+    socialTargetName: getRelationshipTargetName(relationship)
+  }
+}
+
+function canQueueHostedInvite(contextType: InviteOverContext): boolean {
+  return selectedRelationshipAvailability.value.canInviteOver && Boolean(getHostedFollowUpStep(contextType))
+}
+
+function queueHostedInvite(contextType: InviteOverContext) {
+  const relationship = selectedRelationship.value
+  const currentLocation = props.characterState?.location
+  const hostedFollowUp = getHostedFollowUpStep(contextType)
+  if (!relationship || !currentLocation.lotId || !hostedFollowUp || !canQueueHostedInvite(contextType)) {
+    return
+  }
+
+  simulationStore.enqueueIntent(props.characterId || relationship.fromCharacterId, {
+    action: 'invite_over',
+    inviteContextType: contextType,
+    utility: 1,
+    source: 'manual',
+    socialTargetId: relationship.toCharacterId,
+    socialTargetName: getRelationshipTargetName(relationship),
+    targetLotId: currentLocation.lotId || undefined,
+    targetLotName: currentLocation.lotName || undefined,
+    targetSpaceId: currentLocation.spaceId || undefined,
+    targetSpaceName: currentLocation.spaceName || undefined,
+    hostedFollowUp
+  })
 }
 </script>

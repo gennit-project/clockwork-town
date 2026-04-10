@@ -107,6 +107,13 @@
           🎨 View Art
         </button>
         <button
+          @click="testAction('view_movie')"
+          class="px-3 py-2 text-xs font-medium rounded bg-violet-600 hover:bg-violet-700 text-white"
+          title="Fulfillment +0.24, Friends +0.08, Cooldown 8 ticks"
+        >
+          🎬 View Movie
+        </button>
+        <button
           @click="testAction('volunteer')"
           class="px-3 py-2 text-xs font-medium rounded bg-teal-500 hover:bg-teal-600 text-white"
           title="Fulfillment +0.30, Family +0.10, Cooldown 18 ticks"
@@ -288,7 +295,7 @@ const testUtilityCalculation = () => {
   })
   console.log('')
 
-  const actions: ActionName[] = ['eat', 'sleep', 'medicate', 'chat_friend', 'call_mom', 'date', 'read', 'write', 'view_art', 'volunteer']
+  const actions: ActionName[] = ['eat', 'sleep', 'medicate', 'chat_friend', 'call_mom', 'date', 'read', 'write', 'view_art', 'view_movie', 'volunteer']
   const utilities: Array<{ action: ActionName; utility: string; item: string; space: string; travelCost: number }> = []
 
   for (const action of actions) {

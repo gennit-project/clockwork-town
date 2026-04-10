@@ -225,7 +225,7 @@ export function createSimulationRuntime(
         })
       }
 
-      if (intent.action === 'view_art' && otherState.currentAction === 'view_art') {
+      if (intent.action === 'view_movie' && otherState.currentAction === 'view_movie') {
         await recordSharedViewingExperience({
           characterId,
           targetCharacterId: otherCharacterId,
@@ -296,8 +296,46 @@ export function createSimulationRuntime(
     logger.logActionApplied(intent.action, characterId)
   }
 
+  function queueHostedFollowUpIntent({
+    characterId,
+    intent
+  }: {
+    characterId: string
+    intent: Intent
+  }): void {
+    if (!intent.hostedFollowUp) {
+      return
+    }
+
+    const state = refs.characterStates.value[characterId]
+    if (!state) {
+      return
+    }
+
+    const followUpIntent: Intent = {
+      goal: intent.hostedFollowUp.action,
+      strategy: `invite_over:${intent.inviteContextType || 'follow_up'}`,
+      action: intent.hostedFollowUp.action,
+      itemId: intent.hostedFollowUp.itemId,
+      itemName: intent.hostedFollowUp.itemName,
+      targetSpaceId: intent.hostedFollowUp.targetSpaceId,
+      targetSpaceName: intent.hostedFollowUp.targetSpaceName,
+      targetLotId: intent.hostedFollowUp.targetLotId,
+      targetLotName: intent.hostedFollowUp.targetLotName,
+      utility: 1,
+      source: 'manual',
+      socialTargetId: intent.hostedFollowUp.socialTargetId,
+      socialTargetName: intent.hostedFollowUp.socialTargetName
+    }
+
+    state.queuedActions = [followUpIntent, ...(state.queuedActions || [])]
+  }
+
   async function completeIntent(characterId: string, intent: Intent): Promise<void> {
-    applyActionEffects({ characterId, intent })
+    const isInviteArrival = intent.action === 'invite_over' && intent.strategy === 'invite_over:arrival'
+    if (!isInviteArrival) {
+      applyActionEffects({ characterId, intent })
+    }
 
     if (intent.itemId) {
       setItemOccupancy(characterId, intent.itemId)
@@ -325,6 +363,7 @@ export function createSimulationRuntime(
     if (
       (intent.action === 'text_romance' || intent.action === 'call_romance' || intent.action === 'invite_over')
       && intent.socialTargetId
+      && intent.strategy !== 'invite_over:arrival'
     ) {
       const state = refs.characterStates.value[characterId]
       const targetState = refs.characterStates.value[intent.socialTargetId]
@@ -344,7 +383,14 @@ export function createSimulationRuntime(
       }
     }
 
-    if (intent.action === 'eat' || intent.action === 'view_art') {
+    if (intent.action === 'invite_over') {
+      queueHostedFollowUpIntent({
+        characterId,
+        intent
+      })
+    }
+
+    if (intent.action === 'eat' || intent.action === 'view_movie') {
       await recordSharedRelationshipEvents({
         characterId,
         intent

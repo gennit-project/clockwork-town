@@ -451,6 +451,61 @@ describe('simulation store integration', () => {
     }))
   })
 
+  it('does not record an invite_over memory when the invitation is rejected', async () => {
+    const store = setupStore()
+    setupSecondCharacter(store, 'lot-2', 'Community Center', 'space-3', 'Library')
+    seedDirectionalRelationship(store, 'char-1', 'char-2', null, {
+      shortTermScore: 0.2,
+      longTermScore: 0.1
+    })
+    seedDirectionalRelationship(store, 'char-2', 'char-1', null, {
+      shortTermScore: 0.1,
+      longTermScore: 0.05
+    })
+    store.characterStates['char-2'].currentAction = 'sleep'
+    store.enqueueIntent('char-1', {
+      action: 'invite_over',
+      utility: 1,
+      socialTargetId: 'char-2',
+      socialTargetName: 'Bob'
+    })
+
+    await store.executeTick()
+
+    expect(
+      persistenceMocks.createStructuredCharacterLongTermMemory.mock.calls.some(
+        ([input]) => (input as Record<string, unknown>).eventType === 'invite_over'
+      )
+    ).toBe(false)
+  })
+
+  it('moves the invited character to the inviter location after an accepted invite_over', async () => {
+    const store = setupStore()
+    setupSecondCharacter(store, 'lot-2', 'Community Center', 'space-3', 'Library')
+    seedDirectionalRelationship(store, 'char-1', 'char-2', null, {
+      shortTermScore: 0.2,
+      longTermScore: 0.1
+    })
+    seedDirectionalRelationship(store, 'char-2', 'char-1', null, {
+      shortTermScore: 0.1,
+      longTermScore: 0.05
+    })
+    store.enqueueIntent('char-1', {
+      action: 'invite_over',
+      utility: 1,
+      socialTargetId: 'char-2',
+      socialTargetName: 'Bob',
+      targetLotId: 'lot-1',
+      targetLotName: 'Test House',
+      targetSpaceId: 'space-1',
+      targetSpaceName: 'Living Room'
+    })
+
+    await store.executeTick()
+
+    expect(store.characterStates['char-2'].location.lotId).toBe('lot-1')
+  })
+
   it('creates a reunited_after_long_absence memory when characters meet again after hours apart', async () => {
     const store = setupStore()
     store.simulationDateTime = {
@@ -563,16 +618,16 @@ describe('simulation store integration', () => {
     store.worldData.items['item-1'] = {
       ...store.worldData.items['item-1'],
       name: 'Movie Screen',
-      allowedActivities: ['view_art'],
-      affordances: [{ action: 'view_art', weight: 1 }]
+      allowedActivities: ['view_movie'],
+      affordances: [{ action: 'view_movie', weight: 1 }]
     }
-    store.worldData.itemsByAffordance.view_art = ['item-1']
+    store.worldData.itemsByAffordance.view_movie = ['item-1']
     setupSecondCharacter(store, 'lot-1', 'Test House', 'space-1', 'Living Room')
     store.characterStates['char-2'].queuedActions = []
     seedDirectionalRelationship(store, 'char-1', 'char-2', null)
     seedDirectionalRelationship(store, 'char-2', 'char-1', null)
     store.enqueueIntent('char-1', {
-      action: 'view_art',
+      action: 'view_movie',
       itemId: 'item-1',
       itemName: 'Movie Screen',
       targetSpaceId: 'space-1',
@@ -582,7 +637,7 @@ describe('simulation store integration', () => {
       utility: 10
     })
     store.enqueueIntent('char-2', {
-      action: 'view_art',
+      action: 'view_movie',
       itemId: 'item-1',
       itemName: 'Movie Screen',
       targetSpaceId: 'space-1',

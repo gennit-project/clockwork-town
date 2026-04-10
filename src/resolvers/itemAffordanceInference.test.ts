@@ -31,4 +31,8 @@ describe("item affordance inference", () => {
 
     expect(affordances).toEqual([{ action: "eat", weight: 1 }]);
   });
+
+  it("infers view_movie for movie-capable items separately from view_art", () => {
+    expect(inferAffordancesFromText("Television", "Large movie screen").map((entry) => entry.action)).toContain("view_movie");
+  });
 });

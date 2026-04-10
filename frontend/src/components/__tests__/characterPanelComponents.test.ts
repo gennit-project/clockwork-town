@@ -6,6 +6,7 @@ import CharacterMemoriesTab from '../CharacterMemoriesTab.vue'
 import CharacterNeedPicker from '../CharacterNeedPicker.vue'
 import CharacterRelationshipsTab from '../CharacterRelationshipsTab.vue'
 import { useSimulationStore } from '../../stores/simulation'
+import { createMockWorldData } from '../../stores/__tests__/mockData'
 import type { CharacterRelationship, LongTermMemory } from '../../stores/types'
 
 const persistenceMocks = vi.hoisted(() => ({
@@ -201,8 +202,10 @@ describe('character panel components', () => {
     const pinia = createPinia()
     setActivePinia(pinia)
     const simulationStore = useSimulationStore()
-    simulationStore.initializeCharacter({ id: 'char-1', name: 'Alice' })
+    simulationStore.worldData = createMockWorldData()
+    simulationStore.initializeCharacter({ id: 'char-1', name: 'Alice', homeLotId: 'lot-1', homeLotName: 'Home' })
     simulationStore.initializeCharacter({ id: 'char-2', name: 'Bob' })
+    simulationStore.updateCharacterLocation('char-1', 'region-1', 'lot-1', 'Home', 'space-1', 'Living Room')
     simulationStore.characterStates['char-1'].relationships = [{
       id: 'rel-1',
       fromCharacterId: 'char-1',
@@ -302,7 +305,57 @@ describe('character panel components', () => {
     container.remove()
   })
 
-  it('CharacterRelationshipsTab disables invite over when the target is sleeping', async () => {
+  it('CharacterRelationshipsTab includes hosted follow-up data when queueing a hang out invite', async () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const simulationStore = useSimulationStore()
+    simulationStore.worldData = createMockWorldData()
+    simulationStore.initializeCharacter({ id: 'char-1', name: 'Alice', homeLotId: 'lot-1', homeLotName: 'Home' })
+    simulationStore.initializeCharacter({ id: 'char-2', name: 'Bob' })
+    simulationStore.updateCharacterLocation('char-1', 'region-1', 'lot-1', 'Home', 'space-1', 'Living Room')
+    simulationStore.characterStates['char-1'].relationships = [{
+      id: 'rel-1',
+      fromCharacterId: 'char-1',
+      toCharacterId: 'char-2',
+      shortTermScore: 0.4,
+      longTermScore: 0.6,
+      labels: [],
+      lastSeenAt: null,
+      lastSpokeAt: null,
+      isDeceasedTarget: false
+    }]
+
+    const container = document.createElement('div')
+    document.body.appendChild(container)
+    const app = createApp(CharacterRelationshipsTab, {
+      characterName: 'Alice',
+      characterId: 'char-1',
+      characterState: simulationStore.characterStates['char-1'],
+      availableCharacters: [{ id: 'char-2', name: 'Bob' }]
+    })
+    app.use(pinia)
+    app.mount(container)
+
+    await nextTick()
+
+    findButtonByText(container, 'Hang Out').click()
+    await nextTick()
+
+    expect(simulationStore.characterStates['char-1'].queuedActions?.[0]).toMatchObject({
+      action: 'invite_over',
+      inviteContextType: 'hang_out',
+      targetLotId: 'lot-1',
+      targetSpaceId: 'space-1',
+      hostedFollowUp: expect.objectContaining({
+        action: 'chat_friend'
+      })
+    })
+
+    app.unmount()
+    container.remove()
+  })
+
+  it('CharacterRelationshipsTab disables hosted invites when the target is sleeping', async () => {
     const pinia = createPinia()
     setActivePinia(pinia)
     const simulationStore = useSimulationStore()
@@ -334,7 +387,7 @@ describe('character panel components', () => {
 
     await nextTick()
 
-    expect(findButtonByText(container, 'Invite Over').hasAttribute('disabled')).toBe(true)
+    expect(findButtonByText(container, 'Hang Out').hasAttribute('disabled')).toBe(true)
 
     app.unmount()
     container.remove()

@@ -3,7 +3,6 @@ import type { CharacterRelationship, CharacterState, Intent } from '../types'
 const REUNION_ABSENCE_THRESHOLD_MINUTES = 6 * 60
 const LUNCH_START_HOUR = 11
 const LUNCH_END_HOUR = 14
-const MOVIE_ITEM_PATTERN = /movie|tv|television|screen|projector/i
 const MIN_RELATIONSHIP_SCORE = 0
 const MAX_RELATIONSHIP_SCORE = 1
 const SHORT_TERM_DECAY_PER_TICK = 0.01
@@ -240,10 +239,6 @@ function isLunchTime(timestamp: string): boolean {
   const date = new Date(timestamp)
   const hour = date.getHours()
   return hour >= LUNCH_START_HOUR && hour < LUNCH_END_HOUR
-}
-
-function isMovieViewingIntent(intent: Intent): boolean {
-  return intent.action === 'view_art' && MOVIE_ITEM_PATTERN.test(intent.itemName || '')
 }
 
 function getDirectContactMemoryContent({
@@ -754,7 +749,7 @@ export async function recordSharedViewingExperience({
   intent: Intent
   dependencies: RelationshipRuntimeDependencies
 }): Promise<void> {
-  if (!isMovieViewingIntent(intent)) {
+  if (intent.action !== 'view_movie') {
     return
   }
 

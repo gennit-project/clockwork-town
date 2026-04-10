@@ -19,8 +19,10 @@ import { debugLog } from './simulationDebug'
 import { advanceSimulationDateTime } from './simulationCalendar'
 import { createActivityLogEntry } from './characterState'
 import { calculateUtility } from './actionUtility'
+import { evaluateRelationshipAvailability } from './relationshipAvailability'
 
 const MULTI_PARTICIPANT_ACTIONS = new Set<ActionName>(['chat_friend', 'date'])
+const INVITATION_RESPONSE_ACTIONS = new Set<ActionName>(['chat_friend', 'date', 'invite_over'])
 
 function calculateTravelCostToIntentTarget({
   characterState,
@@ -73,11 +75,19 @@ function buildSocialParticipationIntent({
 
   return {
     ...intent,
+    strategy: intent.action === 'invite_over' ? 'invite_over:arrival' : intent.strategy,
     utility: 0,
     source: 'manual',
     travelCost,
     socialTargetId: initiatorId,
     socialTargetName: initiatorState.name,
+    hostedFollowUp: intent.hostedFollowUp
+      ? {
+          ...intent.hostedFollowUp,
+          socialTargetId: initiatorId,
+          socialTargetName: initiatorState.name
+        }
+      : undefined,
     steps: intent.steps?.map((step) => ({
       ...step,
       socialTargetId: initiatorId,
@@ -101,7 +111,8 @@ function buildSocialInvitation({
 }): SocialInvitation {
   return {
     id: crypto.randomUUID(),
-    action: intent.action as Extract<ActionName, 'chat_friend' | 'date'>,
+    action: intent.action as Extract<ActionName, 'chat_friend' | 'date' | 'invite_over'>,
+    inviteContextType: intent.inviteContextType,
     fromCharacterId: characterId,
     fromCharacterName: state.name,
     toCharacterId: intent.socialTargetId as string,
@@ -165,6 +176,19 @@ function calculateInvitationUtility({
   intent: Intent
   worldData: WorldData
 }): number | null {
+  if (intent.action === 'invite_over') {
+    return calculateUtility(participantState.name, intent.action, participantState.needs, {
+      itemId: 'invite-over',
+      itemName: intent.socialTargetName || 'Invitation',
+      spaceId: participantState.location.spaceId || 'unknown-space',
+      spaceName: participantState.location.spaceName || 'Unknown space',
+      lotId: participantState.location.lotId || 'unknown-lot',
+      lotName: participantState.location.lotName || 'Unknown lot',
+      travelCost: 0,
+      affordanceWeight: 1
+    })
+  }
+
   const travelCost = calculateTravelCostToIntentTarget({
     characterState: participantState,
     intent,
@@ -216,6 +240,18 @@ function evaluateInvitationAcceptance({
     return { accepted: false, reason: 'Could not reach the meeting place' }
   }
 
+  if (intent.action === 'invite_over') {
+    const availability = evaluateRelationshipAvailability({
+      relationship: null,
+      targetState: participantState
+    })
+    if (!availability.canInviteOver) {
+      return { accepted: false, reason: availability.summary }
+    }
+
+    return { accepted: true }
+  }
+
   const competingIntent = selectBestIntent({
     characterId: intent.socialTargetId as string,
     characterState: participantState,
@@ -261,7 +297,7 @@ function assignSocialParticipation({
   simulationDateTime?: SimulationDateTime
   activityLog: Ref<ActivityLogEntry[]>
 }): boolean {
-  if (!MULTI_PARTICIPANT_ACTIONS.has(intent.action)) {
+  if (!INVITATION_RESPONSE_ACTIONS.has(intent.action)) {
     return true
   }
 
@@ -492,7 +528,7 @@ export async function executeTick({
       simulationDateTime: simulationDateTime?.value,
       activityLog
     })
-    if (!socialParticipationAssigned && MULTI_PARTICIPANT_ACTIONS.has(intent.action)) {
+    if (!socialParticipationAssigned && INVITATION_RESPONSE_ACTIONS.has(intent.action)) {
       intents[characterId] = {
         action: 'idle',
         utility: 0

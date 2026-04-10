@@ -54,6 +54,7 @@ export const INITIAL_COOLDOWNS: Cooldowns = {
   read: 0,
   write: 0,
   view_art: 0,
+  view_movie: 0,
   volunteer: 0,
   work: 0
 }
