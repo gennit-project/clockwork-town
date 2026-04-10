@@ -23,16 +23,7 @@ export function evaluateRelationshipAvailability({
   relationship: CharacterRelationship | null
   targetState: CharacterState | null
 }): RelationshipAvailabilityResult {
-  if (!relationship) {
-    return {
-      canText: false,
-      canCall: false,
-      canInviteOver: false,
-      summary: 'Unknown'
-    }
-  }
-
-  if (relationship.isDeceasedTarget) {
+  if (relationship?.isDeceasedTarget) {
     return {
       canText: false,
       canCall: false,
@@ -46,7 +37,7 @@ export function evaluateRelationshipAvailability({
       canText: false,
       canCall: false,
       canInviteOver: false,
-      summary: 'Unavailable (not loaded in simulation)'
+      summary: relationship ? 'Unavailable (not loaded in simulation)' : 'Unknown'
     }
   }
 
