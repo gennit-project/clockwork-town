@@ -4,7 +4,7 @@
       <div
         v-for="group in renderGroups"
         :key="group.key"
-        class="min-w-[180px] flex-1 rounded border border-gf-border p-2"
+        class="min-w-[180px] max-w-[360px] flex-1 rounded border border-gf-border p-2"
         :style="group.tint ? { backgroundColor: group.tint } : undefined"
       >
         <div class="mb-1 text-center">

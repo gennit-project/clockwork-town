@@ -43,17 +43,24 @@
           class="px-3 py-1 text-xs font-medium"
           :class="viewMode === 'map' ? 'bg-gf-blue/20 text-gf-blue' : 'text-gf-text-weak hover:bg-gf-surface-2'"
         >
-          Node map
+          Residents
         </button>
         <button
-          @click="viewMode = 'rooms'"
-          class="px-3 py-1 text-xs font-medium"
-          :class="viewMode === 'rooms' ? 'bg-gf-blue/20 text-gf-blue' : 'text-gf-text-weak hover:bg-gf-surface-2'"
+          @click="viewMode = 'nested'"
+          class="border-l border-gf-border px-3 py-1 text-xs font-medium"
+          :class="viewMode === 'nested' ? 'bg-gf-blue/20 text-gf-blue' : 'text-gf-text-weak hover:bg-gf-surface-2'"
         >
           Rooms
         </button>
+        <button
+          @click="viewMode = 'rooms'"
+          class="border-l border-gf-border px-3 py-1 text-xs font-medium"
+          :class="viewMode === 'rooms' ? 'bg-gf-blue/20 text-gf-blue' : 'text-gf-text-weak hover:bg-gf-surface-2'"
+        >
+          Classic
+        </button>
       </div>
-      <template v-if="viewMode === 'map'">
+      <template v-if="viewMode !== 'rooms'">
         <span class="ml-1 text-xs text-gf-text-faint">Fill by</span>
         <select
           v-model="fillMetric"
@@ -94,6 +101,11 @@
       <!-- Node-health host map (default) -->
       <Panel v-if="viewMode === 'map'" title="Resident node health" class="flex-1 overflow-auto">
         <HexMap :groups="hexGroups" :legend-label="fillLabel" @select="onSelectHex" />
+      </Panel>
+
+      <!-- Nested rooms: residents as hexes inside room hexes -->
+      <Panel v-else-if="viewMode === 'nested'" title="Rooms &amp; residents" class="flex-1 overflow-auto">
+        <NestedHexMap :groups="nestedGroups" :legend-label="fillLabel" @select="onSelectHex" />
       </Panel>
 
       <!-- Structural room view -->
@@ -185,6 +197,7 @@ import Panel from '../components/Panel.vue'
 import LotColumn from '../components/LotColumn.vue'
 import DebugActionPanel from '../components/DebugActionPanel.vue'
 import HexMap, { type HexGroup } from '../components/charts/HexMap.vue'
+import NestedHexMap, { type NestedBuilding } from '../components/charts/NestedHexMap.vue'
 import { client, queries } from '../graphql'
 import { useSimulationStore } from '../stores/simulation'
 import { useRouteParams } from '../composables/useRouteParams'
@@ -199,7 +212,7 @@ const { buildBreadcrumbs } = useBreadcrumbs()
 
 type FillMetric = 'happiness' | NeedName
 
-const viewMode = ref<'map' | 'rooms'>('map')
+const viewMode = ref<'map' | 'nested' | 'rooms'>('map')
 const fillMetric = ref<FillMetric>('happiness')
 
 const FILL_OPTIONS: { value: FillMetric; label: string }[] = [
@@ -384,6 +397,48 @@ const hexGroups = computed<HexGroup[]>(() => {
   }
 
   return groups
+})
+
+const nestedGroups = computed<NestedBuilding[]>(() => {
+  const buildings: NestedBuilding[] = []
+  const claimed = new Set<string>()
+
+  for (const lot of lotsWithSpaces.value) {
+    const spaces = [...(lot.indoorRooms || []), ...(lot.outdoorAreas || [])]
+    buildings.push({
+      key: lot.id,
+      label: lot.name,
+      tint: lot.lotType === 'RESIDENTIAL' ? 'rgba(50,116,217,0.06)' : 'rgba(115,191,105,0.06)',
+      rooms: spaces.map((space) => {
+        const occupants = charactersBySpace.value[space.id] || []
+        occupants.forEach((c) => claimed.add(c.id))
+        return {
+          id: space.id,
+          name: space.name,
+          description: space.description,
+          occupants: occupants.map((c) => ({ id: c.id, name: c.name, value: metricValue(c.id) }))
+        }
+      })
+    })
+  }
+
+  const elsewhere = characters.value.filter((c) => !claimed.has(c.id))
+  if (elsewhere.length > 0) {
+    buildings.push({
+      key: '__elsewhere__',
+      label: 'Elsewhere',
+      rooms: [
+        {
+          id: '__elsewhere_room__',
+          name: 'Off the map',
+          description: 'Residents not currently in a known room',
+          occupants: elsewhere.map((c) => ({ id: c.id, name: c.name, value: metricValue(c.id) }))
+        }
+      ]
+    })
+  }
+
+  return buildings
 })
 
 function onSelectHex(characterId: string) {
