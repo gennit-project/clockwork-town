@@ -1,12 +1,19 @@
 <template>
   <div ref="root" class="relative" @mousemove="onMove" @mouseleave="clearHover">
-    <div class="flex flex-wrap gap-3">
+    <div v-for="sec in renderSections" :key="sec.name" class="mb-3 last:mb-0">
       <div
-        v-for="b in renderBuildings"
-        :key="b.key"
-        class="min-w-[220px] max-w-[360px] flex-1 rounded border border-gf-border p-2"
-        :style="b.tint ? { backgroundColor: b.tint } : undefined"
+        v-if="sec.name"
+        class="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-gf-text-weak"
       >
+        {{ sec.name }}
+      </div>
+      <div class="flex flex-wrap gap-3">
+        <div
+          v-for="b in sec.buildings"
+          :key="b.key"
+          class="min-w-[220px] max-w-[360px] flex-1 rounded border border-gf-border p-2"
+          :style="b.tint ? { backgroundColor: b.tint } : undefined"
+        >
         <div class="mb-1 text-center">
           <span class="rounded border border-gf-border bg-gf-surface-2 px-2 py-0.5 text-[11px] text-gf-text">
             {{ b.label }}
@@ -22,8 +29,11 @@
               fill="rgba(255,255,255,0.02)"
               :stroke="hoveredRoomId === room.id ? '#cdd6f4' : '#3a4048'"
               :stroke-width="hoveredRoomId === room.id ? 3 : 1.5"
+              :stroke-dasharray="room.outdoor ? '4 3' : undefined"
+              class="cursor-pointer"
               @mouseenter="enterRoom(room)"
               @mouseleave="clearHover"
+              @click="$emit('select-room', room.id)"
             />
             <polygon
               v-for="occ in room.occupants"
@@ -53,6 +63,7 @@
             <text :x="room.cx" :y="room.labelY" text-anchor="middle" class="roomlabel">{{ room.name }}</text>
           </g>
         </svg>
+        </div>
       </div>
     </div>
 
@@ -105,6 +116,7 @@ export interface NestedRoom {
   id: string
   name: string
   description?: string
+  outdoor?: boolean
   occupants: NestedHexNode[]
   objects?: NestedObject[]
 }
@@ -113,6 +125,7 @@ export interface NestedBuilding {
   key: string
   label: string
   tint?: string
+  section?: string
   rooms: NestedRoom[]
 }
 
@@ -121,7 +134,10 @@ const props = defineProps<{
   legendLabel?: string
 }>()
 
-defineEmits<{ (e: 'select', id: string): void }>()
+defineEmits<{
+  (e: 'select', id: string): void
+  (e: 'select-room', id: string): void
+}>()
 
 const gradient = VIRIDIS_GRADIENT
 
@@ -235,6 +251,7 @@ const renderBuildings = computed(() =>
         id: room.id,
         name: room.name,
         description: room.description,
+        outdoor: room.outdoor === true,
         cx,
         cy,
         labelY: cy + radius + 13,
@@ -248,12 +265,27 @@ const renderBuildings = computed(() =>
       key: building.key,
       label: building.label,
       tint: building.tint,
+      section: building.section || '',
       rooms,
       w: BOX_W,
       h: Math.max(80, y + rowH + GAP)
     }
   })
 )
+
+const renderSections = computed(() => {
+  type RB = typeof renderBuildings.value
+  const byName = new Map<string, RB>()
+  const order: string[] = []
+  for (const building of renderBuildings.value) {
+    if (!byName.has(building.section)) {
+      byName.set(building.section, [])
+      order.push(building.section)
+    }
+    byName.get(building.section)!.push(building)
+  }
+  return order.map((name) => ({ name, buildings: byName.get(name)! }))
+})
 
 // Hover state
 const root = ref<HTMLElement | null>(null)
@@ -272,9 +304,14 @@ function onMove(e: MouseEvent) {
   tipY.value = e.clientY - rect.top
 }
 
-function enterRoom(room: { id: string; name: string; description?: string }) {
+function enterRoom(room: { id: string; name: string; description?: string; outdoor?: boolean }) {
   hoveredRoomId.value = room.id
-  tip.value = { title: room.name, sub: room.description }
+  const sub = room.outdoor
+    ? room.description
+      ? `${room.description} · outdoor`
+      : 'outdoor area'
+    : room.description
+  tip.value = { title: room.name, sub }
 }
 
 function enterNode(occ: { name: string; label: string }, roomId: string) {

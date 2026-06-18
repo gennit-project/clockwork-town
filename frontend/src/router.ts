@@ -4,6 +4,7 @@ import RegionList from './views/RegionList.vue'
 import RegionOverview from './views/RegionOverview.vue'
 import TownDashboard from './views/TownDashboard.vue'
 import ServiceDeskStub from './views/ServiceDeskStub.vue'
+import CharacterDashboard from './views/CharacterDashboard.vue'
 import ActivityLog from './views/ActivityLog.vue'
 import LotList from './views/LotList.vue'
 import SpaceList from './views/SpaceList.vue'
@@ -92,6 +93,11 @@ export const router = createRouter({
       path: '/world/:worldId/region/:regionId/character/:characterId/edit',
       name: 'character-edit',
       component: CharacterEditor
+    },
+    {
+      path: '/world/:worldId/region/:regionId/character/:characterId',
+      name: 'character-dashboard',
+      component: CharacterDashboard
     },
     {
       path: '/tickets',

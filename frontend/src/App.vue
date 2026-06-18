@@ -488,29 +488,14 @@ watch(currentWorldId, (newWorldId) => {
   }
 })
 
-// Character/Animal selection - navigate to their location and show panel
+// Character selection - route to the resident detail page
 const selectCharacter = (character: CharacterSummary) => {
-  // Set as active character
   characterPanelStore.setActiveCharacter(character.id)
 
-  // Show character detail panel
-  selectedCharacterForPanel.value = character
-  selectedCharacterWorldId.value = currentWorldId.value ?? null
-
-  // Get character's location from simulation store
-  const charState = simulationStore.characterStates[character.id]
-  if (charState?.location?.spaceId) {
-    // Navigate to the space detail page
-    const worldId = currentWorldId.value
-    const regionId = currentRegionId.value
-    const lotId = charState.location.lotId
-    const spaceId = charState.location.spaceId
-
-    if (worldId && regionId && lotId && spaceId) {
-      router.push(`/world/${worldId}/region/${regionId}/lot/${lotId}/space/${spaceId}`)
-    }
-  } else {
-    console.warn('Character location not found in simulation state')
+  const worldId = currentWorldId.value
+  const regionId = currentRegionId.value
+  if (worldId && regionId) {
+    router.push(`/world/${worldId}/region/${regionId}/character/${character.id}`)
   }
 }
 

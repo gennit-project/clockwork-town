@@ -105,7 +105,12 @@
 
       <!-- Nested rooms: residents as hexes inside room hexes -->
       <Panel v-else-if="viewMode === 'nested'" title="Rooms &amp; residents" class="flex-1 overflow-auto">
-        <NestedHexMap :groups="nestedGroups" :legend-label="fillLabel" @select="onSelectHex" />
+        <NestedHexMap
+          :groups="nestedGroups"
+          :legend-label="fillLabel"
+          @select="onSelectHex"
+          @select-room="onSelectRoom"
+        />
       </Panel>
 
       <!-- Structural room view -->
@@ -203,7 +208,7 @@ import { useSimulationStore } from '../stores/simulation'
 import { useRouteParams } from '../composables/useRouteParams'
 import { useBreadcrumbs } from '../composables/useBreadcrumbs'
 import { computeCharacterHappiness } from '../stores/utils/happinessMetrics'
-import type { InputLot, NeedName } from '../stores/types'
+import type { InputLot, InputSpace, NeedName } from '../stores/types'
 
 const simulationStore = useSimulationStore()
 const router = useRouter()
@@ -403,28 +408,34 @@ const nestedGroups = computed<NestedBuilding[]>(() => {
   const buildings: NestedBuilding[] = []
   const claimed = new Set<string>()
 
+  const buildRoom = (space: InputSpace, outdoor: boolean) => {
+    const occupants = charactersBySpace.value[space.id] || []
+    occupants.forEach((c) => claimed.add(c.id))
+    return {
+      id: space.id,
+      name: space.name,
+      description: space.description,
+      outdoor,
+      occupants: occupants.map((c) => ({ id: c.id, name: c.name, value: metricValue(c.id) })),
+      objects: (space.items || []).map((item) => ({
+        id: item.id,
+        name: item.name,
+        inUse: simulationStore.getItemActiveUsers(item.id).length > 0,
+        detail: item.description
+      }))
+    }
+  }
+
   for (const lot of lotsWithSpaces.value) {
-    const spaces = [...(lot.indoorRooms || []), ...(lot.outdoorAreas || [])]
     buildings.push({
       key: lot.id,
       label: lot.name,
+      section: lot.lotType === 'RESIDENTIAL' ? 'Residential' : 'Community',
       tint: lot.lotType === 'RESIDENTIAL' ? 'rgba(50,116,217,0.06)' : 'rgba(115,191,105,0.06)',
-      rooms: spaces.map((space) => {
-        const occupants = charactersBySpace.value[space.id] || []
-        occupants.forEach((c) => claimed.add(c.id))
-        return {
-          id: space.id,
-          name: space.name,
-          description: space.description,
-          occupants: occupants.map((c) => ({ id: c.id, name: c.name, value: metricValue(c.id) })),
-          objects: (space.items || []).map((item) => ({
-            id: item.id,
-            name: item.name,
-            inUse: simulationStore.getItemActiveUsers(item.id).length > 0,
-            detail: item.description
-          }))
-        }
-      })
+      rooms: [
+        ...(lot.indoorRooms || []).map((space) => buildRoom(space, false)),
+        ...(lot.outdoorAreas || []).map((space) => buildRoom(space, true))
+      ]
     })
   }
 
@@ -452,6 +463,13 @@ function onSelectHex(characterId: string) {
   const lotId = state?.location?.lotId
   const spaceId = state?.location?.spaceId
   if (worldId.value && regionId.value && lotId && spaceId) {
+    router.push(`/world/${worldId.value}/region/${regionId.value}/lot/${lotId}/space/${spaceId}`)
+  }
+}
+
+function onSelectRoom(spaceId: string) {
+  const lotId = simulationStore.worldData.spaces[spaceId]?.lotId
+  if (worldId.value && regionId.value && lotId) {
     router.push(`/world/${worldId.value}/region/${regionId.value}/lot/${lotId}/space/${spaceId}`)
   }
 }
