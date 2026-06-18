@@ -416,7 +416,13 @@ const nestedGroups = computed<NestedBuilding[]>(() => {
           id: space.id,
           name: space.name,
           description: space.description,
-          occupants: occupants.map((c) => ({ id: c.id, name: c.name, value: metricValue(c.id) }))
+          occupants: occupants.map((c) => ({ id: c.id, name: c.name, value: metricValue(c.id) })),
+          objects: (space.items || []).map((item) => ({
+            id: item.id,
+            name: item.name,
+            inUse: simulationStore.getItemActiveUsers(item.id).length > 0,
+            detail: item.description
+          }))
         }
       })
     })

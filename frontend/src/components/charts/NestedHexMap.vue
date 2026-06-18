@@ -38,6 +38,18 @@
               @mouseleave="clearHover"
               @click="$emit('select', occ.id)"
             />
+            <polygon
+              v-for="obj in room.objects"
+              :key="obj.id"
+              :points="obj.points"
+              :fill="obj.fill"
+              stroke="#111217"
+              stroke-width="1"
+              class="objhex"
+              :aria-label="`${obj.name} · ${obj.inUse ? 'in use' : 'idle'}`"
+              @mouseenter="enterObject(obj, room.id)"
+              @mouseleave="clearHover"
+            />
             <text :x="room.cx" :y="room.labelY" text-anchor="middle" class="roomlabel">{{ room.name }}</text>
           </g>
         </svg>
@@ -59,6 +71,16 @@
       <span class="h-2 flex-1 rounded" :style="{ background: gradient }" />
       <span class="text-[11px] text-gf-text-faint">100%</span>
     </div>
+    <div class="mt-1.5 flex items-center gap-4 text-[11px] text-gf-text-faint">
+      <span class="flex items-center gap-1.5">
+        <span class="inline-block h-2.5 w-2.5 rounded-sm" style="background:#343b40" />
+        object · idle
+      </span>
+      <span class="flex items-center gap-1.5">
+        <span class="inline-block h-2.5 w-2.5 rounded-sm" style="background:#1f9e75" />
+        object · in use
+      </span>
+    </div>
   </div>
 </template>
 
@@ -72,11 +94,19 @@ export interface NestedHexNode {
   value: number
 }
 
+export interface NestedObject {
+  id: string
+  name: string
+  inUse: boolean
+  detail?: string
+}
+
 export interface NestedRoom {
   id: string
   name: string
   description?: string
   occupants: NestedHexNode[]
+  objects?: NestedObject[]
 }
 
 export interface NestedBuilding {
@@ -97,11 +127,15 @@ const gradient = VIRIDIS_GRADIENT
 
 // Layout constants
 const CR = 14 // resident hex radius
+const OR = 9 // object (furniture/appliance) hex radius
 const S = CR * 1.18 // resident centre spacing
-const PAD = 9 // padding from outermost resident to room edge
-const MIN_R = CR * 1.7 // smallest room hex (0-1 occupants)
+const PAD = 9 // padding from outermost cell to room edge
+const MIN_R = CR * 1.7 // smallest room hex (0-1 cells)
 const GAP = 12
 const BOX_W = 300
+
+const OBJ_IDLE = '#343b40'
+const OBJ_IN_USE = '#1f9e75'
 
 function hexPoints(cx: number, cy: number, r: number): string {
   const pts: string[] = []
@@ -145,12 +179,13 @@ function axialToPixel(q: number, r: number): { x: number; y: number } {
 
 // Pre-compute each room's radius and resident offsets from occupancy.
 function layoutRoom(room: NestedRoom) {
-  const n = room.occupants.length
-  const offsets = hexSpiral(Math.max(n, 1)).map((c) => axialToPixel(c.q, c.r))
-  const used = offsets.slice(0, n)
-  const bounding = n <= 1 ? CR : Math.max(...used.map((o) => Math.hypot(o.x, o.y))) + CR
+  const occ = room.occupants.length
+  const total = occ + (room.objects?.length ?? 0)
+  const offsets = hexSpiral(Math.max(total, 1)).map((c) => axialToPixel(c.q, c.r))
+  const used = offsets.slice(0, total)
+  const bounding = total <= 1 ? CR : Math.max(...used.map((o) => Math.hypot(o.x, o.y))) + CR
   const radius = Math.max(MIN_R, bounding + PAD)
-  return { room, radius, offsets }
+  return { room, radius, offsets, occ }
 }
 
 const renderBuildings = computed(() =>
@@ -162,7 +197,7 @@ const renderBuildings = computed(() =>
     let rowH = 0
     let maxRight = 0
 
-    const rooms = laidOut.map(({ room, radius, offsets }) => {
+    const rooms = laidOut.map(({ room, radius, offsets, occ }) => {
       const d = radius * 2
       if (x > GAP && x + d > BOX_W) {
         x = GAP
@@ -172,13 +207,25 @@ const renderBuildings = computed(() =>
       const cx = x + radius
       const cy = y + radius
 
-      const occupants = room.occupants.map((occ, i) => ({
-        id: occ.id,
-        name: occ.name,
-        label: `${Math.round((occ.value ?? 0) * 100)}%`,
-        fill: viridisColor(occ.value ?? 0),
+      const occupants = room.occupants.map((person, i) => ({
+        id: person.id,
+        name: person.name,
+        label: `${Math.round((person.value ?? 0) * 100)}%`,
+        fill: viridisColor(person.value ?? 0),
         points: hexPoints(cx + offsets[i].x, cy + offsets[i].y, CR)
       }))
+
+      const objects = (room.objects ?? []).map((obj, j) => {
+        const off = offsets[occ + j]
+        return {
+          id: obj.id,
+          name: obj.name,
+          inUse: obj.inUse,
+          detail: obj.detail,
+          fill: obj.inUse ? OBJ_IN_USE : OBJ_IDLE,
+          points: hexPoints(cx + off.x, cy + off.y, OR)
+        }
+      })
 
       x += d + GAP
       rowH = Math.max(rowH, d + 18)
@@ -192,7 +239,8 @@ const renderBuildings = computed(() =>
         cy,
         labelY: cy + radius + 13,
         points: hexPoints(cx, cy, radius),
-        occupants
+        occupants,
+        objects
       }
     })
 
@@ -232,6 +280,11 @@ function enterRoom(room: { id: string; name: string; description?: string }) {
 function enterNode(occ: { name: string; label: string }, roomId: string) {
   hoveredRoomId.value = roomId
   tip.value = { title: occ.name, sub: occ.label }
+}
+
+function enterObject(obj: { name: string; inUse: boolean }, roomId: string) {
+  hoveredRoomId.value = roomId
+  tip.value = { title: obj.name, sub: obj.inUse ? 'in use' : 'idle' }
 }
 
 function clearHover() {
