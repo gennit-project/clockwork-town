@@ -6,14 +6,6 @@
       <h1 class="text-xl font-semibold text-gf-text">Region Overview: {{ region?.name || 'Loading…' }}</h1>
       <div class="flex items-center gap-2">
         <button
-          v-if="viewMode === 'rooms'"
-          @click="toggleAllLots"
-          class="rounded border border-gf-border bg-gf-surface px-3 py-1.5 text-sm text-gf-text-weak hover:bg-gf-surface-2"
-          title="Expand or collapse all lot cards"
-        >
-          {{ allLotsExpanded ? 'Collapse all' : 'Expand all' }}
-        </button>
-        <button
           @click="showDebugPanel = !showDebugPanel"
           class="rounded border border-gf-border bg-gf-surface px-3 py-1.5 text-sm text-gf-text-weak hover:bg-gf-surface-2"
           title="Toggle debug action panel"
@@ -52,27 +44,18 @@
         >
           Rooms
         </button>
-        <button
-          @click="viewMode = 'rooms'"
-          class="border-l border-gf-border px-3 py-1 text-xs font-medium"
-          :class="viewMode === 'rooms' ? 'bg-gf-blue/20 text-gf-blue' : 'text-gf-text-weak hover:bg-gf-surface-2'"
-        >
-          Classic
-        </button>
       </div>
-      <template v-if="viewMode !== 'rooms'">
-        <span class="ml-1 text-xs text-gf-text-faint">Fill by</span>
-        <select
-          v-model="fillMetric"
-          class="rounded border border-gf-border bg-gf-bg px-2 py-1 text-xs text-gf-text focus:outline-none"
-        >
-          <option v-for="opt in FILL_OPTIONS" :key="opt.value" :value="opt.value" class="bg-gf-surface">
-            {{ opt.label }}
-          </option>
-        </select>
-        <span class="rounded border border-gf-border bg-gf-bg px-2 py-1 text-xs text-gf-text-faint">avg</span>
-        <span class="rounded border border-gf-border bg-gf-bg px-2 py-1 text-xs text-gf-text-faint">Size by: —</span>
-      </template>
+      <span class="ml-1 text-xs text-gf-text-faint">Fill by</span>
+      <select
+        v-model="fillMetric"
+        class="rounded border border-gf-border bg-gf-bg px-2 py-1 text-xs text-gf-text focus:outline-none"
+      >
+        <option v-for="opt in FILL_OPTIONS" :key="opt.value" :value="opt.value" class="bg-gf-surface">
+          {{ opt.label }}
+        </option>
+      </select>
+      <span class="rounded border border-gf-border bg-gf-bg px-2 py-1 text-xs text-gf-text-faint">avg</span>
+      <span class="rounded border border-gf-border bg-gf-bg px-2 py-1 text-xs text-gf-text-faint">Size by: —</span>
     </div>
 
     <!-- Debug Panel -->
@@ -104,7 +87,7 @@
       </Panel>
 
       <!-- Nested rooms: residents as hexes inside room hexes -->
-      <Panel v-else-if="viewMode === 'nested'" title="Rooms &amp; residents" class="flex-1 overflow-auto">
+      <Panel v-else title="Rooms &amp; residents" class="flex-1 overflow-auto">
         <NestedHexMap
           :groups="nestedGroups"
           :legend-label="fillLabel"
@@ -112,34 +95,6 @@
           @select-room="onSelectRoom"
         />
       </Panel>
-
-      <!-- Structural room view -->
-      <div v-else class="flex flex-1 gap-4 overflow-auto pt-1">
-        <LotColumn
-          title="Residential"
-          :lots="residentialLots"
-          :world-id="worldId || ''"
-          :region-id="regionId || ''"
-          :expanded-lots="expandedLots"
-          :characters-by-lot="charactersByLot"
-          :characters-by-space="charactersBySpace"
-          variant="blue"
-          empty-message="No residential lots yet"
-          @toggle-expanded="toggleLotRooms"
-        />
-        <LotColumn
-          title="Community"
-          :lots="communityLots"
-          :world-id="worldId || ''"
-          :region-id="regionId || ''"
-          :expanded-lots="expandedLots"
-          :characters-by-lot="charactersByLot"
-          :characters-by-space="charactersBySpace"
-          variant="green"
-          empty-message="No community lots yet"
-          @toggle-expanded="toggleLotRooms"
-        />
-      </div>
     </AsyncContainer>
 
     <!-- Edit Region Modal -->
@@ -199,7 +154,6 @@ import Breadcrumbs from '../components/Breadcrumbs.vue'
 import AsyncContainer from '../components/AsyncContainer.vue'
 import Modal from '../components/Modal.vue'
 import Panel from '../components/Panel.vue'
-import LotColumn from '../components/LotColumn.vue'
 import DebugActionPanel from '../components/DebugActionPanel.vue'
 import HexMap, { type HexGroup } from '../components/charts/HexMap.vue'
 import NestedHexMap, { type NestedBuilding } from '../components/charts/NestedHexMap.vue'
@@ -217,7 +171,7 @@ const { buildBreadcrumbs } = useBreadcrumbs()
 
 type FillMetric = 'happiness' | NeedName
 
-const viewMode = ref<'map' | 'nested' | 'rooms'>('map')
+const viewMode = ref<'map' | 'nested'>('map')
 const fillMetric = ref<FillMetric>('happiness')
 
 const FILL_OPTIONS: { value: FillMetric; label: string }[] = [
@@ -322,7 +276,6 @@ const world = ref<WorldSummary | null>(null)
 const region = ref<RegionSummary | null>(null)
 const characters = ref<CharacterSummary[]>([])
 const animals = ref<AnimalSummary[]>([])
-const expandedLots = ref<Record<string, boolean>>({})
 const loading = ref(true)
 const error = ref<string | null>(null)
 const showEditModal = ref(false)
@@ -337,14 +290,6 @@ const breadcrumbs = computed(() => buildBreadcrumbs({
   region: region.value ?? undefined,
   current: 'Overview'
 }))
-
-const residentialLots = computed(() =>
-  lotsWithSpaces.value.filter(lot => lot.lotType === 'RESIDENTIAL')
-)
-
-const communityLots = computed(() =>
-  lotsWithSpaces.value.filter(lot => lot.lotType === 'COMMUNITY')
-)
 
 const charactersByLot = computed<Record<string, CharacterSummary[]>>(() => {
   const byLot: Record<string, CharacterSummary[]> = {}
@@ -474,24 +419,6 @@ function onSelectRoom(spaceId: string) {
   }
 }
 
-const allLotsExpanded = computed(() => {
-  const lotIds = Object.keys(expandedLots.value)
-  return lotIds.length > 0 && lotIds.every(id => expandedLots.value[id])
-})
-
-const toggleLotRooms = (lotId: string) => {
-  expandedLots.value[lotId] = !expandedLots.value[lotId]
-}
-
-const toggleAllLots = () => {
-  const shouldExpand = !allLotsExpanded.value
-  const newExpandedState: Record<string, boolean> = {}
-  lotsWithSpaces.value.forEach(lot => {
-    newExpandedState[lot.id] = shouldExpand
-  })
-  expandedLots.value = newExpandedState
-}
-
 const MUTATION_UPDATE_REGION = gql`
   mutation UpdateRegion($id: ID!, $name: String!, $kind: String!) {
     updateRegion(id: $id, name: $name, kind: $kind) {
@@ -580,12 +507,6 @@ const loadData = async () => {
     )
 
     lotsWithSpaces.value = lotsWithSpacesData
-
-    const expandedState: Record<string, boolean> = {}
-    lotsWithSpacesData.forEach(lot => {
-      expandedState[lot.id] = true
-    })
-    expandedLots.value = expandedState
 
     simulationStore.loadWorldData(lotsWithSpacesData, regionId.value)
 
