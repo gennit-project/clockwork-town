@@ -75,6 +75,32 @@
       <Panel title="Needs" :padded="false" class="mt-3 h-72">
         <NeedsBarGauge :needs="NEED_NAMES" :values="state.needs" />
       </Panel>
+
+      <!-- Need trend over time -->
+      <Panel title="Need trend / time" class="mt-3">
+        <NeedTrendHeatmap :history="happinessHistory" :character-id="characterId || ''" :needs="NEED_NAMES" />
+      </Panel>
+
+      <!-- Relationships -->
+      <Panel title="Relationships" class="mt-3">
+        <ResidentRelationships
+          :relationships="state.relationships || []"
+          :names="residentNames"
+          :now-iso="nowIso"
+          @select="goToResident"
+        />
+      </Panel>
+
+      <!-- Timeline -->
+      <Panel title="Timeline" class="mt-3">
+        <MemoryTimeline
+          :memories="state.longTermMemories || []"
+          :relationships="state.relationships || []"
+          :names="residentNames"
+          :now-iso="nowIso"
+          @select="goToResident"
+        />
+      </Panel>
     </template>
   </div>
 </template>
@@ -87,6 +113,9 @@ import Panel from '../components/Panel.vue'
 import StatTile from '../components/StatTile.vue'
 import CharacterHappinessChart from '../components/charts/CharacterHappinessChart.vue'
 import NeedsBarGauge from '../components/charts/NeedsBarGauge.vue'
+import ResidentRelationships from '../components/ResidentRelationships.vue'
+import MemoryTimeline from '../components/MemoryTimeline.vue'
+import NeedTrendHeatmap from '../components/charts/NeedTrendHeatmap.vue'
 import { useSimulationStore } from '../stores/simulation'
 import { useTownDataLoader } from '../composables/useTownDataLoader'
 import { getCharacterStatusText } from '../composables/useCharacterStatus'
@@ -129,6 +158,22 @@ const statusDotClass = computed(() => (status.value === 'critical' ? 'bg-gf-red'
 const statusTextClass = computed(() => (status.value === 'critical' ? 'text-gf-red' : status.value === 'warning' ? 'text-gf-amber' : 'text-gf-green'))
 
 const actionVerb = computed(() => getCharacterStatusText(state.value))
+
+const nowIso = computed(() => simulationStore.simulationDateTime.iso)
+
+const residentNames = computed(() => {
+  const map: Record<string, string> = {}
+  for (const [id, s] of Object.entries(characterStates.value)) {
+    map[id] = s.name
+  }
+  return map
+})
+
+function goToResident(id: string) {
+  if (worldId.value && regionId.value) {
+    router.push(`/world/${worldId.value}/region/${regionId.value}/character/${id}`)
+  }
+}
 
 const lowestNeed = computed(() => {
   let lowest = { name: 'food' as NeedName, value: Infinity }

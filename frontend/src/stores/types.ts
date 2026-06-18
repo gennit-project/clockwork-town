@@ -59,6 +59,8 @@ export interface HappinessSample {
   iso: string
   town: number
   perCharacter: Record<string, number>
+  /** Per-character full needs snapshot at this tick (for the need-trend heatmap). */
+  perCharacterNeeds: Record<string, Needs>
 }
 
 export interface Cooldowns {

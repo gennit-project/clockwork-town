@@ -8,6 +8,7 @@ import type {
   HappinessSample,
   Intent,
   ItemOccupancy,
+  Needs,
   SimulationDateTime,
   WorldData
 } from '../types'
@@ -553,15 +554,18 @@ export function createSimulationRuntime(
   function recordHappinessSample() {
     const states = refs.characterStates.value
     const perCharacter: Record<string, number> = {}
+    const perCharacterNeeds: Record<string, Needs> = {}
     for (const [characterId, state] of Object.entries(states)) {
       perCharacter[characterId] = computeCharacterHappiness(state.needs)
+      perCharacterNeeds[characterId] = { ...state.needs }
     }
 
     refs.happinessHistory.value.push({
       tick: refs.currentTick.value,
       iso: refs.simulationDateTime.value.iso,
       town: computeTownHappiness(states),
-      perCharacter
+      perCharacter,
+      perCharacterNeeds
     })
 
     if (refs.happinessHistory.value.length > HAPPINESS_HISTORY_LIMIT) {
