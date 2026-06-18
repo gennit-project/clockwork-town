@@ -23,6 +23,7 @@ const RELATIONSHIP_EVENT_SCORES: Record<string, { shortTerm: number; longTerm: n
   text_romance: { shortTerm: 0.05, longTerm: 0.01 },
   call_romance: { shortTerm: 0.08, longTerm: 0.02 },
   invite_over: { shortTerm: 0.1, longTerm: 0.025 },
+  propose_relationship: { shortTerm: 0.12, longTerm: 0.05 },
   ate_lunch_together: { shortTerm: 0.07, longTerm: 0.025 },
   watched_a_movie_together: { shortTerm: 0.06, longTerm: 0.02 },
   reunited_after_long_absence: { shortTerm: 0.05, longTerm: 0.015 }
@@ -72,6 +73,20 @@ function haveSameLabels({
   }
 
   return left.every((label, index) => label === right[index])
+}
+
+function appendRelationshipLabel({
+  labels,
+  label
+}: {
+  labels: string[]
+  label: string
+}): string[] {
+  if (labels.includes(label)) {
+    return labels
+  }
+
+  return [...labels, label]
 }
 
 function buildRelationshipMilestoneLabels({
@@ -351,10 +366,12 @@ function isLunchTime(timestamp: string): boolean {
 
 function getDirectContactMemoryContent({
   action,
-  targetName
+  targetName,
+  proposedRelationshipLabel
 }: {
   action: Intent['action']
   targetName: string
+  proposedRelationshipLabel?: string
 }): string {
   if (action === 'text_romance') {
     return `Texted ${targetName}.`
@@ -366,6 +383,12 @@ function getDirectContactMemoryContent({
 
   if (action === 'invite_over') {
     return `Invited ${targetName} over.`
+  }
+
+  if (action === 'propose_relationship') {
+    return proposedRelationshipLabel
+      ? `Asked ${targetName} to become ${proposedRelationshipLabel}.`
+      : `Asked ${targetName} to define the relationship.`
   }
 
   return `Contacted ${targetName}.`
@@ -788,12 +811,123 @@ export async function recordRelationshipDirectContact({
     eventType: intent.action,
     buildForwardContent: () => getDirectContactMemoryContent({
       action: intent.action,
-      targetName: targetState.name
+      targetName: targetState.name,
+      proposedRelationshipLabel: intent.proposedRelationshipLabel
     }),
     buildReverseContent: () => getDirectContactMemoryContent({
       action: intent.action,
-      targetName: characterState.name
+      targetName: characterState.name,
+      proposedRelationshipLabel: intent.proposedRelationshipLabel
     }),
+    dependencies
+  })
+
+  await syncRelationshipMilestoneLabels({
+    characterState,
+    relationshipId: forwardRelationship.id,
+    dependencies
+  })
+  await syncRelationshipMilestoneLabels({
+    characterState: targetState,
+    relationshipId: reverseRelationship.id,
+    dependencies
+  })
+}
+
+export async function recordRelationshipProposal({
+  characterId,
+  targetCharacterId,
+  characterState,
+  targetState,
+  timestamp,
+  intent,
+  dependencies
+}: {
+  characterId: string
+  targetCharacterId: string
+  characterState: CharacterState
+  targetState: CharacterState
+  timestamp: string
+  intent: Intent
+  dependencies: RelationshipRuntimeDependencies
+}): Promise<void> {
+  const proposedRelationshipLabel = intent.proposedRelationshipLabel
+  if (!proposedRelationshipLabel) {
+    return
+  }
+
+  let forwardRelationship = (
+    characterState.relationships || []
+  ).find((entry) => entry.toCharacterId === targetCharacterId)
+  let reverseRelationship = (
+    targetState.relationships || []
+  ).find((entry) => entry.toCharacterId === characterId)
+
+  if (!forwardRelationship || !reverseRelationship) {
+    return
+  }
+
+  forwardRelationship = await applyRelationshipEventDelta({
+    relationship: buildUpdatedRelationship({
+      relationship: forwardRelationship,
+      lastSpokeAt: timestamp
+    }),
+    fromState: characterState,
+    eventType: 'propose_relationship',
+    dependencies
+  })
+
+  reverseRelationship = await applyRelationshipEventDelta({
+    relationship: buildUpdatedRelationship({
+      relationship: reverseRelationship,
+      lastSpokeAt: timestamp
+    }),
+    fromState: targetState,
+    eventType: 'propose_relationship',
+    dependencies
+  })
+
+  await createPairedRelationshipMemories({
+    forwardRelationship,
+    reverseRelationship,
+    characterId,
+    targetCharacterId,
+    characterState,
+    targetState,
+    timestamp,
+    location: {
+      lotId: intent.targetLotId,
+      lotName: intent.targetLotName,
+      spaceId: intent.targetSpaceId,
+      spaceName: intent.targetSpaceName
+    },
+    eventType: 'propose_relationship',
+    buildForwardContent: () => `Asked ${targetState.name} to become ${proposedRelationshipLabel}. ${targetState.name} said yes.`,
+    buildReverseContent: () => `${characterState.name} asked to become ${proposedRelationshipLabel}. Said yes.`,
+    dependencies
+  })
+
+  forwardRelationship = await persistUpdatedRelationship({
+    fromState: characterState,
+    relationship: {
+      ...forwardRelationship,
+      labels: appendRelationshipLabel({
+        labels: forwardRelationship.labels,
+        label: proposedRelationshipLabel
+      })
+    },
+    dependencies
+  })
+
+  reverseRelationship = await persistUpdatedRelationship({
+    fromState: targetState,
+    relationship: {
+      ...reverseRelationship,
+      labels: appendRelationshipLabel({
+        labels: reverseRelationship.labels,
+        label: proposedRelationshipLabel
+      })
+    },
     dependencies
   })
 

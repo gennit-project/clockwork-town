@@ -28,6 +28,7 @@ function createState(overrides: Partial<CharacterState> = {}): CharacterState {
       text_romance: 0,
       call_romance: 0,
       invite_over: 0,
+      propose_relationship: 0,
       read: 0,
       write: 0,
       view_art: 0,

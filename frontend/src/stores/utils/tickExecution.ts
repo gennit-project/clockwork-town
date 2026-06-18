@@ -22,7 +22,7 @@ import { calculateUtility } from './actionUtility'
 import { evaluateRelationshipAvailability } from './relationshipAvailability'
 
 const MULTI_PARTICIPANT_ACTIONS = new Set<ActionName>(['chat_friend', 'date'])
-const INVITATION_RESPONSE_ACTIONS = new Set<ActionName>(['chat_friend', 'date', 'invite_over'])
+const INVITATION_RESPONSE_ACTIONS = new Set<ActionName>(['chat_friend', 'date', 'invite_over', 'propose_relationship'])
 
 function calculateTravelCostToIntentTarget({
   characterState,
@@ -64,6 +64,18 @@ function buildSocialParticipationIntent({
   intent: Intent
   worldData: WorldData
 }): Intent | null {
+  if (intent.action === 'propose_relationship') {
+    return {
+      ...intent,
+      strategy: 'propose_relationship:response',
+      utility: 0,
+      source: 'manual',
+      travelCost: 0,
+      socialTargetId: initiatorId,
+      socialTargetName: initiatorState.name
+    }
+  }
+
   const travelCost = calculateTravelCostToIntentTarget({
     characterState: participantState,
     intent,
@@ -111,8 +123,9 @@ function buildSocialInvitation({
 }): SocialInvitation {
   return {
     id: crypto.randomUUID(),
-    action: intent.action as Extract<ActionName, 'chat_friend' | 'date' | 'invite_over'>,
+    action: intent.action as Extract<ActionName, 'chat_friend' | 'date' | 'invite_over' | 'propose_relationship'>,
     inviteContextType: intent.inviteContextType,
+    proposedRelationshipLabel: intent.proposedRelationshipLabel,
     fromCharacterId: characterId,
     fromCharacterName: state.name,
     toCharacterId: intent.socialTargetId as string,
@@ -176,10 +189,10 @@ function calculateInvitationUtility({
   intent: Intent
   worldData: WorldData
 }): number | null {
-  if (intent.action === 'invite_over') {
+  if (intent.action === 'invite_over' || intent.action === 'propose_relationship') {
     return calculateUtility(participantState.name, intent.action, participantState.needs, {
-      itemId: 'invite-over',
-      itemName: intent.socialTargetName || 'Invitation',
+      itemId: intent.action,
+      itemName: intent.proposedRelationshipLabel || intent.socialTargetName || 'Invitation',
       spaceId: participantState.location.spaceId || 'unknown-space',
       spaceName: participantState.location.spaceName || 'Unknown space',
       lotId: participantState.location.lotId || 'unknown-lot',
@@ -246,6 +259,18 @@ function evaluateInvitationAcceptance({
       targetState: participantState
     })
     if (!availability.canInviteOver) {
+      return { accepted: false, reason: availability.summary }
+    }
+
+    return { accepted: true }
+  }
+
+  if (intent.action === 'propose_relationship') {
+    const availability = evaluateRelationshipAvailability({
+      relationship: null,
+      targetState: participantState
+    })
+    if (!availability.canCall) {
       return { accepted: false, reason: availability.summary }
     }
 

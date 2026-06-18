@@ -473,6 +473,30 @@ describe('simulation store integration', () => {
     }))
   })
 
+  it('applies the proposed relationship label to both directions after an accepted proposal', async () => {
+    const store = setupStore()
+    setupSecondCharacter(store, 'lot-2', 'Community Center', 'space-3', 'Library')
+    seedDirectionalRelationship(store, 'char-1', 'char-2', null, {
+      shortTermScore: 0.3,
+      longTermScore: 0.5
+    })
+    seedDirectionalRelationship(store, 'char-2', 'char-1', null, {
+      shortTermScore: 0.25,
+      longTermScore: 0.45
+    })
+    store.enqueueIntent('char-1', {
+      action: 'propose_relationship',
+      utility: 1,
+      socialTargetId: 'char-2',
+      socialTargetName: 'Bob',
+      proposedRelationshipLabel: 'monogamous'
+    })
+
+    await store.executeTick()
+
+    expect(store.characterStates['char-1'].relationships?.[0]?.labels).toContain('monogamous')
+  })
+
   it('does not record an invite_over memory when the invitation is rejected', async () => {
     const store = setupStore()
     setupSecondCharacter(store, 'lot-2', 'Community Center', 'space-3', 'Library')

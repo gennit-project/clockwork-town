@@ -76,6 +76,12 @@ export const ACTION_EFFECTS: ActionEffects = {
     secondaryEffects: { friends: 0.08 },
     cooldownTicks: 16
   },
+  propose_relationship: {
+    primaryNeed: 'romance',
+    primaryEffect: 0.2,
+    secondaryEffects: { friends: 0.06 },
+    cooldownTicks: 24
+  },
   read: {
     primaryNeed: 'fulfillment',
     primaryEffect: 0.20,

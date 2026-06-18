@@ -189,6 +189,7 @@ describe('selectBestIntent', () => {
       text_romance: 5,
       call_romance: 5,
       invite_over: 5,
+      propose_relationship: 5,
       read: 5,
       write: 5,
       view_art: 5,

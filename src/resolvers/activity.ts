@@ -5,7 +5,7 @@ export const ActivityResolvers = {
   Mutation: {
     startActivity: async (_: any, { input }: { input: { characterId: string, activityTypeId?: string, actionName?: string, itemId?: string, note?: string } }) =>
       batch(async () => {
-        const REMOTE_CONTACT_ACTIONS = new Set(["text_romance", "call_romance", "invite_over", "call_mom"]);
+        const REMOTE_CONTACT_ACTIONS = new Set(["text_romance", "call_romance", "invite_over", "propose_relationship", "call_mom"]);
         let activityType: any;
         let activityTypeId: string;
 

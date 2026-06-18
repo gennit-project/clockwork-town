@@ -194,6 +194,44 @@
           <p v-else class="mt-2 text-sm text-gray-500 dark:text-gray-400">No labels assigned yet.</p>
         </div>
 
+        <div class="mt-4">
+          <p class="text-sm font-medium text-gray-900 dark:text-gray-100">Commitment</p>
+          <div class="mt-2 flex flex-wrap gap-2">
+            <button
+              type="button"
+              class="rounded border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-900/40 dark:text-gray-200 dark:hover:bg-gray-800"
+              :disabled="!canQueueRelationshipProposal('girlfriend')"
+              @click="queueRelationshipProposal('girlfriend')"
+            >
+              Ask Girlfriend
+            </button>
+            <button
+              type="button"
+              class="rounded border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-900/40 dark:text-gray-200 dark:hover:bg-gray-800"
+              :disabled="!canQueueRelationshipProposal('husband')"
+              @click="queueRelationshipProposal('husband')"
+            >
+              Ask Husband
+            </button>
+            <button
+              type="button"
+              class="rounded border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-900/40 dark:text-gray-200 dark:hover:bg-gray-800"
+              :disabled="!canQueueRelationshipProposal('monogamous')"
+              @click="queueRelationshipProposal('monogamous')"
+            >
+              Ask Monogamous
+            </button>
+            <button
+              type="button"
+              class="rounded border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-900/40 dark:text-gray-200 dark:hover:bg-gray-800"
+              :disabled="!canQueueRelationshipProposal('casual relationship')"
+              @click="queueRelationshipProposal('casual relationship')"
+            >
+              Ask Casual Relationship
+            </button>
+          </div>
+        </div>
+
         <div class="mt-5">
           <p class="text-sm font-medium text-gray-900 dark:text-gray-100">Linked memories</p>
           <div v-if="linkedMemories.length > 0" class="mt-2 space-y-2">
@@ -224,7 +262,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useSimulationStore } from '../stores/simulation'
-import type { ActionName, CharacterRelationship, CharacterState, Intent, InviteOverContext, LongTermMemory, TaskStep } from '../stores/types'
+import type { ActionName, CharacterRelationship, CharacterState, Intent, InviteOverContext, LongTermMemory, RelationshipProposalLabel, TaskStep } from '../stores/types'
 import { canQueueRelationshipAction, evaluateRelationshipAvailability } from '../stores/utils/relationshipAvailability'
 import { findItemsWithAffordance } from '../stores/utils/pathfinding'
 
@@ -384,6 +422,29 @@ function queueRelationshipContactAction(action: Extract<ActionName, 'text_romanc
     source: 'manual',
     socialTargetId: relationship.toCharacterId,
     socialTargetName: getRelationshipTargetName(relationship)
+  }
+
+  simulationStore.enqueueIntent(props.characterId || relationship.fromCharacterId, intent)
+}
+
+function canQueueRelationshipProposal(label: RelationshipProposalLabel): boolean {
+  return selectedRelationshipAvailability.value.canCall
+    && !(selectedRelationship.value?.labels || []).includes(label)
+}
+
+function queueRelationshipProposal(label: RelationshipProposalLabel) {
+  const relationship = selectedRelationship.value
+  if (!relationship || !canQueueRelationshipProposal(label)) {
+    return
+  }
+
+  const intent: Intent = {
+    action: 'propose_relationship',
+    utility: 1,
+    source: 'manual',
+    socialTargetId: relationship.toCharacterId,
+    socialTargetName: getRelationshipTargetName(relationship),
+    proposedRelationshipLabel: label
   }
 
   simulationStore.enqueueIntent(props.characterId || relationship.fromCharacterId, intent)

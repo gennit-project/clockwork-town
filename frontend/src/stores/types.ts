@@ -18,6 +18,7 @@ export type ActionName =
   | 'text_romance'
   | 'call_romance'
   | 'invite_over'
+  | 'propose_relationship'
   | 'read'
   | 'write'
   | 'view_art'
@@ -61,6 +62,7 @@ export interface Cooldowns {
   text_romance: number
   call_romance: number
   invite_over: number
+  propose_relationship: number
   read: number
   write: number
   view_art: number
@@ -70,6 +72,7 @@ export interface Cooldowns {
 }
 
 export type InviteOverContext = 'hang_out' | 'watch_movie' | 'have_dinner'
+export type RelationshipProposalLabel = 'girlfriend' | 'husband' | 'monogamous' | 'casual relationship'
 
 export interface CharacterLocation {
   regionId: string | null
@@ -112,8 +115,9 @@ export type SocialInvitationStatus = 'pending' | 'accepted' | 'rejected'
 
 export interface SocialInvitation {
   id: string
-  action: Extract<ActionName, 'chat_friend' | 'date' | 'invite_over'>
+  action: Extract<ActionName, 'chat_friend' | 'date' | 'invite_over' | 'propose_relationship'>
   inviteContextType?: InviteOverContext
+  proposedRelationshipLabel?: RelationshipProposalLabel
   fromCharacterId: string
   fromCharacterName: string
   toCharacterId: string
@@ -308,6 +312,7 @@ export interface Intent {
   socialTargetId?: string
   socialTargetName?: string
   inviteContextType?: InviteOverContext
+  proposedRelationshipLabel?: RelationshipProposalLabel
   hostedFollowUp?: TaskStep
   steps?: TaskStep[]
 }
@@ -326,6 +331,7 @@ export interface TaskStep {
   socialTargetId?: string
   socialTargetName?: string
   inviteContextType?: InviteOverContext
+  proposedRelationshipLabel?: RelationshipProposalLabel
   hostedFollowUp?: Omit<TaskStep, 'hostedFollowUp'>
 }
 

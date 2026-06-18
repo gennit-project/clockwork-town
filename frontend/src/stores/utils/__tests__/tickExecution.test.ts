@@ -47,6 +47,7 @@ describe('executeTick', () => {
             text_romance: 0,
             call_romance: 0,
             invite_over: 0,
+            propose_relationship: 0,
             read: 0,
             write: 0,
             view_art: 0,
@@ -274,6 +275,7 @@ describe('executeTick', () => {
         text_romance: 5,
         call_romance: 5,
         invite_over: 5,
+        propose_relationship: 5,
         read: 5,
         write: 5,
         view_art: 5,
@@ -415,6 +417,29 @@ describe('executeTick', () => {
       await executeTick(params)
 
       expect(params.executeAction).toHaveBeenCalledWith('char-1', expect.objectContaining({ action: 'idle' }))
+    })
+
+    it('accepts a relationship proposal and schedules a mirrored response intent', async () => {
+      params.characterStates.value['char-2'] = createMockCharacterState({
+        name: 'Alex',
+        currentAction: 'idle'
+      })
+      params.characterStates.value['char-1'].queuedActions = [{
+        action: 'propose_relationship',
+        utility: 1,
+        source: 'manual',
+        socialTargetId: 'char-2',
+        socialTargetName: 'Alex',
+        proposedRelationshipLabel: 'monogamous'
+      }]
+
+      await executeTick(params)
+
+      expect(params.executeAction).toHaveBeenCalledWith('char-2', expect.objectContaining({
+        action: 'propose_relationship',
+        strategy: 'propose_relationship:response',
+        proposedRelationshipLabel: 'monogamous'
+      }))
     })
   })
 

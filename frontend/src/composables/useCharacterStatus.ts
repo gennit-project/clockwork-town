@@ -12,6 +12,7 @@ const ACTION_VERBS: Record<ActionName, string> = {
   text_romance: 'texting',
   call_romance: 'calling',
   invite_over: 'inviting someone over',
+  propose_relationship: 'having a commitment talk',
   read: 'reading',
   write: 'writing',
   view_art: 'looking at',
@@ -47,7 +48,7 @@ export function getCharacterStatusText(state: CharacterState | null | undefined)
       return `${verb} on ${targetName}`
     }
 
-    if (activeAction === 'date' || activeAction === 'chat_friend' || activeAction === 'text_romance' || activeAction === 'call_romance' || activeAction === 'invite_over') {
+    if (activeAction === 'date' || activeAction === 'chat_friend' || activeAction === 'text_romance' || activeAction === 'call_romance' || activeAction === 'invite_over' || activeAction === 'propose_relationship') {
       return `${verb} with ${targetName}`
     }
 

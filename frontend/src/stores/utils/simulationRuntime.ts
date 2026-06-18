@@ -36,6 +36,7 @@ import {
   recordRelationshipConversation,
   recordRelationshipDirectContact,
   recordRelationshipEncounter,
+  recordRelationshipProposal,
   recordSharedMeal,
   recordSharedViewingExperience
 } from './relationshipRuntime'
@@ -369,6 +370,29 @@ export function createSimulationRuntime(
       const targetState = refs.characterStates.value[intent.socialTargetId]
       if (state && targetState) {
         await recordRelationshipDirectContact({
+          characterId,
+          targetCharacterId: intent.socialTargetId,
+          characterState: state,
+          targetState,
+          timestamp: refs.simulationDateTime.value.iso,
+          intent,
+          dependencies: {
+            persistCharacterRelationship: dependencies.persistCharacterRelationship,
+            createStructuredCharacterLongTermMemory: dependencies.createStructuredCharacterLongTermMemory
+          }
+        })
+      }
+    }
+
+    if (
+      intent.action === 'propose_relationship'
+      && intent.socialTargetId
+      && intent.strategy !== 'propose_relationship:response'
+    ) {
+      const state = refs.characterStates.value[characterId]
+      const targetState = refs.characterStates.value[intent.socialTargetId]
+      if (state && targetState) {
+        await recordRelationshipProposal({
           characterId,
           targetCharacterId: intent.socialTargetId,
           characterState: state,
