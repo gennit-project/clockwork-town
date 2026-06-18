@@ -83,7 +83,12 @@
 
       <!-- Node-health host map (default) -->
       <Panel v-if="viewMode === 'map'" title="Resident node health" class="flex-1 overflow-auto">
-        <HexMap :groups="hexGroups" :legend-label="fillLabel" @select="onSelectHex" />
+        <HexMap
+          :groups="hexGroups"
+          :legend-label="fillLabel"
+          @select="onSelectHex"
+          @select-building="onSelectBuilding"
+        />
       </Panel>
 
       <!-- Nested rooms: residents as hexes inside room hexes -->
@@ -93,6 +98,7 @@
           :legend-label="fillLabel"
           @select="onSelectHex"
           @select-room="onSelectRoom"
+          @select-building="onSelectBuilding"
         />
       </Panel>
     </AsyncContainer>
@@ -416,6 +422,12 @@ function onSelectRoom(spaceId: string) {
   const lotId = simulationStore.worldData.spaces[spaceId]?.lotId
   if (worldId.value && regionId.value && lotId) {
     router.push(`/world/${worldId.value}/region/${regionId.value}/lot/${lotId}/space/${spaceId}`)
+  }
+}
+
+function onSelectBuilding(lotId: string) {
+  if (worldId.value && regionId.value && simulationStore.worldData.lots[lotId]) {
+    router.push(`/world/${worldId.value}/region/${regionId.value}/lot/${lotId}`)
   }
 }
 

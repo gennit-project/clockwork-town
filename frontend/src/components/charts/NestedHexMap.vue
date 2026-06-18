@@ -15,9 +15,13 @@
           :style="b.tint ? { backgroundColor: b.tint } : undefined"
         >
         <div class="mb-1 text-center">
-          <span class="rounded border border-gf-border bg-gf-surface-2 px-2 py-0.5 text-[11px] text-gf-text">
+          <button
+            type="button"
+            class="rounded border border-gf-border bg-gf-surface-2 px-2 py-0.5 text-[11px] text-gf-text transition-colors hover:border-gf-blue hover:text-gf-blue"
+            @click="$emit('select-building', b.key)"
+          >
             {{ b.label }}
-          </span>
+          </button>
         </div>
         <div class="mb-1.5 text-center text-[10px] text-gf-text-faint">
           {{ b.rooms.length }} {{ b.rooms.length === 1 ? 'room' : 'rooms' }}
@@ -137,6 +141,7 @@ const props = defineProps<{
 defineEmits<{
   (e: 'select', id: string): void
   (e: 'select-room', id: string): void
+  (e: 'select-building', id: string): void
 }>()
 
 const gradient = VIRIDIS_GRADIENT

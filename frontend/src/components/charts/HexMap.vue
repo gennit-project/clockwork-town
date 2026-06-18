@@ -8,9 +8,13 @@
         :style="group.tint ? { backgroundColor: group.tint } : undefined"
       >
         <div class="mb-1 text-center">
-          <span class="rounded border border-gf-border bg-gf-surface-2 px-2 py-0.5 text-[11px] text-gf-text">
+          <button
+            type="button"
+            class="rounded border border-gf-border bg-gf-surface-2 px-2 py-0.5 text-[11px] text-gf-text transition-colors hover:border-gf-blue hover:text-gf-blue"
+            @click="$emit('select-building', group.key)"
+          >
             {{ group.label }}
-          </span>
+          </button>
         </div>
         <div class="mb-1.5 text-center text-[10px] text-gf-text-faint">
           {{ group.nodes.length }} {{ group.nodes.length === 1 ? 'resident' : 'residents' }}
@@ -83,7 +87,10 @@ const props = defineProps<{
   legendLabel?: string
 }>()
 
-defineEmits<{ (e: 'select', id: string): void }>()
+defineEmits<{
+  (e: 'select', id: string): void
+  (e: 'select-building', id: string): void
+}>()
 
 const gradient = VIRIDIS_GRADIENT
 
