@@ -5,13 +5,13 @@
       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
       @click.self="handleBackdropClick"
     >
-      <div :class="['bg-white dark:bg-gray-800 rounded-lg p-6', sizeClass]">
+      <div :class="['bg-gf-surface border border-gf-border rounded-lg p-6', sizeClass]">
         <div class="flex items-center justify-between mb-4">
-          <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ title }}</h2>
+          <h2 class="text-2xl font-bold text-gf-text">{{ title }}</h2>
           <button
             v-if="showClose"
             @click="close"
-            class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            class="text-gf-text-faint hover:text-gf-text-weak"
             type="button"
           >
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

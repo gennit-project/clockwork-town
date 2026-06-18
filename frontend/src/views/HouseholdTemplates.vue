@@ -1,32 +1,32 @@
 <template>
   <div>
     <div v-if="loading" class="text-center py-8">
-      <p class="text-gray-500">Loading templates...</p>
+      <p class="text-gf-text-faint">Loading templates...</p>
     </div>
 
     <div v-else-if="error" class="text-center py-8">
-      <p class="text-red-500">Error loading templates: {{ error.message }}</p>
+      <p class="text-gf-red">Error loading templates: {{ error.message }}</p>
     </div>
 
     <div v-else-if="!templates || templates.length === 0" class="text-center py-8">
-      <p class="text-gray-500">No household templates yet. Create one to get started!</p>
+      <p class="text-gf-text-faint">No household templates yet. Create one to get started!</p>
     </div>
 
     <div v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       <div
         v-for="template in templates"
         :key="template.id"
-        class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow relative group"
+        class="bg-gf-surface border border-gf-border overflow-hidden rounded transition-colors relative group"
       >
         <router-link
           :to="`/library/households/${template.id}`"
           class="block p-5"
         >
           <div class="flex items-center justify-between">
-            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">{{ template.name }}</h3>
+            <h3 class="text-lg font-medium text-gf-text">{{ template.name }}</h3>
           </div>
 
-          <p v-if="template.description" class="mt-2 text-sm text-gray-500">
+          <p v-if="template.description" class="mt-2 text-sm text-gf-text-faint">
             {{ template.description }}
           </p>
 
@@ -34,7 +34,7 @@
             <span
               v-for="tag in template.tags"
               :key="tag"
-              class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:text-gray-200 dark:bg-gray-700"
+              class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gf-surface-2 text-gf-text-weak"
             >
               {{ tag }}
             </span>
@@ -42,16 +42,16 @@
 
           <div class="mt-4 grid grid-cols-2 gap-4 text-sm">
             <div>
-              <p class="text-gray-500">Characters</p>
-              <p class="font-medium text-gray-900 dark:text-gray-100">{{ template.characters?.length || 0 }}</p>
+              <p class="text-gf-text-faint">Characters</p>
+              <p class="font-medium text-gf-text">{{ template.characters?.length || 0 }}</p>
             </div>
             <div>
-              <p class="text-gray-500">Pets</p>
-              <p class="font-medium text-gray-900 dark:text-gray-100">{{ template.animals?.length || 0 }}</p>
+              <p class="text-gf-text-faint">Pets</p>
+              <p class="font-medium text-gf-text">{{ template.animals?.length || 0 }}</p>
             </div>
           </div>
 
-          <div class="mt-4 text-sm text-indigo-600 font-medium">
+          <div class="mt-4 text-sm text-gf-blue font-medium">
             View Details →
           </div>
         </router-link>
@@ -59,7 +59,7 @@
         <!-- Delete Button -->
         <button
           @click="confirmDelete(template)"
-          class="absolute top-2 right-2 p-2 text-gray-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-gray-700 rounded-full shadow-sm"
+          class="absolute top-2 right-2 p-2 text-gf-text-faint hover:text-gf-red opacity-0 group-hover:opacity-100 transition-opacity bg-gf-surface-2 rounded-full"
           title="Delete template"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -71,10 +71,10 @@
 
     <!-- Delete Confirmation Modal -->
     <div v-if="deletingTemplate" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
-        <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">Delete Template</h2>
-        <p class="mb-2 text-gray-700 dark:text-gray-300">Are you sure you want to delete "{{ deletingTemplate.name }}"?</p>
-        <p class="mb-4 text-sm text-gray-500">
+      <div class="bg-gf-surface border border-gf-border rounded p-6 max-w-md w-full">
+        <h2 class="text-2xl font-bold mb-4 text-gf-text">Delete Template</h2>
+        <p class="mb-2 text-gf-text-weak">Are you sure you want to delete "{{ deletingTemplate.name }}"?</p>
+        <p class="mb-4 text-sm text-gf-text-faint">
           This will permanently delete the template with {{ (deletingTemplate.characters?.length || 0) }} characters and {{ (deletingTemplate.animals?.length || 0) }} animals.
         </p>
         <div class="flex justify-end space-x-3">
@@ -82,14 +82,14 @@
             type="button"
             @click="deletingTemplate = null"
             :disabled="deleting"
-            class="px-4 py-2 text-gray-700 hover:text-gray-900 dark:text-gray-100 disabled:opacity-50"
+            class="rounded border border-gf-border bg-gf-surface px-3 py-1.5 text-sm text-gf-text-weak hover:bg-gf-surface-2 disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             @click="deleteTemplate"
             :disabled="deleting"
-            class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md disabled:opacity-50"
+            class="rounded border border-gf-border bg-gf-red/15 px-3 py-1.5 text-sm text-gf-red hover:bg-gf-red/25 disabled:opacity-50"
           >
             {{ deleting ? 'Deleting...' : 'Delete' }}
           </button>

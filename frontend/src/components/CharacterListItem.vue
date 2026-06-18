@@ -1,14 +1,14 @@
 <template>
   <button
     @click="$emit('select')"
-    class="w-full text-left p-3 rounded transition-colors border border-gray-200 dark:border-gray-600 mb-2"
+    class="w-full text-left p-3 rounded transition-colors border border-gf-border mb-2"
     :class="[
       hoverClass,
       isActive ? activeClass : ''
     ]"
   >
     <div class="flex justify-between items-start">
-      <p class="font-medium text-gray-900 dark:text-gray-100 flex-1">
+      <p class="font-medium text-gf-text flex-1">
         {{ icon }} {{ entity.name }}, {{ entity.age }}
       </p>
       <!-- Status Badge -->
@@ -22,7 +22,7 @@
     </div>
 
     <!-- Location -->
-    <p v-if="simulationState?.location?.lotName" class="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center">
+    <p v-if="simulationState?.location?.lotName" class="text-xs text-gf-text-faint mt-1 flex items-center">
       <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -41,14 +41,14 @@
     <div v-if="simulationState && showNeeds && isActive" class="mt-2 space-y-1 text-[10px]">
       <div v-for="need in allNeeds" :key="need.key" class="flex items-center">
         <span class="mr-1">{{ need.icon }}</span>
-        <div class="flex-1 bg-gray-200 dark:bg-gray-600 h-1.5 rounded-full overflow-hidden">
+        <div class="flex-1 bg-gf-surface-3 h-1.5 rounded-full overflow-hidden">
           <div
             class="h-full rounded-full transition-all"
             :class="getNeedColorClass(simulationState.needs[need.key])"
             :style="{ width: `${simulationState.needs[need.key] * 100}%` }"
           />
         </div>
-        <span class="ml-1 text-gray-600 dark:text-gray-400 w-8 text-right">
+        <span class="ml-1 text-gf-text-weak w-8 text-right">
           {{ Math.round(simulationState.needs[need.key] * 100) }}%
         </span>
       </div>
@@ -58,7 +58,7 @@
     <div v-else-if="simulationState && showNeeds && !isActive" class="mt-2 grid grid-cols-2 gap-1 text-[10px]">
       <div v-for="need in compactNeeds" :key="need.key" class="flex items-center">
         <span class="mr-1">{{ need.icon }}</span>
-        <div class="flex-1 bg-gray-200 dark:bg-gray-600 h-1.5 rounded-full overflow-hidden">
+        <div class="flex-1 bg-gf-surface-3 h-1.5 rounded-full overflow-hidden">
           <div
             class="h-full rounded-full transition-all"
             :class="getNeedColorClass(simulationState.needs[need.key])"
@@ -68,7 +68,7 @@
       </div>
     </div>
 
-    <p v-if="showTraits && entity.traits && entity.traits.length > 0" class="text-xs text-gray-500 dark:text-gray-300 mt-1">
+    <p v-if="showTraits && entity.traits && entity.traits.length > 0" class="text-xs text-gf-text-faint mt-1">
       {{ entity.traits.join(', ') }}
     </p>
   </button>
@@ -110,11 +110,11 @@ const icon = computed(() => {
 })
 
 const hoverClass = computed(() => {
-  return props.type === 'animal' ? 'hover:bg-amber-50 dark:hover:bg-amber-900' : 'hover:bg-blue-50 dark:hover:bg-blue-900'
+  return 'hover:bg-gf-surface-2'
 })
 
 const activeClass = computed(() => {
-  return props.type === 'animal' ? 'bg-amber-100 dark:bg-amber-800 border-amber-400' : 'bg-blue-100 dark:bg-blue-800 border-blue-400'
+  return props.type === 'animal' ? 'bg-gf-surface-3 border-gf-amber' : 'bg-gf-blue/10 border-gf-blue'
 })
 
 const simulationState = computed(() => {
@@ -131,32 +131,33 @@ const needSummaries = computed(() => {
 
 const statusBadgeClass = computed(() => {
   const action = simulationState.value?.currentAction
-  if (!action) return 'bg-gray-200 text-gray-700'
+  const neutral = 'bg-gf-surface-3 text-gf-text-weak'
+  if (!action) return neutral
 
   const statusColors: Partial<Record<ActionName, string>> = {
-    idle: 'bg-gray-200 text-gray-700',
-    eat: 'bg-green-200 text-green-800',
-    sleep: 'bg-blue-200 text-blue-800',
-    use_toilet: 'bg-cyan-200 text-cyan-800',
-    shower: 'bg-sky-200 text-sky-800',
-    medicate: 'bg-red-200 text-red-800',
-    date: 'bg-rose-200 text-rose-800',
-    read: 'bg-purple-200 text-purple-800',
-    write: 'bg-purple-200 text-purple-800',
-    chat_friend: 'bg-pink-200 text-pink-800',
-    view_art: 'bg-indigo-200 text-indigo-800',
-    view_movie: 'bg-violet-200 text-violet-800',
-    work: 'bg-amber-200 text-amber-900'
+    idle: neutral,
+    eat: 'bg-gf-green/15 text-gf-green',
+    sleep: 'bg-gf-blue/15 text-gf-blue',
+    use_toilet: 'bg-gf-blue/15 text-gf-blue',
+    shower: 'bg-gf-blue/15 text-gf-blue',
+    medicate: 'bg-gf-red/15 text-gf-red',
+    date: 'bg-gf-purple/15 text-gf-purple',
+    read: 'bg-gf-purple/15 text-gf-purple',
+    write: 'bg-gf-purple/15 text-gf-purple',
+    chat_friend: 'bg-gf-purple/15 text-gf-purple',
+    view_art: 'bg-gf-purple/15 text-gf-purple',
+    view_movie: 'bg-gf-purple/15 text-gf-purple',
+    work: 'bg-gf-amber/15 text-gf-amber'
   }
 
-  return statusColors[action] || 'bg-gray-200 text-gray-700'
+  return statusColors[action] || neutral
 })
 
 const getNeedColorClass = (value: number): string => {
-  if (value >= 0.7) return 'bg-green-500'
-  if (value >= 0.4) return 'bg-yellow-500'
-  if (value >= 0.2) return 'bg-orange-500'
-  return 'bg-red-500'
+  if (value >= 0.7) return 'bg-gf-green'
+  if (value >= 0.4) return 'bg-gf-amber'
+  if (value >= 0.2) return 'bg-gf-amber'
+  return 'bg-gf-red'
 }
 
 // All needs with their icons (for active character)

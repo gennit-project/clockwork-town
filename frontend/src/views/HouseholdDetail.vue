@@ -1,31 +1,31 @@
 <template>
-  <div>
+  <div class="p-4">
     <Breadcrumbs :crumbs="breadcrumbs" />
 
     <div v-if="loading" class="text-center py-12">
-      <p class="text-gray-500">Loading...</p>
+      <p class="text-gf-text-faint">Loading...</p>
     </div>
 
-    <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-md p-4">
-      <p class="text-red-800">Error: {{ error }}</p>
+    <div v-else-if="error" class="rounded border border-gf-red/40 bg-gf-red/10 p-4">
+      <p class="text-gf-red">Error: {{ error }}</p>
     </div>
 
     <div v-else-if="household" class="max-w-4xl mx-auto">
       <div class="flex justify-between items-center mb-6">
         <div>
-          <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">{{ household.name }}</h1>
-          <p class="text-gray-600 mt-1">{{ household.lotName }}</p>
+          <h1 class="text-xl font-semibold text-gf-text">{{ household.name }}</h1>
+          <p class="text-gf-text-weak mt-1">{{ household.lotName }}</p>
         </div>
         <div class="flex gap-3">
           <button
             @click="showSaveTemplateModal = true"
-            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
+            class="rounded border border-gf-border bg-gf-green/15 px-3 py-1.5 text-sm font-medium text-gf-green hover:bg-gf-green/25"
           >
             Save as Template
           </button>
           <router-link
             :to="`/world/${worldId}/region/${regionId}/household/${householdId}/edit`"
-            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+            class="rounded border border-gf-border bg-gf-blue/15 px-3 py-1.5 text-sm font-medium text-gf-blue hover:bg-gf-blue/25"
           >
             Edit Household
           </router-link>
@@ -34,9 +34,9 @@
 
       <!-- Characters Section -->
       <div class="mb-8">
-        <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Characters</h2>
+        <h2 class="text-xl font-semibold text-gf-text mb-4">Characters</h2>
 
-        <div v-if="household.characters.length === 0" class="text-gray-500 dark:text-gray-300 text-center py-8 bg-white dark:bg-gray-800 rounded-lg shadow">
+        <div v-if="household.characters.length === 0" class="text-gf-text-weak text-center py-8 bg-gf-surface border border-gf-border rounded">
           No characters in this household.
         </div>
 
@@ -44,7 +44,7 @@
           <div class="flex justify-end">
             <router-link
               :to="`/world/${worldId}/region/${regionId}/household/${householdId}/character/new`"
-              class="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
+              class="rounded border border-gf-border bg-gf-blue/15 px-3 py-1.5 text-sm font-medium text-gf-blue hover:bg-gf-blue/25"
             >
               Add Character
             </router-link>
@@ -52,28 +52,28 @@
           <div
             v-for="character in household.characters"
             :key="character.id"
-            class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow"
+            class="bg-gf-surface border border-gf-border p-6 rounded"
           >
             <div class="flex justify-between items-start mb-4">
               <div>
-                <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100">{{ character.name }}</h3>
-                <p class="text-sm text-gray-500">Age: {{ character.age }}</p>
+                <h3 class="text-xl font-semibold text-gf-text">{{ character.name }}</h3>
+                <p class="text-sm text-gf-text-faint">Age: {{ character.age }}</p>
               </div>
               <router-link
                 :to="`/world/${worldId}/region/${regionId}/character/${character.id}/edit`"
-                class="rounded-md bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-100"
+                class="rounded border border-gf-border bg-gf-surface px-3 py-1.5 text-xs font-medium text-gf-text-weak hover:bg-gf-surface-2"
               >
                 Edit Character
               </router-link>
             </div>
 
             <div v-if="character.bio" class="mt-4">
-             
-              <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-md">
+
+              <div class="bg-gf-surface-2 p-4 rounded">
                 <MarkdownRenderer :text="character.bio" fontSize="small" />
               </div>
             </div>
-            <div v-else class="text-gray-500 dark:text-gray-300 italic text-sm">
+            <div v-else class="text-gf-text-weak italic text-sm">
               No biography available.
             </div>
           </div>
@@ -82,29 +82,29 @@
 
       <!-- Animals Section -->
       <div v-if="household.animals && household.animals.length > 0" class="mb-8">
-        <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Pets</h2>
+        <h2 class="text-xl font-semibold text-gf-text mb-4">Pets</h2>
         <div class="space-y-6">
           <div
             v-for="animal in household.animals"
             :key="animal.id"
-            class="bg-amber-50 p-6 rounded-lg shadow border border-amber-200"
+            class="bg-gf-surface p-6 rounded border border-gf-border"
           >
             <div class="flex justify-between items-start mb-4">
               <div>
-                <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100">{{ animal.name }}</h3>
-                <p class="text-sm text-gray-600 dark:text-gray-300">Age: {{ animal.age }}</p>
-                <p class="text-sm text-gray-600 dark:text-gray-300" v-if="animal.traits && animal.traits.length > 0">
+                <h3 class="text-xl font-semibold text-gf-text">{{ animal.name }}</h3>
+                <p class="text-sm text-gf-text-weak">Age: {{ animal.age }}</p>
+                <p class="text-sm text-gf-text-weak" v-if="animal.traits && animal.traits.length > 0">
                   Traits: {{ animal.traits.join(', ') }}
                 </p>
               </div>
             </div>
 
             <div v-if="animal.bio" class="mt-4">
-              <div class="bg-white dark:bg-gray-900 p-4 rounded-md">
+              <div class="bg-gf-surface-2 p-4 rounded">
                 <MarkdownRenderer :text="animal.bio" fontSize="small" />
               </div>
             </div>
-            <div v-else class="text-gray-600 italic text-sm">
+            <div v-else class="text-gf-text-weak italic text-sm">
               No biography available.
             </div>
           </div>
@@ -113,29 +113,29 @@
     </div>
 
     <!-- Save as Template Modal -->
-    <div v-if="showSaveTemplateModal" class="fixed inset-0 bg-black dark:text-white bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
-        <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">Save Household as Template</h2>
+    <div v-if="showSaveTemplateModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div class="bg-gf-surface border border-gf-border rounded-lg p-6 max-w-md w-full">
+        <h2 class="text-xl font-semibold mb-4 text-gf-text">Save Household as Template</h2>
         <form @submit.prevent="saveAsTemplate">
           <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+            <label class="block text-sm font-medium text-gf-text-weak mb-2">
               Template Description (optional)
             </label>
             <textarea
               v-model="templateData.description"
               rows="3"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
               placeholder="Describe this household template"
             ></textarea>
           </div>
           <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+            <label class="block text-sm font-medium text-gf-text-weak mb-2">
               Tags (comma-separated)
             </label>
             <input
               v-model="templateData.tagsInput"
               type="text"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
               placeholder="e.g., family, nuclear, starter"
             />
           </div>
@@ -143,14 +143,14 @@
             <button
               type="button"
               @click="closeSaveTemplateModal"
-              class="px-4 py-2 text-gray-700 hover:text-gray-900 dark:text-gray-100"
+              class="rounded border border-gf-border bg-gf-surface px-3 py-1.5 text-sm text-gf-text-weak hover:bg-gf-surface-2"
             >
               Cancel
             </button>
             <button
               type="submit"
               :disabled="saving"
-              class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md disabled:opacity-50"
+              class="rounded border border-gf-border bg-gf-green/15 px-3 py-1.5 text-sm font-medium text-gf-green hover:bg-gf-green/25 disabled:opacity-50"
             >
               {{ saving ? 'Saving...' : 'Save Template' }}
             </button>

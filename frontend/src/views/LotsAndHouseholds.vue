@@ -1,49 +1,49 @@
 <template>
-  <div>
+  <div class="p-4">
     <Breadcrumbs :crumbs="breadcrumbs" />
 
     <div v-if="loading" class="text-center py-12">
-      <p class="text-gray-500">Loading...</p>
+      <p class="text-gf-text-faint">Loading...</p>
     </div>
 
-    <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-md p-4">
-      <p class="text-red-800">Error: {{ error }}</p>
+    <div v-else-if="error" class="rounded border border-gf-red/40 bg-gf-red/10 p-4">
+      <p class="text-gf-red">Error: {{ error }}</p>
     </div>
 
     <div v-else>
       <!-- Lots Section -->
       <div class="mb-8">
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Lots</h2>
+          <h2 class="text-xl font-semibold text-gf-text">Lots</h2>
           <div class="flex space-x-3">
             <router-link
               to="/library/lots"
-              class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md"
+              class="rounded border border-gf-border bg-gf-purple/15 px-3 py-1.5 text-sm font-medium text-gf-purple hover:bg-gf-purple/25"
             >
               Create Lot from Template
             </router-link>
             <router-link
               :to="`/world/${worldId}/region/${regionId}/overview`"
-              class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
+              class="rounded border border-gf-border bg-gf-surface px-3 py-1.5 text-sm text-gf-text-weak hover:bg-gf-surface-2"
             >
               ← Back to Overview
             </router-link>
           </div>
         </div>
 
-        <div v-if="lots.length === 0" class="text-center py-8 bg-white rounded-lg shadow">
-          <p class="text-gray-500">No lots yet. Create your first lot!</p>
+        <div v-if="lots.length === 0" class="text-center py-8 bg-gf-surface border border-gf-border rounded">
+          <p class="text-gf-text-faint">No lots yet. Create your first lot!</p>
         </div>
 
         <div v-else class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <div
             v-for="lot in lots"
             :key="lot.id"
-            class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer"
+            class="bg-gf-surface border border-gf-border p-4 rounded transition-colors hover:border-gf-border-weak cursor-pointer"
             @click="viewLot(lot.id)"
           >
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ lot.name }}</h3>
-            <div class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+            <h3 class="text-lg font-semibold text-gf-text">{{ lot.name }}</h3>
+            <div class="text-gf-blue hover:underline text-sm font-medium">
               View Spaces →
             </div>
           </div>
@@ -53,36 +53,36 @@
       <!-- Households Section -->
       <div>
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Households</h2>
+          <h2 class="text-xl font-semibold text-gf-text">Households</h2>
           <router-link
             :to="`/world/${worldId}/region/${regionId}/household/new`"
-            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+            class="rounded border border-gf-border bg-gf-blue/15 px-3 py-1.5 text-sm font-medium text-gf-blue hover:bg-gf-blue/25"
           >
             Create Household
           </router-link>
         </div>
 
-        <div v-if="households.length === 0" class="text-center py-8 bg-white rounded-lg shadow">
-          <p class="text-gray-500">No households yet. Create your first household!</p>
+        <div v-if="households.length === 0" class="text-center py-8 bg-gf-surface border border-gf-border rounded">
+          <p class="text-gf-text-faint">No households yet. Create your first household!</p>
         </div>
 
         <div v-else class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <div
             v-for="household in households"
             :key="household.id"
-            class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer"
+            class="bg-gf-surface border border-gf-border p-4 rounded transition-colors hover:border-gf-border-weak cursor-pointer"
             @click="viewHousehold(household.id)"
           >
             <div class="flex justify-between items-start mb-2">
               <div>
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ household.name }}</h3>
-                <p class="text-sm text-gray-500">{{ household.lotName }}</p>
-                <p class="text-xs text-gray-400 mt-1">{{ household.characters.length }} member(s)</p>
+                <h3 class="text-lg font-semibold text-gf-text">{{ household.name }}</h3>
+                <p class="text-sm text-gf-text-faint">{{ household.lotName }}</p>
+                <p class="text-xs text-gf-text-faint mt-1">{{ household.characters.length }} member(s)</p>
               </div>
               <div class="flex space-x-2" @click.stop>
                 <router-link
                   :to="`/world/${worldId}/region/${regionId}/household/${household.id}/edit`"
-                  class="text-blue-600 hover:text-blue-800"
+                  class="text-gf-blue hover:underline"
                   title="Edit"
                 >
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -91,7 +91,7 @@
                 </router-link>
                 <button
                   @click="confirmDeleteHousehold(household)"
-                  class="text-red-600 hover:text-red-800"
+                  class="text-gf-red hover:opacity-80"
                   title="Delete"
                 >
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -101,12 +101,12 @@
               </div>
             </div>
             <div v-if="household.characters.length > 0" class="mt-2">
-              <p class="text-xs font-medium text-gray-700 mb-1">Members:</p>
+              <p class="text-xs font-medium text-gf-text-weak mb-1">Members:</p>
               <div class="flex flex-wrap gap-1">
                 <span
                   v-for="char in household.characters"
                   :key="char.id"
-                  class="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded"
+                  class="text-xs border border-gf-border bg-gf-surface-3 text-gf-text-weak px-2 py-1 rounded"
                 >
                   {{ char.name }} ({{ char.age }})
                 </span>
@@ -119,21 +119,21 @@
 
     <!-- Delete Household Confirmation Modal -->
     <div v-if="deletingHousehold" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
-        <h2 class="text-2xl font-bold mb-4">Delete Household</h2>
-        <p class="mb-4">Are you sure you want to delete "{{ deletingHousehold.name }}"? This will also delete all characters in the household.</p>
+      <div class="bg-gf-surface border border-gf-border rounded-lg p-6 max-w-md w-full">
+        <h2 class="text-xl font-semibold mb-4 text-gf-text">Delete Household</h2>
+        <p class="mb-4 text-gf-text-weak">Are you sure you want to delete "{{ deletingHousehold.name }}"? This will also delete all characters in the household.</p>
         <div class="flex justify-end space-x-3">
           <button
             type="button"
             @click="deletingHousehold = null"
-            class="px-4 py-2 text-gray-700 hover:text-gray-900 dark:text-gray-100"
+            class="rounded border border-gf-border bg-gf-surface px-3 py-1.5 text-sm text-gf-text-weak hover:bg-gf-surface-2"
           >
             Cancel
           </button>
           <button
             @click="deleteHousehold"
             :disabled="saving"
-            class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md disabled:opacity-50"
+            class="rounded border border-gf-border bg-gf-red/15 px-3 py-1.5 text-sm text-gf-red hover:bg-gf-red/25 disabled:opacity-50"
           >
             {{ saving ? 'Deleting...' : 'Delete' }}
           </button>

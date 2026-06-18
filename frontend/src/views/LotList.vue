@@ -1,19 +1,19 @@
 <template>
-  <div>
+  <div class="p-4">
     <Breadcrumbs :crumbs="breadcrumbs" />
 
     <div class="flex justify-between items-center mb-6">
-      <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Lots</h1>
+      <h1 class="text-xl font-semibold text-gf-text">Lots</h1>
       <div class="flex space-x-3">
         <router-link
           :to="`/world/${worldId}/region/${regionId}/overview`"
-          class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
+          class="rounded border border-gf-border bg-gf-green/15 px-3 py-1.5 text-sm font-medium text-gf-green hover:bg-gf-green/25"
         >
           View Overview
         </router-link>
         <button
           @click="showCreateModal = true"
-          class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+          class="rounded border border-gf-border bg-gf-blue/15 px-3 py-1.5 text-sm font-medium text-gf-blue hover:bg-gf-blue/25"
         >
           Create Lot
         </button>
@@ -21,37 +21,37 @@
     </div>
 
     <div v-if="loading" class="text-center py-12">
-      <p class="text-gray-500">Loading...</p>
+      <p class="text-gf-text-faint">Loading...</p>
     </div>
 
-    <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-md p-4">
-      <p class="text-red-800">Error: {{ error }}</p>
+    <div v-else-if="error" class="border border-gf-red/40 bg-gf-red/10 rounded-md p-4">
+      <p class="text-gf-red">Error: {{ error }}</p>
     </div>
 
-    <div v-else-if="lots.length === 0" class="text-center py-12 bg-white rounded-lg shadow">
-      <p class="text-gray-500 dark:text-gray-300 mb-4">No lots yet. Create your first lot!</p>
+    <div v-else-if="lots.length === 0" class="text-center py-12 bg-gf-surface border border-gf-border rounded-lg">
+      <p class="text-gf-text-faint mb-4">No lots yet. Create your first lot!</p>
     </div>
 
     <div v-else class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       <div
         v-for="lot in lots"
         :key="lot.id"
-        class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow hover:shadow-lg transition-shadow"
+        class="bg-gf-surface border border-gf-border p-6 rounded-lg transition-colors"
       >
         <div class="flex justify-between items-start mb-2">
           <div>
-            <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">{{ lot.name }}</h2>
-            
+            <h2 class="text-xl font-semibold text-gf-text">{{ lot.name }}</h2>
+
             <div v-if="getHouseholdForLot(lot.id)" class="mt-2">
-              <p class="text-xs font-medium text-gray-700 dark:text-gray-300">Household:</p>
-              <p class="text-xs text-gray-600 dark:text-gray-300">{{ getHouseholdForLot(lot.id)?.name }}</p>
-              <p class="text-xs text-gray-500">{{ getHouseholdForLot(lot.id)?.characters.length ?? 0 }} member(s)</p>
+              <p class="text-xs font-medium text-gf-text-weak">Household:</p>
+              <p class="text-xs text-gf-text-weak">{{ getHouseholdForLot(lot.id)?.name }}</p>
+              <p class="text-xs text-gf-text-faint">{{ getHouseholdForLot(lot.id)?.characters.length ?? 0 }} member(s)</p>
             </div>
           </div>
           <div class="flex space-x-2">
             <button
               @click="editLot(lot)"
-              class="text-blue-600 hover:text-blue-800"
+              class="text-gf-blue hover:underline"
               title="Edit"
             >
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -60,7 +60,7 @@
             </button>
             <button
               @click="confirmDelete(lot)"
-              class="text-red-600 hover:text-red-800"
+              class="text-gf-red hover:opacity-80"
               title="Delete"
             >
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -71,7 +71,7 @@
         </div>
         <router-link
           :to="`/world/${worldId}/region/${regionId}/lot/${lot.id}`"
-          class="text-blue-600 hover:text-blue-800 font-medium"
+          class="text-gf-blue hover:underline font-medium"
         >
           View Spaces →
         </router-link>
@@ -80,31 +80,31 @@
 
     <!-- Create/Edit Modal -->
     <div v-if="showCreateModal || editingLot" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
-        <h2 class="text-2xl font-bold mb-4">
+      <div class="bg-gf-surface border border-gf-border rounded-lg p-6 max-w-md w-full">
+        <h2 class="text-2xl font-bold mb-4 text-gf-text">
           {{ editingLot ? 'Edit Lot' : 'Create Lot' }}
         </h2>
         <form @submit.prevent="saveLot">
           <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">
+            <label class="block text-sm font-medium text-gf-text-weak mb-2">
               Lot Name
             </label>
             <input
               v-model="formData.name"
               type="text"
               required
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
               placeholder="Enter lot name"
             />
           </div>
           <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">
+            <label class="block text-sm font-medium text-gf-text-weak mb-2">
               Type
             </label>
             <select
               v-model="formData.lotType"
               required
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
             >
               <option value="">Select type</option>
               <option value="RESIDENTIAL">Residential</option>
@@ -116,14 +116,14 @@
             <button
               type="button"
               @click="closeModal"
-              class="px-4 py-2 text-gray-700 hover:text-gray-900 dark:text-gray-100"
+              class="rounded border border-gf-border bg-gf-surface px-3 py-1.5 text-sm text-gf-text-weak hover:bg-gf-surface-2"
             >
               Cancel
             </button>
             <button
               type="submit"
               :disabled="saving"
-              class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md disabled:opacity-50"
+              class="rounded border border-gf-border bg-gf-blue/15 px-3 py-1.5 text-sm font-medium text-gf-blue hover:bg-gf-blue/25 disabled:opacity-50"
             >
               {{ saving ? 'Saving...' : 'Save' }}
             </button>
@@ -134,21 +134,21 @@
 
     <!-- Delete Confirmation Modal -->
     <div v-if="deletingLot" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
-        <h2 class="text-2xl font-bold mb-4">Delete Lot</h2>
-        <p class="mb-4">Are you sure you want to delete "{{ deletingLot.name }}"?</p>
+      <div class="bg-gf-surface border border-gf-border rounded-lg p-6 max-w-md w-full">
+        <h2 class="text-2xl font-bold mb-4 text-gf-text">Delete Lot</h2>
+        <p class="mb-4 text-gf-text-weak">Are you sure you want to delete "{{ deletingLot.name }}"?</p>
         <div class="flex justify-end space-x-3">
           <button
             type="button"
             @click="deletingLot = null"
-            class="px-4 py-2 text-gray-700 hover:text-gray-900 dark:text-gray-100"
+            class="rounded border border-gf-border bg-gf-surface px-3 py-1.5 text-sm text-gf-text-weak hover:bg-gf-surface-2"
           >
             Cancel
           </button>
           <button
             @click="deleteLot"
             :disabled="saving"
-            class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md disabled:opacity-50"
+            class="rounded border border-gf-border bg-gf-red/15 px-3 py-1.5 text-sm text-gf-red hover:bg-gf-red/25 disabled:opacity-50"
           >
             {{ saving ? 'Deleting...' : 'Delete' }}
           </button>

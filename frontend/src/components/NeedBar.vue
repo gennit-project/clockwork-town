@@ -9,10 +9,10 @@
     <span class="text-lg mr-2">{{ icon }}</span>
     <div class="flex-1">
       <div class="flex items-center justify-between mb-1">
-        <span class="text-xs font-medium text-gray-700 dark:text-gray-300">{{ label }}</span>
-        <span class="text-xs text-gray-600 dark:text-gray-400">{{ Math.round(percentage) }}%</span>
+        <span class="text-xs font-medium text-gf-text-weak">{{ label }}</span>
+        <span class="text-xs text-gf-text-weak">{{ Math.round(percentage) }}%</span>
       </div>
-      <div class="w-full bg-gray-200 dark:bg-gray-600 h-2 rounded-full overflow-hidden">
+      <div class="w-full bg-gf-surface-3 h-2 rounded-full overflow-hidden">
         <div
           class="h-full rounded-full transition-all"
           :class="getColorClass(percentage / 100)"
@@ -36,9 +36,9 @@ defineEmits<{
 }>()
 
 const getColorClass = (value: number): string => {
-  if (value >= 0.7) return 'bg-green-500'
-  if (value >= 0.4) return 'bg-yellow-500'
-  if (value >= 0.2) return 'bg-orange-500'
-  return 'bg-red-500'
+  if (value >= 0.7) return 'bg-gf-green'
+  if (value >= 0.4) return 'bg-gf-amber'
+  if (value >= 0.2) return 'bg-gf-amber'
+  return 'bg-gf-red'
 }
 </script>

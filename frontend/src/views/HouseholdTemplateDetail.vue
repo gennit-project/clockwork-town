@@ -1,11 +1,11 @@
 <template>
   <div>
     <div v-if="loading" class="text-center py-8">
-      <p class="text-gray-500">Loading template...</p>
+      <p class="text-gf-text-faint">Loading template...</p>
     </div>
 
     <div v-else-if="error" class="text-center py-8">
-      <p class="text-red-500">Error loading template: {{ error.message }}</p>
+      <p class="text-gf-red">Error loading template: {{ error.message }}</p>
     </div>
 
     <div v-else-if="template">
@@ -16,15 +16,15 @@
             <div class="flex items-center gap-3">
               <router-link
                 to="/library/households"
-                class="text-gray-400 hover:text-gray-600 dark:text-gray-300"
+                class="text-gf-text-faint hover:text-gf-text"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                   <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
                 </svg>
               </router-link>
-              <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">{{ template.name }}</h1>
+              <h1 class="text-xl font-semibold text-gf-text">{{ template.name }}</h1>
             </div>
-            <p v-if="template.description" class="mt-2 text-gray-600 dark:text-gray-300">
+            <p v-if="template.description" class="mt-2 text-gf-text-weak">
               {{ template.description }}
             </p>
           </div>
@@ -32,14 +32,14 @@
             <button
               type="button"
               @click="openEditModal"
-              class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+              class="inline-flex items-center rounded border border-gf-border bg-gf-green/15 px-3 py-1.5 text-sm font-medium text-gf-green hover:bg-gf-green/25"
             >
               Edit Template
             </button>
             <button
               type="button"
               @click="showCloneModal = true"
-              class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              class="inline-flex items-center rounded border border-gf-border bg-gf-blue/15 px-3 py-1.5 text-sm font-medium text-gf-blue hover:bg-gf-blue/25"
             >
               Place in World
             </button>
@@ -50,7 +50,7 @@
           <span
             v-for="tag in template.tags"
             :key="tag"
-            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-gray-100 text-gray-800 dark:text-gray-200 dark:bg-gray-700"
+            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-gf-surface-2 text-gf-text-weak"
           >
             {{ tag }}
           </span>
@@ -59,17 +59,17 @@
 
       <!-- Characters -->
       <div v-if="template.characters && template.characters.length > 0" class="mb-8">
-        <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Characters ({{ template.characters.length }})</h2>
+        <h2 class="text-xl font-semibold text-gf-text mb-4">Characters ({{ template.characters.length }})</h2>
         <div class="space-y-4">
           <div
             v-for="(character, index) in template.characters"
             :key="index"
-            class="bg-white dark:bg-gray-800 shadow rounded-lg p-5"
+            class="bg-gf-surface border border-gf-border rounded p-5"
           >
-            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">{{ character.name }}</h3>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Age: {{ character.age }}</p>
+            <h3 class="text-lg font-medium text-gf-text">{{ character.name }}</h3>
+            <p class="text-sm text-gf-text-faint mt-1">Age: {{ character.age }}</p>
             <div v-if="character.bio" class="mt-3">
-              <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-md">
+              <div class="bg-gf-surface-2 p-4 rounded">
                 <MarkdownRenderer :text="character.bio" fontSize="small" />
               </div>
             </div>
@@ -79,16 +79,16 @@
 
       <!-- Animals -->
       <div v-if="template.animals && template.animals.length > 0" class="mb-8">
-        <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Pets ({{ template.animals.length }})</h2>
+        <h2 class="text-xl font-semibold text-gf-text mb-4">Pets ({{ template.animals.length }})</h2>
         <div class="space-y-4">
           <div
             v-for="(animal, index) in template.animals"
             :key="index"
-            class="bg-amber-50 dark:bg-amber-950 shadow rounded-lg p-5 border border-amber-200 dark:border-amber-800"
+            class="bg-gf-surface rounded p-5 border border-gf-amber/40"
           >
-            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">{{ animal.name }}</h3>
-            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Age: {{ animal.age }}</p>
-            <p v-if="animal.traits && animal.traits.length > 0" class="text-sm text-gray-600 dark:text-gray-300 mt-1">
+            <h3 class="text-lg font-medium text-gf-text">{{ animal.name }}</h3>
+            <p class="text-sm text-gf-text-weak mt-1">Age: {{ animal.age }}</p>
+            <p v-if="animal.traits && animal.traits.length > 0" class="text-sm text-gf-text-weak mt-1">
               Traits: {{ animal.traits.join(', ') }}
             </p>
           </div>
@@ -96,53 +96,53 @@
       </div>
 
       <!-- Empty state -->
-      <div v-if="(!template.characters || template.characters.length === 0) && (!template.animals || template.animals.length === 0)" class="text-center py-12 bg-gray-50 dark:bg-gray-900 rounded-lg">
-        <p class="text-gray-500">This template has no characters or animals defined.</p>
+      <div v-if="(!template.characters || template.characters.length === 0) && (!template.animals || template.animals.length === 0)" class="text-center py-12 bg-gf-surface-2 rounded">
+        <p class="text-gf-text-faint">This template has no characters or animals defined.</p>
       </div>
     </div>
 
     <!-- Edit Template Modal -->
     <div v-if="showEditModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full my-8">
-        <h2 class="text-2xl font-bold mb-6 text-gray-900 dark:text-gray-100">Edit Household Template</h2>
+      <div class="bg-gf-surface border border-gf-border rounded p-6 max-w-2xl w-full my-8">
+        <h2 class="text-2xl font-bold mb-6 text-gf-text">Edit Household Template</h2>
 
         <form @submit.prevent="saveTemplate" class="space-y-6">
           <!-- Template Name -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label class="block text-sm font-medium text-gf-text-weak mb-2">
               Template Name *
             </label>
             <input
               v-model="editForm.name"
               type="text"
               required
-              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+              class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
               placeholder="Enter template name"
             />
           </div>
 
           <!-- Description -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label class="block text-sm font-medium text-gf-text-weak mb-2">
               Description
             </label>
             <textarea
               v-model="editForm.description"
               rows="3"
-              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+              class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
               placeholder="Describe this household template"
             ></textarea>
           </div>
 
           <!-- Tags -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label class="block text-sm font-medium text-gf-text-weak mb-2">
               Tags (comma-separated)
             </label>
             <input
               v-model="editForm.tagsInput"
               type="text"
-              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+              class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
               placeholder="e.g., family, nuclear, starter"
             />
           </div>
@@ -150,19 +150,19 @@
           <!-- Characters Section -->
           <div>
             <div class="flex justify-between items-center mb-3">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label class="block text-sm font-medium text-gf-text-weak">
                 Characters *
               </label>
               <button
                 type="button"
                 @click="addCharacter"
-                class="text-green-600 hover:text-green-800 text-sm font-medium"
+                class="text-gf-green hover:opacity-80 text-sm font-medium"
               >
                 + Add Character
               </button>
             </div>
 
-            <div v-if="editForm.characters.length === 0" class="text-gray-500 dark:text-gray-300 text-sm">
+            <div v-if="editForm.characters.length === 0" class="text-gf-text-faint text-sm">
               No characters yet. Click "Add Character" to create one.
             </div>
 
@@ -170,12 +170,12 @@
               <div
                 v-for="(character, index) in editForm.characters"
                 :key="index"
-                class="border border-gray-300 dark:border-gray-600 rounded-md p-4 relative bg-white dark:bg-gray-700"
+                class="border border-gf-border rounded p-4 relative bg-gf-surface-2"
               >
                 <button
                   type="button"
                   @click="removeCharacter(index)"
-                  class="absolute top-2 right-2 text-red-600 hover:text-red-800"
+                  class="absolute top-2 right-2 text-gf-red hover:opacity-80"
                   title="Remove character"
                 >
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -185,19 +185,19 @@
 
                 <div class="grid grid-cols-2 gap-4 mb-3">
                   <div>
-                    <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label class="block text-xs font-medium text-gf-text-weak mb-1">
                       Name *
                     </label>
                     <input
                       v-model="character.name"
                       type="text"
                       required
-                      class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                      class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
                       placeholder="Character name"
                     />
                   </div>
                   <div>
-                    <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label class="block text-xs font-medium text-gf-text-weak mb-1">
                       Age *
                     </label>
                     <input
@@ -205,18 +205,18 @@
                       type="number"
                       required
                       min="0"
-                      class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                      class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
                       placeholder="Age"
                     />
                   </div>
                 </div>
                 <div>
-                  <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label class="block text-xs font-medium text-gf-text-weak mb-1">
                     Bio
                   </label>
                   <textarea
                     v-model="character.bio"
-                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                    class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
                     placeholder="Optional bio (supports markdown)"
                     rows="4"
                   ></textarea>
@@ -228,19 +228,19 @@
           <!-- Animals Section -->
           <div>
             <div class="flex justify-between items-center mb-3">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label class="block text-sm font-medium text-gf-text-weak">
                 Animals (Pets)
               </label>
               <button
                 type="button"
                 @click="addAnimal"
-                class="text-green-600 hover:text-green-800 text-sm font-medium"
+                class="text-gf-green hover:opacity-80 text-sm font-medium"
               >
                 + Add Animal
               </button>
             </div>
 
-            <div v-if="editForm.animals.length === 0" class="text-gray-500 dark:text-gray-300 text-sm">
+            <div v-if="editForm.animals.length === 0" class="text-gf-text-faint text-sm">
               No animals yet. Click "Add Animal" to add a pet.
             </div>
 
@@ -248,12 +248,12 @@
               <div
                 v-for="(animal, index) in editForm.animals"
                 :key="index"
-                class="border border-amber-300 dark:border-amber-700 rounded-md p-4 relative bg-amber-50 dark:bg-amber-950"
+                class="border border-gf-amber/40 rounded p-4 relative bg-gf-surface-2"
               >
                 <button
                   type="button"
                   @click="removeAnimal(index)"
-                  class="absolute top-2 right-2 text-red-600 hover:text-red-800"
+                  class="absolute top-2 right-2 text-gf-red hover:opacity-80"
                   title="Remove animal"
                 >
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -263,19 +263,19 @@
 
                 <div class="grid grid-cols-2 gap-4 mb-3">
                   <div>
-                    <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label class="block text-xs font-medium text-gf-text-weak mb-1">
                       Name *
                     </label>
                     <input
                       v-model="animal.name"
                       type="text"
                       required
-                      class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                      class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
                       placeholder="Animal name"
                     />
                   </div>
                   <div>
-                    <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label class="block text-xs font-medium text-gf-text-weak mb-1">
                       Age *
                     </label>
                     <input
@@ -283,19 +283,19 @@
                       type="number"
                       required
                       min="0"
-                      class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                      class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
                       placeholder="Age"
                     />
                   </div>
                 </div>
                 <div>
-                  <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label class="block text-xs font-medium text-gf-text-weak mb-1">
                     Traits (comma separated)
                   </label>
                   <input
                     v-model="animal.traitsString"
                     type="text"
-                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                    class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
                     placeholder="e.g., friendly, playful, loyal"
                   />
                 </div>
@@ -304,19 +304,19 @@
           </div>
 
           <!-- Action Buttons -->
-          <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <div class="flex justify-end space-x-3 pt-4 border-t border-gf-border">
             <button
               type="button"
               @click="closeEditModal"
               :disabled="saving"
-              class="px-4 py-2 text-gray-700 hover:text-gray-900 dark:text-gray-100 disabled:opacity-50"
+              class="rounded border border-gf-border bg-gf-surface px-3 py-1.5 text-sm text-gf-text-weak hover:bg-gf-surface-2 disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
               :disabled="saving || editForm.characters.length === 0"
-              class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md disabled:opacity-50"
+              class="rounded border border-gf-border bg-gf-green/15 px-3 py-1.5 text-sm font-medium text-gf-green hover:bg-gf-green/25 disabled:opacity-50"
             >
               {{ saving ? 'Saving...' : 'Save Template' }}
             </button>
@@ -326,20 +326,20 @@
     </div>
 
     <!-- Clone to World Modal -->
-    <div v-if="showCloneModal" class="fixed inset-0 bg-black dark:text-white bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
-        <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">Place Household in World</h2>
+    <div v-if="showCloneModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div class="bg-gf-surface border border-gf-border rounded p-6 max-w-md w-full">
+        <h2 class="text-2xl font-bold mb-4 text-gf-text">Place Household in World</h2>
 
         <form @submit.prevent="cloneTemplate">
           <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+            <label class="block text-sm font-medium text-gf-text-weak mb-2">
               Select World
             </label>
             <select
               v-model="selectedWorldId"
               @change="onWorldChange"
               required
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
             >
               <option value="">-- Select a world --</option>
               <option v-for="world in worlds" :key="world.id" :value="world.id">
@@ -349,14 +349,14 @@
           </div>
 
           <div v-if="selectedWorldId" class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+            <label class="block text-sm font-medium text-gf-text-weak mb-2">
               Select Region
             </label>
             <select
               v-model="selectedRegionId"
               @change="onRegionChange"
               required
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
             >
               <option value="">-- Select a region --</option>
               <option v-for="region in regions" :key="region.id" :value="region.id">
@@ -366,13 +366,13 @@
           </div>
 
           <div v-if="selectedRegionId" class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+            <label class="block text-sm font-medium text-gf-text-weak mb-2">
               Select Lot (Home)
             </label>
             <select
               v-model="selectedLotId"
               required
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
             >
               <option value="">-- Select a lot --</option>
               <option v-for="lot in lots" :key="lot.id" :value="lot.id">
@@ -386,14 +386,14 @@
               type="button"
               @click="closeCloneModal"
               :disabled="cloning"
-              class="px-4 py-2 text-gray-700 hover:text-gray-900 dark:text-gray-100 disabled:opacity-50"
+              class="rounded border border-gf-border bg-gf-surface px-3 py-1.5 text-sm text-gf-text-weak hover:bg-gf-surface-2 disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
               :disabled="cloning || !selectedLotId"
-              class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md disabled:opacity-50"
+              class="rounded border border-gf-border bg-gf-blue/15 px-3 py-1.5 text-sm font-medium text-gf-blue hover:bg-gf-blue/25 disabled:opacity-50"
             >
               {{ cloning ? 'Placing...' : 'Place Household' }}
             </button>

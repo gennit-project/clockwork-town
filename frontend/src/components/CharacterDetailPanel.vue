@@ -1,16 +1,16 @@
 <template>
-  <div class="flex h-full min-h-0 w-full flex-col bg-white dark:bg-gray-800">
+  <div class="flex h-full min-h-0 w-full flex-col bg-gf-surface border border-gf-border">
     <!-- Header -->
-    <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+    <div class="flex items-center justify-between p-4 border-b border-gf-border flex-shrink-0">
       <div class="min-w-0">
-        <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ character.name }}</h3>
-        <p class="mt-1 truncate text-xs font-medium text-blue-700 dark:text-blue-300">
+        <h3 class="text-lg font-bold text-gf-text">{{ character.name }}</h3>
+        <p class="mt-1 truncate text-xs font-medium text-gf-blue">
           {{ statusSummary }}
         </p>
       </div>
       <button
         @click="$emit('close')"
-        class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+        class="text-gf-text-faint hover:text-gf-text"
         title="Close"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -20,15 +20,15 @@
     </div>
 
     <!-- Tabs -->
-    <div class="flex border-b border-gray-200 dark:border-gray-700 overflow-x-auto flex-shrink-0">
+    <div class="flex border-b border-gf-border overflow-x-auto flex-shrink-0">
       <button
         v-for="tab in tabs"
         :key="tab"
         @click="activeTab = tab"
         class="flex-1 px-3 py-2 text-xs font-medium transition-colors whitespace-nowrap"
         :class="activeTab === tab
-          ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20'
-          : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'"
+          ? 'text-gf-blue border-b-2 border-gf-blue'
+          : 'text-gf-text-weak hover:text-gf-text'"
       >
         {{ tab }}
       </button>
@@ -43,15 +43,15 @@
         />
 
         <!-- Location & Status -->
-        <div class="flex items-center justify-between text-xs mb-4 pb-3 border-b border-gray-200 dark:border-gray-700">
-          <div class="flex items-center text-gray-700 dark:text-gray-300">
+        <div class="flex items-center justify-between text-xs mb-4 pb-3 border-b border-gf-border">
+          <div class="flex items-center text-gf-text-weak">
             <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
             <span>{{ statusLocation }}</span>
           </div>
-          <div class="flex items-center text-purple-600 dark:text-purple-400">
+          <div class="flex items-center text-gf-purple">
             <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
@@ -64,7 +64,7 @@
           :key="section.label"
           class="space-y-2"
         >
-          <h4 class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+          <h4 class="text-xs font-semibold uppercase tracking-wide text-gf-text-faint">
             {{ section.label }}
           </h4>
           <NeedBar

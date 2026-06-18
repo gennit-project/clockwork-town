@@ -2,12 +2,12 @@
   <div class="space-y-3">
     <div class="flex items-start justify-between gap-2">
       <div>
-        <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Age</p>
-        <p class="text-base text-gray-900 dark:text-gray-100">{{ character.age }}</p>
+        <p class="text-sm text-gf-text-weak mb-1">Age</p>
+        <p class="text-base text-gf-text">{{ character.age }}</p>
       </div>
       <button
         type="button"
-        class="text-xs text-blue-600 dark:text-blue-400"
+        class="text-xs text-gf-blue hover:underline"
         @click="editingBio = !editingBio"
       >
         {{ editingBio ? 'Cancel' : 'Edit Bio' }}
@@ -15,18 +15,18 @@
     </div>
 
     <div>
-      <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Bio</p>
+      <p class="text-sm text-gf-text-weak mb-1">Bio</p>
       <textarea
         v-if="editingBio"
         v-model="bioDraft"
         rows="5"
-        class="w-full rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 text-sm"
+        class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
       />
-      <p v-else class="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{{ bioDraft || 'No bio yet.' }}</p>
+      <p v-else class="text-sm text-gf-text whitespace-pre-wrap">{{ bioDraft || 'No bio yet.' }}</p>
       <button
         v-if="editingBio"
         type="button"
-        class="mt-2 rounded bg-blue-600 px-3 py-1 text-xs text-white"
+        class="mt-2 rounded border border-gf-border bg-gf-blue/15 px-3 py-1.5 text-sm font-medium text-gf-blue hover:bg-gf-blue/25"
         @click="saveBio"
       >
         Save Bio
@@ -34,12 +34,12 @@
     </div>
 
     <div v-if="character.traits && character.traits.length > 0">
-      <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Traits</p>
+      <p class="text-sm text-gf-text-weak mb-1">Traits</p>
       <div class="flex flex-wrap gap-2">
         <span
           v-for="trait in character.traits"
           :key="trait"
-          class="px-2 py-1 text-xs font-medium bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300 rounded-full"
+          class="px-2 py-1 text-xs font-medium border border-gf-purple/30 bg-gf-purple/15 text-gf-purple rounded-full"
         >
           {{ trait }}
         </span>
@@ -47,24 +47,24 @@
     </div>
 
     <div v-if="characterState?.location">
-      <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Location</p>
-      <p class="text-base text-gray-900 dark:text-gray-100">
+      <p class="text-sm text-gf-text-weak mb-1">Location</p>
+      <p class="text-base text-gf-text">
         {{ characterState.location.spaceName }} ({{ characterState.location.lotName }})
       </p>
     </div>
 
     <div v-if="characterState?.currentAction">
-      <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Current Status</p>
-      <p class="text-base text-gray-900 dark:text-gray-100">{{ statusSummary }}</p>
+      <p class="text-sm text-gf-text-weak mb-1">Current Status</p>
+      <p class="text-base text-gf-text">{{ statusSummary }}</p>
     </div>
 
     <div v-if="characterState?.workSchedule?.length">
-      <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Work Schedule</p>
+      <p class="text-sm text-gf-text-weak mb-1">Work Schedule</p>
       <div class="space-y-1">
         <p
           v-for="shift in characterState.workSchedule"
           :key="`${shift.day}-${shift.start}-${shift.locationLotId || shift.locationLotName}`"
-          class="text-sm text-gray-900 dark:text-gray-100"
+          class="text-sm text-gf-text"
         >
           {{ shift.day }} {{ shift.start }}-{{ shift.end }} at {{ shift.locationLotName || 'Work' }}
         </p>
@@ -74,7 +74,7 @@
     <div class="pt-2">
       <button
         type="button"
-        class="text-xs font-medium text-blue-600 dark:text-blue-400"
+        class="text-xs font-medium text-gf-blue hover:underline"
         @click="openEditor"
       >
         Open Character Editor

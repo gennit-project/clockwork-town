@@ -1,6 +1,6 @@
 <template>
   <div class="space-y-4">
-    <div v-if="sortedRelationships.length === 0" class="rounded border border-dashed border-gray-300 px-4 py-8 text-center text-sm text-gray-500 dark:border-gray-600 dark:text-gray-400">
+    <div v-if="sortedRelationships.length === 0" class="rounded border border-dashed border-gf-border px-4 py-8 text-center text-sm text-gf-text-faint">
       No relationships tracked yet.
     </div>
 
@@ -12,22 +12,22 @@
           type="button"
           class="w-full rounded border px-3 py-3 text-left transition-colors"
           :class="relationship.id === selectedRelationshipId
-            ? 'border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-900/20'
-            : 'border-gray-200 bg-white hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700'"
+            ? 'border-gf-blue bg-gf-blue/10'
+            : 'border-gf-border bg-gf-surface hover:bg-gf-surface-2'"
           @click="selectedRelationshipId = relationship.id"
         >
           <div class="flex items-start justify-between gap-3">
             <div>
-              <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">
+              <p class="text-sm font-semibold text-gf-text">
                 {{ getRelationshipTargetName(relationship) }}
               </p>
-              <p class="mt-1 text-xs text-gray-600 dark:text-gray-400">
+              <p class="mt-1 text-xs text-gf-text-weak">
                 Long-term {{ formatScore(relationship.longTermScore) }} | Short-term {{ formatScore(relationship.shortTermScore) }}
               </p>
             </div>
             <span
               v-if="relationship.isDeceasedTarget"
-              class="rounded-full bg-gray-200 px-2 py-1 text-[11px] font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-200"
+              class="rounded-full border border-gf-border bg-gf-surface-3 px-2 py-1 text-[11px] font-medium text-gf-text-weak"
             >
               Deceased
             </span>
@@ -36,7 +36,7 @@
             <span
               v-for="label in relationship.labels"
               :key="label"
-              class="rounded-full bg-rose-100 px-2 py-1 text-[11px] font-medium text-rose-700 dark:bg-rose-900/30 dark:text-rose-300"
+              class="rounded-full border border-gf-purple/30 bg-gf-purple/15 px-2 py-1 text-[11px] font-medium text-gf-purple"
             >
               {{ label }}
             </span>
@@ -44,58 +44,58 @@
         </button>
       </div>
 
-      <div v-if="selectedRelationship" class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/70">
+      <div v-if="selectedRelationship" class="rounded-lg border border-gf-border bg-gf-surface-2 p-4">
         <div class="flex items-start justify-between gap-3">
           <div>
-            <p class="text-base font-semibold text-gray-900 dark:text-gray-100">
+            <p class="text-base font-semibold text-gf-text">
               {{ characterName }} -> {{ getRelationshipTargetName(selectedRelationship) }}
             </p>
-            <p class="mt-1 text-xs text-gray-600 dark:text-gray-400">
+            <p class="mt-1 text-xs text-gf-text-weak">
               Directional relationship details
             </p>
           </div>
           <span
             v-if="selectedRelationship.isDeceasedTarget"
-            class="rounded-full bg-gray-200 px-2 py-1 text-[11px] font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-200"
+            class="rounded-full border border-gf-border bg-gf-surface-3 px-2 py-1 text-[11px] font-medium text-gf-text-weak"
           >
             Deceased
           </span>
         </div>
 
         <div class="mt-4 grid gap-3 md:grid-cols-2">
-          <div class="rounded border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900/40">
-            <p class="text-xs font-semibold text-gray-900 dark:text-gray-100">
+          <div class="rounded border border-gf-border bg-gf-surface-2 p-3">
+            <p class="text-xs font-semibold text-gf-text">
               {{ characterName }} -> {{ getRelationshipTargetName(selectedRelationship) }}
             </p>
             <div class="mt-3 grid grid-cols-2 gap-3">
               <div>
-                <p class="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">Long-term</p>
-                <p class="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">{{ formatScore(selectedRelationship.longTermScore) }}</p>
+                <p class="text-[11px] uppercase tracking-wide text-gf-text-faint">Long-term</p>
+                <p class="mt-1 text-lg font-semibold text-gf-text">{{ formatScore(selectedRelationship.longTermScore) }}</p>
               </div>
               <div>
-                <p class="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">Short-term</p>
-                <p class="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">{{ formatScore(selectedRelationship.shortTermScore) }}</p>
+                <p class="text-[11px] uppercase tracking-wide text-gf-text-faint">Short-term</p>
+                <p class="mt-1 text-lg font-semibold text-gf-text">{{ formatScore(selectedRelationship.shortTermScore) }}</p>
               </div>
             </div>
           </div>
 
-          <div class="rounded border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900/40">
-            <p class="text-xs font-semibold text-gray-900 dark:text-gray-100">
+          <div class="rounded border border-gf-border bg-gf-surface-2 p-3">
+            <p class="text-xs font-semibold text-gf-text">
               {{ getRelationshipTargetName(selectedRelationship) }} -> {{ characterName }}
             </p>
             <template v-if="reverseRelationship">
               <div class="mt-3 grid grid-cols-2 gap-3">
                 <div>
-                  <p class="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">Long-term</p>
-                  <p class="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">{{ formatScore(reverseRelationship.longTermScore) }}</p>
+                  <p class="text-[11px] uppercase tracking-wide text-gf-text-faint">Long-term</p>
+                  <p class="mt-1 text-lg font-semibold text-gf-text">{{ formatScore(reverseRelationship.longTermScore) }}</p>
                 </div>
                 <div>
-                  <p class="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">Short-term</p>
-                  <p class="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">{{ formatScore(reverseRelationship.shortTermScore) }}</p>
+                  <p class="text-[11px] uppercase tracking-wide text-gf-text-faint">Short-term</p>
+                  <p class="mt-1 text-lg font-semibold text-gf-text">{{ formatScore(reverseRelationship.shortTermScore) }}</p>
                 </div>
               </div>
             </template>
-            <p v-else class="mt-3 text-sm text-gray-500 dark:text-gray-400">
+            <p v-else class="mt-3 text-sm text-gf-text-faint">
               No reverse relationship tracked yet.
             </p>
           </div>
@@ -103,7 +103,7 @@
 
         <div
           v-if="reverseRelationship"
-          class="mt-4 rounded border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/20 dark:text-amber-200"
+          class="mt-4 rounded border border-gf-amber/30 bg-gf-amber/15 px-3 py-3 text-sm text-gf-amber"
         >
           <p class="font-medium">Directional discrepancy</p>
           <p class="mt-1">
@@ -113,27 +113,27 @@
           </p>
         </div>
 
-        <div class="mt-4 space-y-2 text-sm text-gray-700 dark:text-gray-300">
+        <div class="mt-4 space-y-2 text-sm text-gf-text-weak">
           <p>
-            <span class="font-medium text-gray-900 dark:text-gray-100">Availability:</span>
+            <span class="font-medium text-gf-text">Availability:</span>
             {{ relationshipAvailability }}
           </p>
           <p>
-            <span class="font-medium text-gray-900 dark:text-gray-100">Last seen:</span>
+            <span class="font-medium text-gf-text">Last seen:</span>
             {{ formatDateTime(selectedRelationship.lastSeenAt) }}
           </p>
           <p>
-            <span class="font-medium text-gray-900 dark:text-gray-100">Last spoke:</span>
+            <span class="font-medium text-gf-text">Last spoke:</span>
             {{ formatDateTime(selectedRelationship.lastSpokeAt) }}
           </p>
         </div>
 
         <div class="mt-4">
-          <p class="text-sm font-medium text-gray-900 dark:text-gray-100">Contact</p>
+          <p class="text-sm font-medium text-gf-text">Contact</p>
           <div class="mt-2 flex flex-wrap gap-2">
             <button
               type="button"
-              class="rounded border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-900/40 dark:text-gray-200 dark:hover:bg-gray-800"
+              class="rounded border border-gf-border bg-gf-surface px-3 py-2 text-sm font-medium text-gf-text-weak transition-colors hover:bg-gf-surface-2 disabled:cursor-not-allowed disabled:opacity-50"
               :disabled="!canContactSelectedRelationship"
               @click="queueRelationshipContactAction('text_romance')"
             >
@@ -141,7 +141,7 @@
             </button>
             <button
               type="button"
-              class="rounded border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-900/40 dark:text-gray-200 dark:hover:bg-gray-800"
+              class="rounded border border-gf-border bg-gf-surface px-3 py-2 text-sm font-medium text-gf-text-weak transition-colors hover:bg-gf-surface-2 disabled:cursor-not-allowed disabled:opacity-50"
               :disabled="!canContactSelectedRelationship"
               @click="queueRelationshipContactAction('call_romance')"
             >
@@ -151,11 +151,11 @@
         </div>
 
         <div class="mt-4">
-          <p class="text-sm font-medium text-gray-900 dark:text-gray-100">Invite Over</p>
+          <p class="text-sm font-medium text-gf-text">Invite Over</p>
           <div class="mt-2 flex flex-wrap gap-2">
             <button
               type="button"
-              class="rounded border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-900/40 dark:text-gray-200 dark:hover:bg-gray-800"
+              class="rounded border border-gf-border bg-gf-surface px-3 py-2 text-sm font-medium text-gf-text-weak transition-colors hover:bg-gf-surface-2 disabled:cursor-not-allowed disabled:opacity-50"
               :disabled="!canQueueHostedInvite('hang_out')"
               @click="queueHostedInvite('hang_out')"
             >
@@ -163,7 +163,7 @@
             </button>
             <button
               type="button"
-              class="rounded border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-900/40 dark:text-gray-200 dark:hover:bg-gray-800"
+              class="rounded border border-gf-border bg-gf-surface px-3 py-2 text-sm font-medium text-gf-text-weak transition-colors hover:bg-gf-surface-2 disabled:cursor-not-allowed disabled:opacity-50"
               :disabled="!canQueueHostedInvite('watch_movie')"
               @click="queueHostedInvite('watch_movie')"
             >
@@ -171,7 +171,7 @@
             </button>
             <button
               type="button"
-              class="rounded border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-900/40 dark:text-gray-200 dark:hover:bg-gray-800"
+              class="rounded border border-gf-border bg-gf-surface px-3 py-2 text-sm font-medium text-gf-text-weak transition-colors hover:bg-gf-surface-2 disabled:cursor-not-allowed disabled:opacity-50"
               :disabled="!canQueueHostedInvite('have_dinner')"
               @click="queueHostedInvite('have_dinner')"
             >
@@ -181,25 +181,25 @@
         </div>
 
         <div class="mt-4">
-          <p class="text-sm font-medium text-gray-900 dark:text-gray-100">Labels</p>
+          <p class="text-sm font-medium text-gf-text">Labels</p>
           <div v-if="selectedRelationship.labels.length > 0" class="mt-2 flex flex-wrap gap-2">
             <span
               v-for="label in selectedRelationship.labels"
               :key="label"
-              class="rounded-full bg-rose-100 px-2 py-1 text-xs font-medium text-rose-700 dark:bg-rose-900/30 dark:text-rose-300"
+              class="rounded-full border border-gf-purple/30 bg-gf-purple/15 px-2 py-1 text-xs font-medium text-gf-purple"
             >
               {{ label }}
             </span>
           </div>
-          <p v-else class="mt-2 text-sm text-gray-500 dark:text-gray-400">No labels assigned yet.</p>
+          <p v-else class="mt-2 text-sm text-gf-text-faint">No labels assigned yet.</p>
         </div>
 
         <div class="mt-4">
-          <p class="text-sm font-medium text-gray-900 dark:text-gray-100">Commitment</p>
+          <p class="text-sm font-medium text-gf-text">Commitment</p>
           <div class="mt-2 flex flex-wrap gap-2">
             <button
               type="button"
-              class="rounded border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-900/40 dark:text-gray-200 dark:hover:bg-gray-800"
+              class="rounded border border-gf-border bg-gf-surface px-3 py-2 text-sm font-medium text-gf-text-weak transition-colors hover:bg-gf-surface-2 disabled:cursor-not-allowed disabled:opacity-50"
               :disabled="!canQueueRelationshipProposal('girlfriend')"
               @click="queueRelationshipProposal('girlfriend')"
             >
@@ -207,7 +207,7 @@
             </button>
             <button
               type="button"
-              class="rounded border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-900/40 dark:text-gray-200 dark:hover:bg-gray-800"
+              class="rounded border border-gf-border bg-gf-surface px-3 py-2 text-sm font-medium text-gf-text-weak transition-colors hover:bg-gf-surface-2 disabled:cursor-not-allowed disabled:opacity-50"
               :disabled="!canQueueRelationshipProposal('husband')"
               @click="queueRelationshipProposal('husband')"
             >
@@ -215,7 +215,7 @@
             </button>
             <button
               type="button"
-              class="rounded border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-900/40 dark:text-gray-200 dark:hover:bg-gray-800"
+              class="rounded border border-gf-border bg-gf-surface px-3 py-2 text-sm font-medium text-gf-text-weak transition-colors hover:bg-gf-surface-2 disabled:cursor-not-allowed disabled:opacity-50"
               :disabled="!canQueueRelationshipProposal('monogamous')"
               @click="queueRelationshipProposal('monogamous')"
             >
@@ -223,7 +223,7 @@
             </button>
             <button
               type="button"
-              class="rounded border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-900/40 dark:text-gray-200 dark:hover:bg-gray-800"
+              class="rounded border border-gf-border bg-gf-surface px-3 py-2 text-sm font-medium text-gf-text-weak transition-colors hover:bg-gf-surface-2 disabled:cursor-not-allowed disabled:opacity-50"
               :disabled="!canQueueRelationshipProposal('casual relationship')"
               @click="queueRelationshipProposal('casual relationship')"
             >
@@ -233,24 +233,24 @@
         </div>
 
         <div class="mt-5">
-          <p class="text-sm font-medium text-gray-900 dark:text-gray-100">Linked memories</p>
+          <p class="text-sm font-medium text-gf-text">Linked memories</p>
           <div v-if="linkedMemories.length > 0" class="mt-2 space-y-2">
             <div
               v-for="memory in linkedMemories"
               :key="memory.id"
-              class="rounded border border-gray-200 bg-white px-3 py-3 dark:border-gray-700 dark:bg-gray-900/40"
+              class="rounded border border-gf-border bg-gf-surface-2 px-3 py-3"
             >
               <div class="flex items-center justify-between gap-2">
-                <span class="text-xs font-medium text-gray-900 dark:text-gray-100">{{ formatMemoryTitle(memory) }}</span>
-                <span class="text-[11px] text-gray-500 dark:text-gray-400">{{ formatDateTime(memory.createdAt) }}</span>
+                <span class="text-xs font-medium text-gf-text">{{ formatMemoryTitle(memory) }}</span>
+                <span class="text-[11px] text-gf-text-faint">{{ formatDateTime(memory.createdAt) }}</span>
               </div>
-              <p class="mt-2 text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{{ memory.content }}</p>
-              <p v-if="memory.locationLotName || memory.locationSpaceName" class="mt-2 text-[11px] text-gray-500 dark:text-gray-400">
+              <p class="mt-2 text-sm text-gf-text-weak whitespace-pre-wrap">{{ memory.content }}</p>
+              <p v-if="memory.locationLotName || memory.locationSpaceName" class="mt-2 text-[11px] text-gf-text-faint">
                 {{ formatMemoryLocation(memory) }}
               </p>
             </div>
           </div>
-          <p v-else class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+          <p v-else class="mt-2 text-sm text-gf-text-faint">
             No memories linked to this relationship yet.
           </p>
         </div>

@@ -3,13 +3,13 @@
     <div
       v-for="summary in summaries"
       :key="summary.key"
-      class="rounded border border-gray-200 bg-gray-50 px-2 py-1 dark:border-gray-700 dark:bg-gray-900/40"
+      class="rounded border border-gf-border bg-gf-surface-2 px-2 py-1"
     >
-      <div class="mb-1 flex items-center justify-between text-[10px] font-medium text-gray-600 dark:text-gray-300">
+      <div class="mb-1 flex items-center justify-between text-[10px] font-medium text-gf-text-weak">
         <span>{{ summary.icon }} {{ summary.label }}</span>
         <span>{{ Math.round(summary.value * 100) }}%</span>
       </div>
-      <div class="h-1.5 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+      <div class="h-1.5 overflow-hidden rounded-full bg-gf-surface-3">
         <div
           class="h-full rounded-full transition-all"
           :class="getColorClass(summary.value)"
@@ -28,9 +28,9 @@ defineProps<{
 }>()
 
 function getColorClass(value: number): string {
-  if (value >= 0.7) return 'bg-green-500'
-  if (value >= 0.4) return 'bg-yellow-500'
-  if (value >= 0.2) return 'bg-orange-500'
-  return 'bg-red-500'
+  if (value >= 0.7) return 'bg-gf-green'
+  if (value >= 0.4) return 'bg-gf-amber'
+  if (value >= 0.2) return 'bg-gf-amber'
+  return 'bg-gf-red'
 }
 </script>

@@ -1,63 +1,63 @@
 <template>
-  <div>
+  <div class="p-4">
     <Breadcrumbs :crumbs="breadcrumbs" />
 
     <div class="mx-auto max-w-3xl">
-      <h1 class="mb-6 text-3xl font-bold text-gray-900 dark:text-gray-100">{{ isCreating ? 'Create Character' : 'Edit Character' }}</h1>
+      <h1 class="mb-6 text-xl font-semibold text-gf-text">{{ isCreating ? 'Create Character' : 'Edit Character' }}</h1>
 
-      <div v-if="loading" class="py-12 text-center text-gray-500">
+      <div v-if="loading" class="py-12 text-center text-gf-text-faint">
         Loading...
       </div>
 
-      <div v-else-if="error" class="mb-4 rounded-md border border-red-200 bg-red-50 p-4 text-red-800">
+      <div v-else-if="error" class="mb-4 rounded border border-gf-red/40 bg-gf-red/10 p-4 text-gf-red">
         {{ error }}
       </div>
 
-      <form v-else @submit.prevent="saveCharacter" class="rounded-lg bg-white p-6 shadow dark:bg-gray-800">
+      <form v-else @submit.prevent="saveCharacter" class="rounded-lg border border-gf-border bg-gf-surface p-6">
         <div class="mb-4 grid grid-cols-2 gap-4">
           <div>
-            <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">Name</label>
+            <label class="mb-2 block text-sm font-medium text-gf-text-weak">Name</label>
             <input
               v-model="formData.name"
               type="text"
               required
-              class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
             />
           </div>
           <div>
-            <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">Age</label>
+            <label class="mb-2 block text-sm font-medium text-gf-text-weak">Age</label>
             <input
               v-model.number="formData.age"
               type="number"
               min="0"
               required
-              class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
             />
           </div>
         </div>
 
         <div class="mb-6">
-          <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">Bio</label>
+          <label class="mb-2 block text-sm font-medium text-gf-text-weak">Bio</label>
           <textarea
             v-model="formData.bio"
             rows="6"
-            class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
           />
         </div>
 
         <div class="mb-6">
           <div class="mb-3 flex items-center justify-between">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Work Schedule</label>
+            <label class="block text-sm font-medium text-gf-text-weak">Work Schedule</label>
             <button
               type="button"
-              class="text-sm font-medium text-blue-600 hover:text-blue-800"
+              class="text-sm font-medium text-gf-blue hover:underline"
               @click="addWorkShift"
             >
               + Add Shift
             </button>
           </div>
 
-          <div v-if="formData.workSchedule.length === 0" class="text-sm text-gray-500 dark:text-gray-400">
+          <div v-if="formData.workSchedule.length === 0" class="text-sm text-gf-text-faint">
             No scheduled shifts yet.
           </div>
 
@@ -65,12 +65,12 @@
             <div
               v-for="(shift, index) in formData.workSchedule"
               :key="`${shift.day}-${shift.start}-${index}`"
-              class="rounded-md border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/40"
+              class="rounded border border-gf-border bg-gf-surface-2 p-4"
             >
               <div class="mb-2 flex justify-end">
                 <button
                   type="button"
-                  class="text-xs text-red-600 hover:text-red-800"
+                  class="text-xs text-gf-red hover:opacity-80"
                   @click="removeWorkShift(index)"
                 >
                   Remove Shift
@@ -78,24 +78,24 @@
               </div>
               <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
                 <div>
-                  <label class="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">Day</label>
-                  <select v-model="shift.day" class="w-full rounded-md border border-gray-300 px-2 py-2 text-sm">
+                  <label class="mb-1 block text-xs font-medium text-gf-text-weak">Day</label>
+                  <select v-model="shift.day" class="w-full rounded border border-gf-border bg-gf-bg px-2 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue">
                     <option v-for="weekday in weekdayOptions" :key="weekday" :value="weekday">
                       {{ weekday }}
                     </option>
                   </select>
                 </div>
                 <div>
-                  <label class="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">Start</label>
-                  <input v-model="shift.start" type="time" class="w-full rounded-md border border-gray-300 px-2 py-2 text-sm">
+                  <label class="mb-1 block text-xs font-medium text-gf-text-weak">Start</label>
+                  <input v-model="shift.start" type="time" class="w-full rounded border border-gf-border bg-gf-bg px-2 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue">
                 </div>
                 <div>
-                  <label class="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">End</label>
-                  <input v-model="shift.end" type="time" class="w-full rounded-md border border-gray-300 px-2 py-2 text-sm">
+                  <label class="mb-1 block text-xs font-medium text-gf-text-weak">End</label>
+                  <input v-model="shift.end" type="time" class="w-full rounded border border-gf-border bg-gf-bg px-2 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue">
                 </div>
                 <div>
-                  <label class="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">Workplace</label>
-                  <select v-model="shift.locationLotId" class="w-full rounded-md border border-gray-300 px-2 py-2 text-sm">
+                  <label class="mb-1 block text-xs font-medium text-gf-text-weak">Workplace</label>
+                  <select v-model="shift.locationLotId" class="w-full rounded border border-gf-border bg-gf-bg px-2 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue">
                     <option value="">Select lot</option>
                     <option v-for="lot in lots" :key="lot.id" :value="lot.id">
                       {{ lot.name }}
@@ -108,13 +108,13 @@
         </div>
 
         <div class="flex justify-end gap-3">
-          <button type="button" class="px-4 py-2 text-gray-700 dark:text-gray-200" @click="goBack">
+          <button type="button" class="rounded border border-gf-border bg-gf-surface px-3 py-1.5 text-sm text-gf-text-weak hover:bg-gf-surface-2" @click="goBack">
             Cancel
           </button>
           <button
             type="submit"
             :disabled="saving"
-            class="rounded-md bg-blue-600 px-4 py-2 text-white disabled:opacity-50"
+            class="rounded border border-gf-border bg-gf-blue/15 px-3 py-1.5 text-sm font-medium text-gf-blue hover:bg-gf-blue/25 disabled:opacity-50"
           >
             {{ saving ? 'Saving...' : 'Save Character' }}
           </button>

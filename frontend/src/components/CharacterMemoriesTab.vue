@@ -4,12 +4,12 @@
       <textarea
         v-model="memoryDraft"
         rows="3"
-        class="w-full rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 text-sm"
+        class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
         placeholder="Add a long-term memory"
       />
       <button
         type="button"
-        class="rounded bg-blue-600 px-3 py-1 text-xs text-white"
+        class="rounded border border-gf-border bg-gf-blue/15 px-3 py-1.5 text-sm font-medium text-gf-blue hover:bg-gf-blue/25"
         @click="saveMemory"
       >
         Add Memory
@@ -19,33 +19,33 @@
       <div
         v-for="memory in longTermMemories"
         :key="memory.id"
-        class="p-2 bg-gray-50 dark:bg-gray-700 rounded text-xs"
+        class="p-2 bg-gf-surface-2 rounded text-xs"
       >
         <div class="flex items-center justify-between mb-1 gap-2">
-          <span class="font-medium text-gray-900 dark:text-gray-100">{{ new Date(memory.createdAt).toLocaleDateString() }}</span>
+          <span class="font-medium text-gf-text">{{ new Date(memory.createdAt).toLocaleDateString() }}</span>
           <div class="flex gap-2">
-            <button type="button" class="text-blue-600 dark:text-blue-400" @click="startEditingMemory(memory)">Edit</button>
-            <button type="button" class="text-red-600 dark:text-red-400" @click="removeMemory(memory.id)">Delete</button>
+            <button type="button" class="text-gf-blue hover:underline" @click="startEditingMemory(memory)">Edit</button>
+            <button type="button" class="text-gf-red hover:underline" @click="removeMemory(memory.id)">Delete</button>
           </div>
         </div>
         <textarea
           v-if="editingMemoryId === memory.id"
           v-model="editingMemoryContent"
           rows="3"
-          class="w-full rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white px-2 py-1"
+          class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
         />
-        <p v-else class="text-gray-600 dark:text-gray-300 whitespace-pre-wrap">{{ memory.content }}</p>
+        <p v-else class="text-gf-text-weak whitespace-pre-wrap">{{ memory.content }}</p>
         <button
           v-if="editingMemoryId === memory.id"
           type="button"
-          class="mt-2 rounded bg-blue-600 px-2 py-1 text-[11px] text-white"
+          class="mt-2 rounded border border-gf-border bg-gf-blue/15 px-3 py-1.5 text-sm font-medium text-gf-blue hover:bg-gf-blue/25"
           @click="saveEditedMemory"
         >
           Save
         </button>
       </div>
     </div>
-    <div v-else class="text-center py-8 text-gray-500 dark:text-gray-400">
+    <div v-else class="text-center py-8 text-gf-text-faint">
       <p class="text-sm">No long-term memories yet</p>
     </div>
   </div>

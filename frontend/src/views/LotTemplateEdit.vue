@@ -1,11 +1,11 @@
 <template>
   <div>
     <div v-if="loading" class="text-center py-8">
-      <p class="text-gray-500">Loading template...</p>
+      <p class="text-gf-text-faint">Loading template...</p>
     </div>
 
     <div v-else-if="error" class="text-center py-8">
-      <p class="text-red-500">Error loading template: {{ error.message }}</p>
+      <p class="text-gf-red">Error loading template: {{ error.message }}</p>
     </div>
 
     <div v-else-if="template">
@@ -14,13 +14,13 @@
         <div class="flex items-center gap-3 mb-4">
           <router-link
             :to="`/library/lots/${template.id}`"
-            class="text-gray-400 hover:text-gray-600 dark:text-gray-300"
+            class="text-gf-text-faint hover:text-gf-text"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
             </svg>
           </router-link>
-          <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Edit Lot Template</h1>
+          <h1 class="text-xl font-semibold text-gf-text">Edit Lot Template</h1>
         </div>
       </div>
 
@@ -28,27 +28,27 @@
       <form @submit.prevent="saveTemplate" class="space-y-6">
         <!-- Template Name -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label class="block text-sm font-medium text-gf-text-weak mb-2">
             Template Name *
           </label>
           <input
             v-model="editForm.name"
             type="text"
             required
-            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+            class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
             placeholder="Enter template name"
           />
         </div>
 
         <!-- Lot Type -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label class="block text-sm font-medium text-gf-text-weak mb-2">
             Lot Type *
           </label>
           <select
             v-model="editForm.lotType"
             required
-            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+            class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
           >
             <option value="">Select lot type</option>
             <option value="RESIDENTIAL">Residential</option>
@@ -60,26 +60,26 @@
 
         <!-- Description -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label class="block text-sm font-medium text-gf-text-weak mb-2">
             Description
           </label>
           <textarea
             v-model="editForm.description"
             rows="3"
-            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+            class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
             placeholder="Describe this lot template"
           ></textarea>
         </div>
 
         <!-- Tags -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label class="block text-sm font-medium text-gf-text-weak mb-2">
             Tags (comma-separated)
           </label>
           <input
             v-model="editForm.tagsInput"
             type="text"
-            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+            class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
             placeholder="e.g., starter, house, modern"
           />
         </div>
@@ -87,19 +87,19 @@
         <!-- Indoor Rooms Section -->
         <div>
           <div class="flex justify-between items-center mb-3">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="block text-sm font-medium text-gf-text-weak">
               Indoor Rooms
             </label>
             <button
               type="button"
               @click="addIndoorRoom"
-              class="text-green-600 hover:text-green-800 text-sm font-medium"
+              class="text-gf-green hover:opacity-80 text-sm font-medium"
             >
               + Add Room
             </button>
           </div>
 
-          <div v-if="editForm.indoorRooms.length === 0" class="text-gray-500 dark:text-gray-300 text-sm">
+          <div v-if="editForm.indoorRooms.length === 0" class="text-gf-text-faint text-sm">
             No indoor rooms yet.
           </div>
 
@@ -107,14 +107,14 @@
             <div
               v-for="(room, roomIndex) in editForm.indoorRooms"
               :key="roomIndex"
-              class="border border-gray-300 dark:border-gray-600 rounded-md p-4 bg-white dark:bg-gray-700"
+              class="border border-gf-border rounded p-4 bg-gf-surface-2"
             >
               <div class="flex justify-between items-start mb-3">
-                <h4 class="font-medium text-gray-900 dark:text-gray-100">Room {{ roomIndex + 1 }}</h4>
+                <h4 class="font-medium text-gf-text">Room {{ roomIndex + 1 }}</h4>
                 <button
                   type="button"
                   @click="removeIndoorRoom(roomIndex)"
-                  class="text-red-600 hover:text-red-800"
+                  class="text-gf-red hover:opacity-80"
                   title="Remove room"
                 >
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -125,25 +125,25 @@
 
               <div class="space-y-3">
                 <div>
-                  <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label class="block text-xs font-medium text-gf-text-weak mb-1">
                     Room Name *
                   </label>
                   <input
                     v-model="room.spaceName"
                     type="text"
                     required
-                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-white rounded-md text-sm"
+                    class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
                     placeholder="e.g., Living Room"
                   />
                 </div>
                 <div>
-                  <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label class="block text-xs font-medium text-gf-text-weak mb-1">
                     Description
                   </label>
                   <textarea
                     v-model="room.spaceDescription"
                     rows="2"
-                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-white rounded-md text-sm"
+                    class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
                     placeholder="Describe this room"
                   ></textarea>
                 </div>
@@ -151,19 +151,19 @@
                 <!-- Items in this room -->
                 <div>
                   <div class="flex justify-between items-center mb-2">
-                    <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">
+                    <label class="block text-xs font-medium text-gf-text-weak">
                       Items
                     </label>
                     <button
                       type="button"
                       @click="addItemToRoom(roomIndex, true)"
-                      class="text-blue-600 hover:text-blue-800 text-xs font-medium"
+                      class="text-gf-blue hover:underline text-xs font-medium"
                     >
                       + Add Item
                     </button>
                   </div>
 
-                  <div v-if="!room.items || room.items.length === 0" class="text-xs text-gray-500 dark:text-gray-400">
+                  <div v-if="!room.items || room.items.length === 0" class="text-xs text-gf-text-faint">
                     No items yet.
                   </div>
 
@@ -171,27 +171,27 @@
                     <div
                       v-for="(item, itemIndex) in room.items"
                       :key="itemIndex"
-                      class="flex gap-2 items-start bg-gray-50 dark:bg-gray-800 p-2 rounded"
+                      class="flex gap-2 items-start bg-gf-surface-3 p-2 rounded"
                     >
                       <div class="flex-1 space-y-1">
                         <input
                           v-model="item.itemName"
                           type="text"
                           required
-                          class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded text-xs"
+                          class="w-full rounded border border-gf-border bg-gf-bg px-2 py-1 text-xs text-gf-text focus:outline-none focus:border-gf-blue"
                           placeholder="Item name"
                         />
                         <input
                           v-model="item.itemDescription"
                           type="text"
-                          class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded text-xs"
+                          class="w-full rounded border border-gf-border bg-gf-bg px-2 py-1 text-xs text-gf-text focus:outline-none focus:border-gf-blue"
                           placeholder="Description"
                         />
                       </div>
                       <button
                         type="button"
                         @click="removeItemFromRoom(roomIndex, itemIndex, true)"
-                        class="text-red-600 hover:text-red-800 mt-1"
+                        class="text-gf-red hover:opacity-80 mt-1"
                       >
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -208,19 +208,19 @@
         <!-- Outdoor Spaces Section -->
         <div>
           <div class="flex justify-between items-center mb-3">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="block text-sm font-medium text-gf-text-weak">
               Outdoor Areas
             </label>
             <button
               type="button"
               @click="addOutdoorSpace"
-              class="text-green-600 hover:text-green-800 text-sm font-medium"
+              class="text-gf-green hover:opacity-80 text-sm font-medium"
             >
               + Add Area
             </button>
           </div>
 
-          <div v-if="editForm.outdoorSpaces.length === 0" class="text-gray-500 dark:text-gray-300 text-sm">
+          <div v-if="editForm.outdoorSpaces.length === 0" class="text-gf-text-faint text-sm">
             No outdoor areas yet.
           </div>
 
@@ -228,14 +228,14 @@
             <div
               v-for="(space, spaceIndex) in editForm.outdoorSpaces"
               :key="spaceIndex"
-              class="border border-gray-300 dark:border-gray-600 rounded-md p-4 bg-white dark:bg-gray-700"
+              class="border border-gf-border rounded p-4 bg-gf-surface-2"
             >
               <div class="flex justify-between items-start mb-3">
-                <h4 class="font-medium text-gray-900 dark:text-gray-100">Area {{ spaceIndex + 1 }}</h4>
+                <h4 class="font-medium text-gf-text">Area {{ spaceIndex + 1 }}</h4>
                 <button
                   type="button"
                   @click="removeOutdoorSpace(spaceIndex)"
-                  class="text-red-600 hover:text-red-800"
+                  class="text-gf-red hover:opacity-80"
                   title="Remove area"
                 >
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -246,25 +246,25 @@
 
               <div class="space-y-3">
                 <div>
-                  <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label class="block text-xs font-medium text-gf-text-weak mb-1">
                     Area Name *
                   </label>
                   <input
                     v-model="space.spaceName"
                     type="text"
                     required
-                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-white rounded-md text-sm"
+                    class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
                     placeholder="e.g., Backyard"
                   />
                 </div>
                 <div>
-                  <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label class="block text-xs font-medium text-gf-text-weak mb-1">
                     Description
                   </label>
                   <textarea
                     v-model="space.spaceDescription"
                     rows="2"
-                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-white rounded-md text-sm"
+                    class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
                     placeholder="Describe this area"
                   ></textarea>
                 </div>
@@ -272,19 +272,19 @@
                 <!-- Items in this area -->
                 <div>
                   <div class="flex justify-between items-center mb-2">
-                    <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">
+                    <label class="block text-xs font-medium text-gf-text-weak">
                       Items
                     </label>
                     <button
                       type="button"
                       @click="addItemToRoom(spaceIndex, false)"
-                      class="text-blue-600 hover:text-blue-800 text-xs font-medium"
+                      class="text-gf-blue hover:underline text-xs font-medium"
                     >
                       + Add Item
                     </button>
                   </div>
 
-                  <div v-if="!space.items || space.items.length === 0" class="text-xs text-gray-500 dark:text-gray-400">
+                  <div v-if="!space.items || space.items.length === 0" class="text-xs text-gf-text-faint">
                     No items yet.
                   </div>
 
@@ -292,27 +292,27 @@
                     <div
                       v-for="(item, itemIndex) in space.items"
                       :key="itemIndex"
-                      class="flex gap-2 items-start bg-gray-50 dark:bg-gray-800 p-2 rounded"
+                      class="flex gap-2 items-start bg-gf-surface-3 p-2 rounded"
                     >
                       <div class="flex-1 space-y-1">
                         <input
                           v-model="item.itemName"
                           type="text"
                           required
-                          class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded text-xs"
+                          class="w-full rounded border border-gf-border bg-gf-bg px-2 py-1 text-xs text-gf-text focus:outline-none focus:border-gf-blue"
                           placeholder="Item name"
                         />
                         <input
                           v-model="item.itemDescription"
                           type="text"
-                          class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded text-xs"
+                          class="w-full rounded border border-gf-border bg-gf-bg px-2 py-1 text-xs text-gf-text focus:outline-none focus:border-gf-blue"
                           placeholder="Description"
                         />
                       </div>
                       <button
                         type="button"
                         @click="removeItemFromRoom(spaceIndex, itemIndex, false)"
-                        class="text-red-600 hover:text-red-800 mt-1"
+                        class="text-gf-red hover:opacity-80 mt-1"
                       >
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -327,17 +327,17 @@
         </div>
 
         <!-- Action Buttons -->
-        <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+        <div class="flex justify-end space-x-3 pt-4 border-t border-gf-border">
           <router-link
             :to="`/library/lots/${template.id}`"
-            class="px-4 py-2 text-gray-700 hover:text-gray-900 dark:text-gray-100"
+            class="rounded border border-gf-border bg-gf-surface px-3 py-1.5 text-sm text-gf-text-weak hover:bg-gf-surface-2"
           >
             Cancel
           </router-link>
           <button
             type="submit"
             :disabled="saving"
-            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md disabled:opacity-50"
+            class="rounded border border-gf-border bg-gf-green/15 px-3 py-1.5 text-sm font-medium text-gf-green hover:bg-gf-green/25 disabled:opacity-50"
           >
             {{ saving ? 'Saving...' : 'Save Template' }}
           </button>

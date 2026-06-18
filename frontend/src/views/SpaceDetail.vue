@@ -23,47 +23,47 @@
         </div>
 
         <!-- Add Item Form -->
-        <div v-if="showAddItemForm" class="mb-6 p-4 bg-blue-50 dark:bg-blue-900 rounded-lg border border-blue-200">
+        <div v-if="showAddItemForm" class="mb-6 p-4 bg-gf-surface-2 rounded-lg border border-gf-border">
           <form @submit.prevent="addItem" class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+              <label class="block text-sm font-medium text-gf-text-weak mb-1">
                 Item Name *
               </label>
               <input
                 v-model="newItem.name"
                 type="text"
                 required
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
                 placeholder="Enter item name"
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+              <label class="block text-sm font-medium text-gf-text-weak mb-1">
                 Description *
               </label>
               <textarea
                 v-model="newItem.description"
                 required
                 rows="3"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
                 placeholder="Describe the item"
               ></textarea>
             </div>
             <div class="flex gap-4">
               <div class="flex-1">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                <label class="block text-sm font-medium text-gf-text-weak mb-1">
                   Max Simultaneous Users
                 </label>
                 <input
                   v-model.number="newItem.maxSimultaneousUsers"
                   type="number"
                   min="1"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
                   placeholder="Leave empty for unlimited"
                 />
               </div>
               <div class="flex-1">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                <label class="block text-sm font-medium text-gf-text-weak mb-1">
                   Comfort Bonus
                 </label>
                 <input
@@ -71,20 +71,20 @@
                   type="number"
                   min="0"
                   step="0.01"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
                   placeholder="Leave empty for default"
                 />
               </div>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+              <label class="block text-sm font-medium text-gf-text-weak mb-2">
                 Item Roles
               </label>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <label
                   v-for="role in ITEM_ROLE_OPTIONS"
                   :key="role.key"
-                  class="rounded border border-gray-200 px-3 py-2 text-sm"
+                  class="rounded border border-gf-border px-3 py-2 text-sm text-gf-text"
                 >
                   <span class="flex items-center gap-2">
                     <input
@@ -98,14 +98,14 @@
               </div>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+              <label class="block text-sm font-medium text-gf-text-weak mb-2">
                 Affordances
               </label>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <label
                   v-for="option in affordanceOptions"
                   :key="option.action"
-                  class="rounded border border-gray-200 px-3 py-2 text-sm"
+                  class="rounded border border-gf-border px-3 py-2 text-sm text-gf-text"
                 >
                   <div class="flex items-center justify-between gap-2">
                     <span class="flex items-center gap-2">
@@ -122,7 +122,7 @@
                       type="number"
                       min="0.1"
                       step="0.1"
-                      class="w-20 rounded border border-gray-300 px-2 py-1 text-xs"
+                      class="w-20 rounded border border-gf-border bg-gf-bg px-2 py-1 text-xs text-gf-text focus:outline-none focus:border-gf-blue"
                       @input="handleAffordanceWeightInput(newItem, option.action, $event)"
                     />
                   </div>
@@ -133,14 +133,14 @@
               <button
                 type="submit"
                 :disabled="saving"
-                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium disabled:opacity-50"
+                class="rounded border border-gf-border bg-gf-blue/15 px-3 py-1.5 text-sm font-medium text-gf-blue hover:bg-gf-blue/25 disabled:opacity-50"
               >
                 {{ saving ? 'Adding...' : 'Add Item' }}
               </button>
               <button
                 type="button"
                 @click="showAddItemForm = false"
-                class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md text-sm font-medium"
+                class="rounded border border-gf-border bg-gf-surface px-3 py-1.5 text-sm text-gf-text-weak hover:bg-gf-surface-2"
               >
                 Cancel
               </button>
@@ -170,30 +170,30 @@
                 v-model="editingItem.name"
                 type="text"
                 required
-                class="dark:text-white w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="w-full px-2 py-1 text-sm rounded border border-gf-border bg-gf-bg text-gf-text focus:outline-none focus:border-gf-blue"
                 placeholder="Item name"
               />
               <textarea
                 v-model="editingItem.description"
                 required
                 rows="2"
-                class="dark:text-white w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="w-full px-2 py-1 text-xs rounded border border-gf-border bg-gf-bg text-gf-text focus:outline-none focus:border-gf-blue"
                 placeholder="Description"
               ></textarea>
               <div>
-                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label class="block text-xs font-medium text-gf-text-weak mb-1">
                   Max Simultaneous Users
                 </label>
                 <input
                   v-model.number="editingItem.maxSimultaneousUsers"
                   type="number"
                   min="1"
-                  class="dark:text-white w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  class="w-full px-2 py-1 text-sm rounded border border-gf-border bg-gf-bg text-gf-text focus:outline-none focus:border-gf-blue"
                   placeholder="Leave empty for unlimited"
                 />
               </div>
               <div>
-                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label class="block text-xs font-medium text-gf-text-weak mb-1">
                   Comfort Bonus
                 </label>
                 <input
@@ -201,7 +201,7 @@
                   type="number"
                   min="0"
                   step="0.01"
-                  class="dark:text-white w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  class="w-full px-2 py-1 text-sm rounded border border-gf-border bg-gf-bg text-gf-text focus:outline-none focus:border-gf-blue"
                   placeholder="Leave empty for default"
                 />
               </div>
@@ -209,26 +209,26 @@
                 <button
                   @click="saveEdit"
                   :disabled="saving"
-                  class="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded disabled:opacity-50"
+                  class="text-xs rounded border border-gf-border bg-gf-blue/15 px-3 py-1 font-medium text-gf-blue hover:bg-gf-blue/25 disabled:opacity-50"
                 >
                   {{ saving ? 'Saving...' : 'Save' }}
                 </button>
                 <button
                   @click="cancelEdit"
-                  class="text-xs bg-gray-300 hover:bg-gray-400 text-gray-800 px-3 py-1 rounded"
+                  class="text-xs rounded border border-gf-border bg-gf-surface px-3 py-1 text-gf-text-weak hover:bg-gf-surface-2"
                 >
                   Cancel
                 </button>
               </div>
               <div>
-                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label class="block text-xs font-medium text-gf-text-weak mb-2">
                   Item Roles
                 </label>
                 <div class="grid grid-cols-1 gap-2">
                   <label
                     v-for="role in ITEM_ROLE_OPTIONS"
                     :key="role.key"
-                    class="flex items-center gap-2 text-xs"
+                    class="flex items-center gap-2 text-xs text-gf-text"
                   >
                     <input
                       type="checkbox"
@@ -240,14 +240,14 @@
                 </div>
               </div>
               <div>
-                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label class="block text-xs font-medium text-gf-text-weak mb-2">
                   Affordances
                 </label>
                 <div class="space-y-2">
                   <label
                     v-for="option in affordanceOptions"
                     :key="option.action"
-                    class="flex items-center justify-between gap-2 text-xs"
+                    class="flex items-center justify-between gap-2 text-xs text-gf-text"
                   >
                     <span class="flex items-center gap-2">
                       <input
@@ -263,7 +263,7 @@
                       type="number"
                       min="0.1"
                       step="0.1"
-                      class="w-20 rounded border border-gray-300 px-2 py-1 text-xs dark:text-white"
+                      class="w-20 rounded border border-gf-border bg-gf-bg px-2 py-1 text-xs text-gf-text focus:outline-none focus:border-gf-blue"
                       @input="editingItem && handleAffordanceWeightInput(editingItem, option.action, $event)"
                     />
                   </label>
@@ -275,16 +275,16 @@
             <div v-else>
               <div
                 v-if="item.activeUsers?.length"
-                class="mb-3 rounded-lg border border-blue-200 bg-blue-100/80 px-2.5 py-2 dark:border-blue-700 dark:bg-blue-900/40"
+                class="mb-3 rounded border border-gf-blue/30 bg-gf-blue/15 px-2.5 py-2"
               >
-                <p class="text-[11px] font-semibold uppercase tracking-wide text-blue-800 dark:text-blue-200">
+                <p class="text-[11px] font-semibold uppercase tracking-wide text-gf-blue">
                   In use now
                 </p>
                 <div class="mt-1 space-y-1">
                   <p
                     v-for="user in item.activeUsers"
                     :key="user.id"
-                    class="text-xs font-medium text-blue-900 dark:text-blue-100"
+                    class="text-xs font-medium text-gf-text"
                   >
                     {{ user.name }}: {{ getCharacterStatus(user.id) }}
                   </p>
@@ -311,7 +311,7 @@
                 <div class="flex gap-1 ml-2">
                 <button
                   @click="startEditItem(item)"
-                  class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                  class="text-gf-blue hover:opacity-80"
                   title="Edit item"
                 >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -320,7 +320,7 @@
                 </button>
                 <button
                   @click="removeItem(item.id)"
-                  class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                  class="text-gf-red hover:opacity-80"
                   title="Delete item"
                 >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

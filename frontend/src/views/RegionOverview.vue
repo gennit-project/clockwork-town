@@ -107,26 +107,26 @@
     <Modal :is-open="showEditModal" title="Edit Region" @close="closeEditModal">
       <form @submit.prevent="saveRegion">
         <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label class="mb-2 block text-sm font-medium text-gf-text-weak">
             Region Name
           </label>
           <input
             v-model="formData.name"
             type="text"
             required
-            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
             placeholder="Enter region name"
           />
         </div>
         <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label class="mb-2 block text-sm font-medium text-gf-text-weak">
             Type
           </label>
           <input
             v-model="formData.kind"
             type="text"
             required
-            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
             placeholder="e.g., urban, rural, mountain"
           />
         </div>
@@ -135,14 +135,14 @@
             type="button"
             @click="closeEditModal"
             :disabled="saving"
-            class="px-4 py-2 text-gray-700 hover:text-gray-900 dark:text-gray-100 disabled:opacity-50"
+            class="rounded border border-gf-border bg-gf-surface px-3 py-1.5 text-sm text-gf-text-weak hover:bg-gf-surface-2 disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             type="submit"
             :disabled="saving"
-            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md disabled:opacity-50"
+            class="rounded border border-gf-border bg-gf-blue/15 px-3 py-1.5 text-sm font-medium text-gf-blue hover:bg-gf-blue/25 disabled:opacity-50"
           >
             {{ saving ? 'Saving...' : 'Save' }}
           </button>

@@ -1,44 +1,44 @@
 <template>
-  <div>
+  <div class="p-4">
     <Breadcrumbs :crumbs="breadcrumbs" />
 
     <div class="max-w-2xl mx-auto">
-      <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6">
+      <h1 class="text-xl font-semibold text-gf-text mb-6">
         {{ isEditing ? 'Edit Household' : 'Create Household' }}
       </h1>
 
       <div v-if="loading" class="text-center py-12">
-        <p class="text-gray-500">Loading...</p>
+        <p class="text-gf-text-faint">Loading...</p>
       </div>
 
-      <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-md p-4 mb-4">
-        <p class="text-red-800">Error: {{ error }}</p>
+      <div v-else-if="error" class="rounded border border-gf-red/40 bg-gf-red/10 p-4 mb-4">
+        <p class="text-gf-red">Error: {{ error }}</p>
       </div>
 
-      <form v-else @submit.prevent="saveHousehold" class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+      <form v-else @submit.prevent="saveHousehold" class="bg-gf-surface border border-gf-border rounded-lg p-6">
         <!-- Household Name -->
         <div class="mb-6">
-          <label class="block text-sm font-medium text-gray-700 mb-2">
+          <label class="block text-sm font-medium text-gf-text-weak mb-2">
             Household Name
           </label>
           <input
             v-model="formData.name"
             type="text"
             required
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
             placeholder="Enter household name"
           />
         </div>
 
         <!-- Lot Selection -->
         <div class="mb-6">
-          <label class="block text-sm font-medium text-gray-700 mb-2">
+          <label class="block text-sm font-medium text-gf-text-weak mb-2">
             Lot
           </label>
           <select
             v-model="formData.lotId"
             required
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
           >
             <option value="">Select a lot</option>
             <option v-for="lot in availableLots" :key="lot.id" :value="lot.id">
@@ -50,19 +50,19 @@
         <!-- Characters Section -->
         <div class="mb-6">
           <div class="flex justify-between items-center mb-3">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="block text-sm font-medium text-gf-text-weak">
               Characters
             </label>
             <button
               type="button"
               @click="addCharacter"
-              class="text-blue-600 hover:text-blue-800 text-sm font-medium"
+              class="text-gf-blue hover:underline text-sm font-medium"
             >
               + Add Character
             </button>
           </div>
 
-          <div v-if="formData.characters.length === 0" class="text-gray-500 dark:text-gray-300 text-sm">
+          <div v-if="formData.characters.length === 0" class="text-gf-text-weak text-sm">
             No characters yet. Click "Add Character" to create one.
           </div>
 
@@ -70,12 +70,12 @@
             <div
               v-for="(character, index) in formData.characters"
               :key="index"
-              class="border border-gray-300 rounded-md p-4 relative"
+              class="border border-gf-border rounded p-4 relative"
             >
               <button
                 type="button"
                 @click="removeCharacter(index)"
-                class="absolute top-2 right-2 text-red-600 hover:text-red-800"
+                class="absolute top-2 right-2 text-gf-red hover:opacity-80"
                 title="Remove character"
               >
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -85,19 +85,19 @@
 
               <div class="grid grid-cols-2 gap-4 mb-3">
                 <div>
-                  <label class="block text-xs font-medium text-gray-700 mb-1">
+                  <label class="block text-xs font-medium text-gf-text-weak mb-1">
                     Name *
                   </label>
                   <input
                     v-model="character.name"
                     type="text"
                     required
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
                     placeholder="Character name"
                   />
                 </div>
                 <div>
-                  <label class="block text-xs font-medium text-gray-700 mb-1">
+                  <label class="block text-xs font-medium text-gf-text-weak mb-1">
                     Age *
                   </label>
                   <input
@@ -105,48 +105,48 @@
                     type="number"
                     required
                     min="0"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
                     placeholder="Age"
                   />
                 </div>
               </div>
               <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">
+                <label class="block text-xs font-medium text-gf-text-weak mb-1">
                   Bio
                 </label>
                 <textarea
                   v-model="character.bio"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
                   placeholder="Optional bio"
                   rows="6"
                 ></textarea>
               </div>
               <div class="mt-4">
                 <div class="mb-2 flex items-center justify-between">
-                  <label class="block text-xs font-medium text-gray-700 mb-1">
+                  <label class="block text-xs font-medium text-gf-text-weak mb-1">
                     Work Schedule
                   </label>
                   <button
                     type="button"
-                    class="text-xs font-medium text-blue-600 hover:text-blue-800"
+                    class="text-xs font-medium text-gf-blue hover:underline"
                     @click="addWorkShift(character)"
                   >
                     + Add Shift
                   </button>
                 </div>
-                <div v-if="character.workSchedule.length === 0" class="text-xs text-gray-500">
+                <div v-if="character.workSchedule.length === 0" class="text-xs text-gf-text-faint">
                   No work shifts yet.
                 </div>
                 <div v-else class="space-y-2">
                   <div
                     v-for="(shift, shiftIndex) in character.workSchedule"
                     :key="`${character.id}-${shiftIndex}`"
-                    class="rounded border border-gray-200 bg-gray-50 p-3"
+                    class="rounded border border-gf-border bg-gf-surface-2 p-3"
                   >
                     <div class="mb-2 flex justify-end">
                       <button
                         type="button"
-                        class="text-xs text-red-600 hover:text-red-800"
+                        class="text-xs text-gf-red hover:opacity-80"
                         @click="removeWorkShift(character, shiftIndex)"
                       >
                         Remove Shift
@@ -154,12 +154,12 @@
                     </div>
                     <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
                       <div>
-                        <label class="mb-1 block text-[11px] font-medium text-gray-700">
+                        <label class="mb-1 block text-[11px] font-medium text-gf-text-weak">
                           Day
                         </label>
                         <select
                           v-model="shift.day"
-                          class="w-full rounded-md border border-gray-300 px-2 py-2 text-sm"
+                          class="w-full rounded border border-gf-border bg-gf-bg px-2 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
                         >
                           <option v-for="weekday in weekdayOptions" :key="weekday" :value="weekday">
                             {{ weekday }}
@@ -167,32 +167,32 @@
                         </select>
                       </div>
                       <div>
-                        <label class="mb-1 block text-[11px] font-medium text-gray-700">
+                        <label class="mb-1 block text-[11px] font-medium text-gf-text-weak">
                           Start
                         </label>
                         <input
                           v-model="shift.start"
                           type="time"
-                          class="w-full rounded-md border border-gray-300 px-2 py-2 text-sm"
+                          class="w-full rounded border border-gf-border bg-gf-bg px-2 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
                         />
                       </div>
                       <div>
-                        <label class="mb-1 block text-[11px] font-medium text-gray-700">
+                        <label class="mb-1 block text-[11px] font-medium text-gf-text-weak">
                           End
                         </label>
                         <input
                           v-model="shift.end"
                           type="time"
-                          class="w-full rounded-md border border-gray-300 px-2 py-2 text-sm"
+                          class="w-full rounded border border-gf-border bg-gf-bg px-2 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
                         />
                       </div>
                       <div>
-                        <label class="mb-1 block text-[11px] font-medium text-gray-700">
+                        <label class="mb-1 block text-[11px] font-medium text-gf-text-weak">
                           Workplace
                         </label>
                         <select
                           v-model="shift.locationLotId"
-                          class="w-full rounded-md border border-gray-300 px-2 py-2 text-sm"
+                          class="w-full rounded border border-gf-border bg-gf-bg px-2 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
                         >
                           <option value="">Select lot</option>
                           <option v-for="lot in lots" :key="lot.id" :value="lot.id">
@@ -211,19 +211,19 @@
         <!-- Animals Section -->
         <div class="mb-6">
           <div class="flex justify-between items-center mb-3">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="block text-sm font-medium text-gf-text-weak">
               Animals (Pets)
             </label>
             <button
               type="button"
               @click="addAnimal"
-              class="text-blue-600 hover:text-blue-800 text-sm font-medium"
+              class="text-gf-blue hover:underline text-sm font-medium"
             >
               + Add Animal
             </button>
           </div>
 
-          <div v-if="formData.animals.length === 0" class="text-gray-500 dark:text-gray-300 text-sm">
+          <div v-if="formData.animals.length === 0" class="text-gf-text-weak text-sm">
             No animals yet. Click "Add Animal" to add a pet.
           </div>
 
@@ -231,12 +231,12 @@
             <div
               v-for="(animal, index) in formData.animals"
               :key="index"
-              class="border border-gray-300 rounded-md p-4 relative bg-amber-50"
+              class="border border-gf-border rounded p-4 relative bg-gf-surface-2"
             >
               <button
                 type="button"
                 @click="removeAnimal(index)"
-                class="absolute top-2 right-2 text-red-600 hover:text-red-800"
+                class="absolute top-2 right-2 text-gf-red hover:opacity-80"
                 title="Remove animal"
               >
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -246,19 +246,19 @@
 
               <div class="grid grid-cols-2 gap-4 mb-3">
                 <div>
-                  <label class="block text-xs font-medium text-gray-700 mb-1">
+                  <label class="block text-xs font-medium text-gf-text-weak mb-1">
                     Name *
                   </label>
                   <input
                     v-model="animal.name"
                     type="text"
                     required
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
                     placeholder="Animal name"
                   />
                 </div>
                 <div>
-                  <label class="block text-xs font-medium text-gray-700 mb-1">
+                  <label class="block text-xs font-medium text-gf-text-weak mb-1">
                     Age *
                   </label>
                   <input
@@ -266,19 +266,19 @@
                     type="number"
                     required
                     min="0"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
                     placeholder="Age"
                   />
                 </div>
               </div>
               <div class="mb-3">
-                <label class="block text-xs font-medium text-gray-700 mb-1">
+                <label class="block text-xs font-medium text-gf-text-weak mb-1">
                   Owner *
                 </label>
                 <select
                   v-model="animal.ownerId"
                   required
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
                 >
                   <option value="">Select owner</option>
                   <option v-for="char in formData.characters" :key="char.id" :value="char.id">
@@ -287,24 +287,24 @@
                 </select>
               </div>
               <div class="mb-3">
-                <label class="block text-xs font-medium text-gray-700 mb-1">
+                <label class="block text-xs font-medium text-gf-text-weak mb-1">
                   Traits (comma separated)
                 </label>
                 <input
                   v-model="animal.traitsString"
                   type="text"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
                   placeholder="e.g., friendly, playful, loyal"
                 />
               </div>
               <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">
+                <label class="block text-xs font-medium text-gf-text-weak mb-1">
                   Biography
                 </label>
                 <textarea
                   v-model="animal.bio"
                   rows="6"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  class="w-full rounded border border-gf-border bg-gf-bg px-3 py-2 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
                   placeholder="Write about this animal's personality, history, etc. (supports markdown)"
                 />
               </div>
@@ -317,14 +317,14 @@
           <button
             type="button"
             @click="goBack"
-            class="px-4 py-2 text-gray-700 hover:text-gray-900 dark:text-gray-100"
+            class="rounded border border-gf-border bg-gf-surface px-3 py-1.5 text-sm text-gf-text-weak hover:bg-gf-surface-2"
           >
             Cancel
           </button>
           <button
             type="submit"
             :disabled="saving"
-            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md disabled:opacity-50"
+            class="rounded border border-gf-border bg-gf-blue/15 px-3 py-1.5 text-sm font-medium text-gf-blue hover:bg-gf-blue/25 disabled:opacity-50"
           >
             {{ saving ? 'Saving...' : 'Save Household' }}
           </button>
