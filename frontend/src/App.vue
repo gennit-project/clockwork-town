@@ -187,7 +187,7 @@
         <!-- Right sidebar - Residents -->
         <aside v-if="currentRegionId" class="hidden w-80 shrink-0 overflow-y-auto border-l border-gf-border bg-gf-surface p-3 lg:block">
           <h2 class="mb-3 text-[11px] font-semibold uppercase tracking-wider text-gf-text-weak">Residents</h2>
-          <div v-if="regionCharacters.length === 0 && regionAnimals.length === 0" class="text-sm text-gf-text-faint">
+          <div v-if="regionCharacters.length === 0 && regionAnimals.length === 0 && awayCharacters.length === 0" class="text-sm text-gf-text-faint">
             No residents in this region yet.
           </div>
           <div v-else class="space-y-4">
@@ -224,6 +224,27 @@
                       <span class="truncate">{{ getCharacterStatus(character.id) }}</span>
                     </div>
                   </div>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="awayCharacters.length > 0">
+              <h3 class="mb-2 text-[10px] font-semibold uppercase tracking-wider text-gf-text-faint">
+                Away ({{ awayCharacters.length }})
+              </h3>
+              <div class="space-y-1.5">
+                <div
+                  v-for="character in awayCharacters"
+                  :key="character.id"
+                  class="cursor-pointer rounded border border-dashed border-gf-border px-3 py-2 opacity-70 transition-opacity hover:opacity-100"
+                  @click="selectCharacter(character)"
+                  title="Household member currently outside this region"
+                >
+                  <div class="flex items-center justify-between">
+                    <p class="text-sm font-medium text-gf-text-weak">{{ character.name }}, {{ character.age }}</p>
+                    <span class="text-xs">🚶</span>
+                  </div>
+                  <p class="mt-0.5 text-xs text-gf-text-faint">Currently elsewhere</p>
                 </div>
               </div>
             </div>
@@ -350,6 +371,10 @@ interface GetRegionResult {
   } | null
 }
 
+interface GetHouseholdsResult {
+  households?: Array<{ characters?: Array<{ id: string; name: string; age: number }> }>
+}
+
 function normalizeRouteParam(value: string | string[] | undefined): string | undefined {
   if (Array.isArray(value)) {
     return value[0]
@@ -368,6 +393,7 @@ const showActivityLog = ref(false)
 const showMobileNav = ref(false)
 const regionCharacters = ref<CharacterSummary[]>([])
 const regionAnimals = ref<AnimalSummary[]>([])
+const regionHouseholdMembers = ref<{ id: string; name: string; age: number }[]>([])
 const selectedCharacterForPanel = ref<CharacterSummary | null>(null)
 const selectedCharacterWorldId = ref<string | null>(null)
 const selectedAnimalForPanel = ref<AnimalSummary | null>(null)
@@ -381,6 +407,12 @@ const showCharacterPane = computed(() =>
     selectedCharacterWorldId.value === currentWorldId.value
   )
 )
+
+// Household members not currently present on a lot in this region.
+const awayCharacters = computed(() => {
+  const present = new Set(regionCharacters.value.map((c) => c.id))
+  return regionHouseholdMembers.value.filter((member) => !present.has(member.id))
+})
 
 // Base path for region-scoped nav items (null when no region is active).
 const regionBase = computed(() =>
@@ -463,17 +495,23 @@ const loadRegionData = async () => {
   if (!currentRegionId.value) {
     regionCharacters.value = []
     regionAnimals.value = []
+    regionHouseholdMembers.value = []
     return
   }
 
   try {
-    const regionData = await client.request<GetRegionResult>(queries.getRegion, { id: currentRegionId.value })
+    const [regionData, householdsData] = await Promise.all([
+      client.request<GetRegionResult>(queries.getRegion, { id: currentRegionId.value }),
+      client.request<GetHouseholdsResult>(queries.getHouseholds, { regionId: currentRegionId.value })
+    ])
     regionCharacters.value = regionData.region?.characters || []
     regionAnimals.value = regionData.region?.animals || []
+    regionHouseholdMembers.value = (householdsData.households || []).flatMap((h) => h.characters || [])
   } catch (e) {
     console.error('Failed to load region data:', e)
     regionCharacters.value = []
     regionAnimals.value = []
+    regionHouseholdMembers.value = []
   }
 }
 
