@@ -1,26 +1,24 @@
 <template>
-  <div>
+  <div class="p-4">
     <Breadcrumbs :crumbs="breadcrumbs" />
 
     <AsyncContainer :loading="loading" :error="error ?? undefined">
-      <div class="max-w-4xl mx-auto">
+      <div class="max-w-5xl">
       <!-- Space Header -->
-      <div class="mb-6">
-        <div class="flex items-center gap-3 mb-2">
-          <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">{{ space?.name || 'Loading...' }}</h1>
-        </div>
-        <p class="text-gray-600 dark:text-gray-300">{{ space?.description }}</p>
+      <div class="mb-4">
+        <h1 class="text-xl font-semibold text-gf-text">{{ space?.name || 'Loading…' }}</h1>
+        <p class="mt-0.5 text-sm text-gf-text-weak">{{ space?.description }}</p>
       </div>
 
       <!-- Items Section -->
-      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+      <div class="rounded border border-gf-border bg-gf-surface p-4">
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Items in this Space</h2>
+          <h2 class="text-[11px] font-semibold uppercase tracking-wider text-gf-text-weak">Items in this space</h2>
           <button
             @click="showAddItemForm = !showAddItemForm"
-            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+            class="rounded border border-gf-border bg-gf-blue/15 px-3 py-1 text-xs font-medium text-gf-blue hover:bg-gf-blue/25"
           >
-            {{ showAddItemForm ? 'Cancel' : '+ Add Item' }}
+            {{ showAddItemForm ? 'Cancel' : '+ Add item' }}
           </button>
         </div>
 
@@ -152,11 +150,11 @@
 
         <!-- Items List -->
         <div v-if="items.length === 0 && !showAddItemForm" class="text-center py-12">
-          <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-16 h-16 mx-auto text-gf-text-faint mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
           </svg>
-          <p class="text-gray-500 dark:text-gray-300 text-lg">This room is empty.</p>
-          <p class="text-gray-400 text-sm mt-2">Click "Add Item" to place something here.</p>
+          <p class="text-gf-text-weak text-lg">This room is empty.</p>
+          <p class="text-gf-text-faint text-sm mt-2">Click "Add item" to place something here.</p>
         </div>
 
         <div v-else-if="items.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -295,18 +293,18 @@
 
               <div class="flex justify-between items-start mb-2">
                 <div class="flex-1">
-                  <h3 class="font-medium text-sm text-gray-900 dark:text-gray-100">{{ item.name }}</h3>
-                  <p class="text-xs text-gray-600 dark:text-gray-300 mt-1">{{ item.description }}</p>
+                  <h3 class="text-sm font-medium text-gf-text">{{ item.name }}</h3>
+                  <p class="mt-1 text-xs text-gf-text-weak">{{ item.description }}</p>
                   <div v-if="item.itemRoles.length" class="mt-2 flex flex-wrap gap-1">
                     <span
                       v-for="role in item.itemRoles"
                       :key="role"
-                      class="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-700 dark:bg-slate-700 dark:text-slate-100"
+                      class="inline-flex items-center rounded border border-gf-border bg-gf-surface-3 px-2 py-0.5 text-[10px] font-medium text-gf-text-weak"
                     >
                       {{ formatItemRole(role) }}
                     </span>
                   </div>
-                  <p v-if="item.comfort > 0" class="mt-2 text-[10px] font-medium text-gray-500 dark:text-gray-400">
+                  <p v-if="item.comfort > 0" class="mt-2 text-[10px] font-medium text-gf-text-faint">
                     Comfort +{{ item.comfort.toFixed(2) }}
                   </p>
                 </div>
@@ -338,23 +336,23 @@
                   <div
                     v-for="slotIndex in item.maxSimultaneousUsers"
                     :key="slotIndex"
-                    class="border-2 rounded p-1.5 min-h-[48px] flex flex-col items-center justify-center"
+                    class="flex min-h-[48px] flex-col items-center justify-center rounded border p-1.5"
                     :class="item.activeUsers && item.activeUsers[slotIndex - 1]
-                      ? 'border-blue-400 bg-blue-50 dark:bg-blue-950 dark:border-blue-600'
-                      : 'border-gray-300 bg-gray-100 dark:bg-gray-700 dark:border-gray-600'"
+                      ? 'border-gf-blue bg-gf-blue/15'
+                      : 'border-gf-border bg-gf-bg'"
                   >
                     <div
                       v-if="item.activeUsers && item.activeUsers[slotIndex - 1]"
                       class="text-center"
                     >
-                      <div class="text-[10px] font-medium text-blue-800 dark:text-blue-200 truncate">
+                      <div class="truncate text-[10px] font-medium text-gf-text">
                         👤 {{ item.activeUsers[slotIndex - 1].name }}
                       </div>
-                      <div class="text-[9px] text-blue-600 dark:text-blue-300 mt-0.5 truncate">
+                      <div class="mt-0.5 truncate text-[9px] text-gf-blue">
                         {{ getCharacterActivity(item.activeUsers[slotIndex - 1].id) }}
                       </div>
                     </div>
-                    <span v-else class="text-[10px] text-gray-400 dark:text-gray-500">
+                    <span v-else class="text-[10px] text-gf-text-faint">
                       —
                     </span>
                   </div>
@@ -366,7 +364,7 @@
                 <span
                   v-for="affordance in getItemAffordances(item)"
                   :key="affordance.action"
-                  class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+                  class="inline-flex items-center rounded border border-gf-purple/30 bg-gf-purple/15 px-2 py-0.5 text-[10px] font-medium text-gf-purple"
                 >
                   {{ affordance.action }} ({{ affordance.weight }})
                 </span>
@@ -376,7 +374,7 @@
                   v-for="activity in getItemActions(item)"
                   :key="activity"
                   type="button"
-                  class="rounded bg-blue-600 px-2 py-1 text-[10px] text-white"
+                  class="rounded border border-gf-border bg-gf-blue/15 px-2 py-1 text-[10px] text-gf-blue hover:bg-gf-blue/25"
                   @click="queueItemAction(item, activity)"
                 >
                   Send {{ activeCharacter.name }} to {{ activity }}
@@ -388,12 +386,12 @@
 
         <!-- Idle Characters Section -->
         <div v-if="idleCharacters.length > 0" class="mt-6">
-          <h2 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">Idle</h2>
+          <h2 class="mb-3 text-[11px] font-semibold uppercase tracking-wider text-gf-text-weak">Idle</h2>
           <div class="flex flex-wrap gap-2">
             <span
               v-for="char in idleCharacters"
               :key="char.id"
-              class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium border-2 border-blue-400 bg-blue-50 text-blue-800 dark:bg-blue-950 dark:border-blue-600 dark:text-blue-200"
+              class="inline-flex items-center rounded border border-gf-border bg-gf-surface-2 px-3 py-1.5 text-sm font-medium text-gf-text"
             >
               {{ char.name }}
             </span>
@@ -931,13 +929,13 @@ function queueItemAction(item: SpaceItem, action: ActionName) {
 
 function getItemCardClass(item: ItemCard): string {
   if (editingItem.value?.id === item.id) {
-    return 'border-blue-400 bg-blue-50 dark:bg-blue-950'
+    return 'border-gf-blue bg-gf-blue/10'
   }
 
   if (item.activeUsers?.length) {
-    return 'border-blue-400 bg-blue-50 shadow-md ring-2 ring-blue-200 dark:border-blue-500 dark:bg-blue-950/40 dark:ring-blue-800'
+    return 'border-gf-blue bg-gf-blue/10 ring-1 ring-gf-blue/40'
   }
 
-  return 'border-gray-200 bg-gray-50 hover:border-blue-300 dark:bg-gray-900'
+  return 'border-gf-border bg-gf-surface-2 hover:border-gf-border-weak'
 }
 </script>
