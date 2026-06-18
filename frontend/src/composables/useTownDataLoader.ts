@@ -66,7 +66,7 @@ export function useTownDataLoader() {
         })
       )
 
-      simulationStore.loadWorldData(lotsWithSpaces, regionId)
+      simulationStore.loadWorldData(lotsWithSpaces, regionId, worldId)
 
       const households = householdsData.households || []
       const characters = regionData.region?.characters || []

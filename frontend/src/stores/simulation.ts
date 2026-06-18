@@ -58,6 +58,9 @@ export const useSimulationStore = defineStore('simulation', () => {
   // Happiness history ring buffer (sampled once per tick) for time-series panels
   const happinessHistory: Ref<HappinessSample[]> = ref([])
 
+  // The world the in-memory simulation is currently scoped to (worlds are isolated)
+  const activeWorldId: Ref<string | null> = ref(null)
+
   // Character state (needs & cooldowns)
   // Structure: { [characterId]: { needs: {...}, cooldowns: {...}, currentAction: string, location: {...} } }
   const characterStates: Ref<Record<string, CharacterState>> = ref({})
@@ -183,11 +186,27 @@ export const useSimulationStore = defineStore('simulation', () => {
   )
 
   /**
-   * Load world data (lots, spaces, items) for pathfinding
+   * Load world data (lots, spaces, items) for pathfinding.
+   *
+   * Worlds are isolated: when the active world changes, the previous world's
+   * in-memory simulation is frozen and cleared so only the active world's
+   * residents exist, tick, and can be reached by pathfinding. This prevents
+   * characters from wandering across worlds via accumulated state.
+   *
    * @param lots - Array of lot objects with indoorRooms and outdoorAreas
    * @param regionId - Region ID that these lots belong to
+   * @param worldId - World the lots belong to (scopes the simulation)
    */
-  function loadWorldData(lots: InputLot[], regionId: string): void {
+  function loadWorldData(lots: InputLot[], regionId: string, worldId?: string): void {
+    if (worldId && worldId !== activeWorldId.value) {
+      characterStates.value = {}
+      itemOccupancy.value = {}
+      happinessHistory.value = []
+    }
+    if (worldId) {
+      activeWorldId.value = worldId
+    }
+
     worldData.value = buildWorldData(lots, regionId)
 
     for (const state of Object.values(characterStates.value)) {
@@ -211,6 +230,7 @@ export const useSimulationStore = defineStore('simulation', () => {
     isPaused,
     activityLog,
     happinessHistory,
+    activeWorldId,
     characterStates,
     worldData,
     autoTickSpeed,

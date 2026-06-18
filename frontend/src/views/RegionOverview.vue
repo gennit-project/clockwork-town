@@ -520,7 +520,7 @@ const loadData = async () => {
 
     lotsWithSpaces.value = lotsWithSpacesData
 
-    simulationStore.loadWorldData(lotsWithSpacesData, regionId.value)
+    simulationStore.loadWorldData(lotsWithSpacesData, regionId.value, worldId.value)
 
     const households = householdsData.households || []
 

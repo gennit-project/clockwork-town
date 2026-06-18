@@ -673,7 +673,7 @@ const loadData = async () => {
       }
     }
 
-    simulationStore.loadWorldData(lotsWithSpacesData, regionId.value)
+    simulationStore.loadWorldData(lotsWithSpacesData, regionId.value, worldId.value)
 
     for (const character of characters) {
       const characterHousehold = householdsData.households.find((household) =>

@@ -428,7 +428,7 @@ const loadData = async () => {
       }
     }
 
-    simulationStore.loadWorldData(lotsWithSpacesData, regionId.value)
+    simulationStore.loadWorldData(lotsWithSpacesData, regionId.value, worldId.value)
 
     const currentLotData = lotsWithSpacesData.find(currentLot => currentLot.id === lotId.value)
     if (currentLotData) {
