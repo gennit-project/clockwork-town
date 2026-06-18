@@ -1,3 +1,74 @@
 @import "tailwindcss";
 
 @variant dark (&:where(.dark, .dark *));
+
+/*
+ * Grafana-dark design tokens.
+ * Exposed as Tailwind v4 theme colors so utilities like `bg-gf-surface`,
+ * `text-gf-text`, `border-gf-border` are generated, and the same values are
+ * available as CSS variables (var(--color-gf-...)) for component-scoped styles.
+ */
+@theme {
+  /* Surfaces */
+  --color-gf-bg: #111217;
+  --color-gf-surface: #181b1f;
+  --color-gf-surface-2: #22252b;
+  --color-gf-surface-3: #2a2d34;
+
+  /* Borders */
+  --color-gf-border: #2c3235;
+  --color-gf-border-weak: #343b40;
+
+  /* Text */
+  --color-gf-text: #d8d9da;
+  --color-gf-text-weak: #9fa7b3;
+  --color-gf-text-faint: #6e7681;
+
+  /* Accent + status */
+  --color-gf-blue: #3274d9;
+  --color-gf-blue-hover: #5a8ee0;
+  --color-gf-green: #73bf69;
+  --color-gf-amber: #ff9830;
+  --color-gf-red: #f2495c;
+  --color-gf-purple: #b877d9;
+
+  --font-mono: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-gf-bg);
+  color: var(--color-gf-text);
+  font-family: Inter, Roboto, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Thin, dark Grafana-style scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-gf-surface-3) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--color-gf-surface-3);
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}

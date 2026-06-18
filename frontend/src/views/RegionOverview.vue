@@ -1,41 +1,71 @@
 <template>
-  <div class="h-screen flex flex-col">
+  <div class="flex h-full flex-col p-4">
     <Breadcrumbs :crumbs="breadcrumbs" />
 
-    <div class="flex justify-between items-center mb-6">
-      <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Region Overview: {{ region?.name || 'Loading...' }}</h1>
-      <div class="flex space-x-3 items-center">
-        <!-- Expand/Collapse All Button -->
+    <div class="mb-4 flex items-center justify-between gap-3">
+      <h1 class="text-xl font-semibold text-gf-text">Region Overview: {{ region?.name || 'Loading…' }}</h1>
+      <div class="flex items-center gap-2">
         <button
+          v-if="viewMode === 'rooms'"
           @click="toggleAllLots"
-          class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md font-medium"
+          class="rounded border border-gf-border bg-gf-surface px-3 py-1.5 text-sm text-gf-text-weak hover:bg-gf-surface-2"
           title="Expand or collapse all lot cards"
         >
-          {{ allLotsExpanded ? '▼ Collapse All' : '▶ Expand All' }}
+          {{ allLotsExpanded ? 'Collapse all' : 'Expand all' }}
         </button>
-
-        <!-- Debug Toggle Button -->
         <button
           @click="showDebugPanel = !showDebugPanel"
-          class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-md font-medium"
+          class="rounded border border-gf-border bg-gf-surface px-3 py-1.5 text-sm text-gf-text-weak hover:bg-gf-surface-2"
           title="Toggle debug action panel"
         >
-          🔧 Debug
+          Debug
         </button>
-
         <button
           @click="showEditModal = true"
-          class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md"
+          class="rounded border border-gf-border bg-gf-surface px-3 py-1.5 text-sm text-gf-text-weak hover:bg-gf-surface-2"
         >
-          Edit Region
+          Edit region
         </button>
         <router-link
           :to="`/world/${worldId}/region/${regionId}/lots`"
-          class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+          class="rounded border border-gf-border bg-gf-blue/15 px-3 py-1.5 text-sm text-gf-blue hover:bg-gf-blue/25"
         >
-          Manage Lots & Households
+          Manage lots &amp; households
         </router-link>
       </div>
+    </div>
+
+    <!-- Control bar -->
+    <div class="mb-3 flex flex-wrap items-center gap-2 rounded border border-gf-border bg-gf-surface px-2 py-1.5">
+      <div class="flex overflow-hidden rounded border border-gf-border">
+        <button
+          @click="viewMode = 'map'"
+          class="px-3 py-1 text-xs font-medium"
+          :class="viewMode === 'map' ? 'bg-gf-blue/20 text-gf-blue' : 'text-gf-text-weak hover:bg-gf-surface-2'"
+        >
+          Node map
+        </button>
+        <button
+          @click="viewMode = 'rooms'"
+          class="px-3 py-1 text-xs font-medium"
+          :class="viewMode === 'rooms' ? 'bg-gf-blue/20 text-gf-blue' : 'text-gf-text-weak hover:bg-gf-surface-2'"
+        >
+          Rooms
+        </button>
+      </div>
+      <template v-if="viewMode === 'map'">
+        <span class="ml-1 text-xs text-gf-text-faint">Fill by</span>
+        <select
+          v-model="fillMetric"
+          class="rounded border border-gf-border bg-gf-bg px-2 py-1 text-xs text-gf-text focus:outline-none"
+        >
+          <option v-for="opt in FILL_OPTIONS" :key="opt.value" :value="opt.value" class="bg-gf-surface">
+            {{ opt.label }}
+          </option>
+        </select>
+        <span class="rounded border border-gf-border bg-gf-bg px-2 py-1 text-xs text-gf-text-faint">avg</span>
+        <span class="rounded border border-gf-border bg-gf-bg px-2 py-1 text-xs text-gf-text-faint">Size by: —</span>
+      </template>
     </div>
 
     <!-- Debug Panel -->
@@ -52,44 +82,46 @@
       empty-message="No lots in this region yet."
     >
       <template #empty>
-        <p class="text-gray-500 dark:text-gray-300 mb-4">No lots in this region yet.</p>
+        <p class="mb-4 text-gf-text-weak">No lots in this region yet.</p>
         <router-link
           :to="`/world/${worldId}/region/${regionId}`"
-          class="text-blue-600 hover:text-blue-800 font-medium"
+          class="font-medium text-gf-blue hover:underline"
         >
           Go to Region to create lots
         </router-link>
       </template>
 
-      <div class="flex-1 flex gap-4 p-4 overflow-auto">
-      <!-- Three Column Layout -->
-      <!-- Residential Column -->
-      <LotColumn
-        title="Residential"
-        :lots="residentialLots"
-        :world-id="worldId || ''"
-        :region-id="regionId || ''"
-        :expanded-lots="expandedLots"
-        :characters-by-lot="charactersByLot"
-        :characters-by-space="charactersBySpace"
-        variant="blue"
-        empty-message="No residential lots yet"
-        @toggle-expanded="toggleLotRooms"
-      />
+      <!-- Node-health host map (default) -->
+      <Panel v-if="viewMode === 'map'" title="Resident node health" class="flex-1 overflow-auto">
+        <HexMap :groups="hexGroups" :legend-label="fillLabel" @select="onSelectHex" />
+      </Panel>
 
-      <!-- Community Column -->
-      <LotColumn
-        title="Community"
-        :lots="communityLots"
-        :world-id="worldId || ''"
-        :region-id="regionId || ''"
-        :expanded-lots="expandedLots"
-        :characters-by-lot="charactersByLot"
-        :characters-by-space="charactersBySpace"
-        variant="green"
-        empty-message="No community lots yet"
-        @toggle-expanded="toggleLotRooms"
-      />
+      <!-- Structural room view -->
+      <div v-else class="flex flex-1 gap-4 overflow-auto pt-1">
+        <LotColumn
+          title="Residential"
+          :lots="residentialLots"
+          :world-id="worldId || ''"
+          :region-id="regionId || ''"
+          :expanded-lots="expandedLots"
+          :characters-by-lot="charactersByLot"
+          :characters-by-space="charactersBySpace"
+          variant="blue"
+          empty-message="No residential lots yet"
+          @toggle-expanded="toggleLotRooms"
+        />
+        <LotColumn
+          title="Community"
+          :lots="communityLots"
+          :world-id="worldId || ''"
+          :region-id="regionId || ''"
+          :expanded-lots="expandedLots"
+          :characters-by-lot="charactersByLot"
+          :characters-by-space="charactersBySpace"
+          variant="green"
+          empty-message="No community lots yet"
+          @toggle-expanded="toggleLotRooms"
+        />
       </div>
     </AsyncContainer>
 
@@ -145,20 +177,58 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { gql } from 'graphql-request'
+import { useRouter } from 'vue-router'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
 import AsyncContainer from '../components/AsyncContainer.vue'
 import Modal from '../components/Modal.vue'
+import Panel from '../components/Panel.vue'
 import LotColumn from '../components/LotColumn.vue'
 import DebugActionPanel from '../components/DebugActionPanel.vue'
+import HexMap, { type HexGroup } from '../components/charts/HexMap.vue'
 import { client, queries } from '../graphql'
 import { useSimulationStore } from '../stores/simulation'
 import { useRouteParams } from '../composables/useRouteParams'
 import { useBreadcrumbs } from '../composables/useBreadcrumbs'
-import type { InputLot } from '../stores/types'
+import { computeCharacterHappiness } from '../stores/utils/happinessMetrics'
+import type { InputLot, NeedName } from '../stores/types'
 
 const simulationStore = useSimulationStore()
+const router = useRouter()
 const { worldId, regionId } = useRouteParams()
 const { buildBreadcrumbs } = useBreadcrumbs()
+
+type FillMetric = 'happiness' | NeedName
+
+const viewMode = ref<'map' | 'rooms'>('map')
+const fillMetric = ref<FillMetric>('happiness')
+
+const FILL_OPTIONS: { value: FillMetric; label: string }[] = [
+  { value: 'happiness', label: 'Happiness' },
+  { value: 'food', label: 'Food' },
+  { value: 'sleep', label: 'Sleep' },
+  { value: 'bladder', label: 'Bladder' },
+  { value: 'hygiene', label: 'Hygiene' },
+  { value: 'health', label: 'Health' },
+  { value: 'friends', label: 'Friends' },
+  { value: 'family', label: 'Family' },
+  { value: 'romance', label: 'Romance' },
+  { value: 'fulfillment', label: 'Fulfillment' }
+]
+
+const fillLabel = computed(
+  () => FILL_OPTIONS.find((o) => o.value === fillMetric.value)?.label ?? 'Happiness'
+)
+
+function metricValue(characterId: string): number {
+  const state = simulationStore.characterStates[characterId]
+  if (!state) {
+    return 0
+  }
+  if (fillMetric.value === 'happiness') {
+    return computeCharacterHappiness(state.needs)
+  }
+  return state.needs[fillMetric.value] ?? 0
+}
 
 interface WorldSummary {
   id: string
@@ -287,6 +357,43 @@ const charactersBySpace = computed<Record<string, CharacterSummary[]>>(() => {
   })
   return bySpace
 })
+
+const hexGroups = computed<HexGroup[]>(() => {
+  const groups: HexGroup[] = []
+  const claimed = new Set<string>()
+
+  for (const lot of lotsWithSpaces.value) {
+    const occupants = charactersByLot.value[lot.id] || []
+    occupants.forEach((c) => claimed.add(c.id))
+    groups.push({
+      key: lot.id,
+      label: lot.name,
+      tint: lot.lotType === 'RESIDENTIAL' ? 'rgba(50,116,217,0.06)' : 'rgba(115,191,105,0.06)',
+      nodes: occupants.map((c) => ({ id: c.id, name: c.name, value: metricValue(c.id) }))
+    })
+  }
+
+  // Residents currently outside this region's known lots.
+  const elsewhere = characters.value.filter((c) => !claimed.has(c.id))
+  if (elsewhere.length > 0) {
+    groups.push({
+      key: '__elsewhere__',
+      label: 'Elsewhere',
+      nodes: elsewhere.map((c) => ({ id: c.id, name: c.name, value: metricValue(c.id) }))
+    })
+  }
+
+  return groups
+})
+
+function onSelectHex(characterId: string) {
+  const state = simulationStore.characterStates[characterId]
+  const lotId = state?.location?.lotId
+  const spaceId = state?.location?.spaceId
+  if (worldId.value && regionId.value && lotId && spaceId) {
+    router.push(`/world/${worldId.value}/region/${regionId.value}/lot/${lotId}/space/${spaceId}`)
+  }
+}
 
 const allLotsExpanded = computed(() => {
   const lotIds = Object.keys(expandedLots.value)

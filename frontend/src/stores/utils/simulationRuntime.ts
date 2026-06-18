@@ -5,6 +5,7 @@ import type {
   AutoTickSpeed,
   CharacterRelationship,
   CharacterState,
+  HappinessSample,
   Intent,
   ItemOccupancy,
   SimulationDateTime,
@@ -32,6 +33,11 @@ import { progressActiveTask } from './taskProgression'
 import { executeTick as runTick } from './tickExecution'
 import { createSimulationDateTime } from './simulationCalendar'
 import {
+  HAPPINESS_HISTORY_LIMIT,
+  computeCharacterHappiness,
+  computeTownHappiness
+} from './happinessMetrics'
+import {
   decayCharacterRelationships,
   recordRelationshipConversation,
   recordRelationshipDirectContact,
@@ -52,6 +58,7 @@ export interface SimulationRuntimeRefs {
   itemOccupancy: Ref<ItemOccupancy>
   activeCharacterId: Ref<string | null>
   autoTickSpeed: Ref<AutoTickSpeed>
+  happinessHistory: Ref<HappinessSample[]>
 }
 
 export interface SimulationRuntimeDependencies {
@@ -539,6 +546,30 @@ export function createSimulationRuntime(
       },
       progressTask
     })
+
+    recordHappinessSample()
+  }
+
+  function recordHappinessSample() {
+    const states = refs.characterStates.value
+    const perCharacter: Record<string, number> = {}
+    for (const [characterId, state] of Object.entries(states)) {
+      perCharacter[characterId] = computeCharacterHappiness(state.needs)
+    }
+
+    refs.happinessHistory.value.push({
+      tick: refs.currentTick.value,
+      iso: refs.simulationDateTime.value.iso,
+      town: computeTownHappiness(states),
+      perCharacter
+    })
+
+    if (refs.happinessHistory.value.length > HAPPINESS_HISTORY_LIMIT) {
+      refs.happinessHistory.value.splice(
+        0,
+        refs.happinessHistory.value.length - HAPPINESS_HISTORY_LIMIT
+      )
+    }
   }
 
   function pauseAutoTick() {
@@ -578,6 +609,7 @@ export function createSimulationRuntime(
     refs.characterStates.value = {}
     refs.itemOccupancy.value = {}
     refs.activeCharacterId.value = null
+    refs.happinessHistory.value = []
     logger.logSimulationReset()
   }
 

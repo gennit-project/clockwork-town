@@ -50,6 +50,17 @@ export interface Needs {
   fulfillment: number
 }
 
+/**
+ * One sampled point of happiness history, captured per tick for time-series panels.
+ * `town` and each value in `perCharacter` are on a 0..1 scale.
+ */
+export interface HappinessSample {
+  tick: number
+  iso: string
+  town: number
+  perCharacter: Record<string, number>
+}
+
 export interface Cooldowns {
   eat: number
   sleep: number

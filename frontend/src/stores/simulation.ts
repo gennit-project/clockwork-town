@@ -7,6 +7,7 @@ import type {
   WorldData,
   ItemOccupancy,
   ActivityLogEntry,
+  HappinessSample,
   Intent,
   InputLot,
   SimulationDateTime,
@@ -53,6 +54,9 @@ export const useSimulationStore = defineStore('simulation', () => {
 
   // Activity log (for UI display)
   const activityLog: Ref<ActivityLogEntry[]> = ref([])
+
+  // Happiness history ring buffer (sampled once per tick) for time-series panels
+  const happinessHistory: Ref<HappinessSample[]> = ref([])
 
   // Character state (needs & cooldowns)
   // Structure: { [characterId]: { needs: {...}, cooldowns: {...}, currentAction: string, location: {...} } }
@@ -166,7 +170,8 @@ export const useSimulationStore = defineStore('simulation', () => {
       worldData,
       itemOccupancy,
       activeCharacterId: ref<string | null>(null),
-      autoTickSpeed
+      autoTickSpeed,
+      happinessHistory
     },
     {
       recordShortTermMemory,
@@ -205,6 +210,7 @@ export const useSimulationStore = defineStore('simulation', () => {
     simulationDateTime,
     isPaused,
     activityLog,
+    happinessHistory,
     characterStates,
     worldData,
     autoTickSpeed,

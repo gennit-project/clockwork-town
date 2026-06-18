@@ -2,6 +2,8 @@ import { createRouter, createWebHistory } from 'vue-router'
 import WorldList from './views/WorldList.vue'
 import RegionList from './views/RegionList.vue'
 import RegionOverview from './views/RegionOverview.vue'
+import TownDashboard from './views/TownDashboard.vue'
+import ServiceDeskStub from './views/ServiceDeskStub.vue'
 import ActivityLog from './views/ActivityLog.vue'
 import LotList from './views/LotList.vue'
 import SpaceList from './views/SpaceList.vue'
@@ -47,6 +49,11 @@ export const router = createRouter({
       component: RegionOverview
     },
     {
+      path: '/world/:worldId/region/:regionId/dashboard',
+      name: 'town-dashboard',
+      component: TownDashboard
+    },
+    {
       path: '/world/:worldId/region/:regionId/activity-log',
       name: 'activity-log',
       component: ActivityLog
@@ -85,6 +92,64 @@ export const router = createRouter({
       path: '/world/:worldId/region/:regionId/character/:characterId/edit',
       name: 'character-edit',
       component: CharacterEditor
+    },
+    {
+      path: '/tickets',
+      name: 'tickets',
+      component: ServiceDeskStub,
+      meta: {
+        sectionTitle: 'Tickets',
+        sectionBlurb:
+          'Resident incidents — unmet wants, complaints, grief, and disapproval reactions — will be filed here as the desire/complaint systems land.'
+      }
+    },
+    {
+      path: '/alerts',
+      name: 'alerts',
+      component: ServiceDeskStub,
+      meta: {
+        sectionTitle: 'Alerts',
+        sectionBlurb:
+          'Threshold-based pages: critical needs, value-neglect, and advance death warnings will surface here.'
+      }
+    },
+    {
+      path: '/calendar',
+      name: 'calendar',
+      component: ServiceDeskStub,
+      meta: {
+        sectionTitle: 'Calendar',
+        sectionBlurb:
+          'Household schedules, meal rotas, work shifts, and auto-proposed hangouts will be managed from this view.'
+      }
+    },
+    {
+      path: '/analytics',
+      name: 'analytics',
+      component: ServiceDeskStub,
+      meta: {
+        sectionTitle: 'Analytics',
+        sectionBlurb: 'Cross-town trends and cohort breakdowns will live here. For now, see the region dashboard.'
+      }
+    },
+    {
+      path: '/reports',
+      name: 'reports',
+      component: ServiceDeskStub,
+      meta: {
+        sectionTitle: 'Reports',
+        sectionBlurb: 'Scheduled summaries and exports will live here.'
+      }
+    },
+    {
+      path: '/settings',
+      name: 'settings',
+      component: ServiceDeskStub,
+      meta: {
+        sectionTitle: 'Settings',
+        sectionBlurb:
+          'World/region config, climate, item & template authoring, and backup/restore will live here.'
+      }
     },
     {
       path: '/library',

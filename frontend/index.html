@@ -1,9 +1,21 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Clockwork Town</title>
+  <style>
+    /* Avoid a light flash before the app mounts */
+    html { background: #111217; }
+  </style>
+  <script>
+    // Apply the user's saved light preference before paint; default is dark.
+    try {
+      if (localStorage.getItem('darkMode') === 'false') {
+        document.documentElement.classList.remove('dark');
+      }
+    } catch (e) {}
+  </script>
 </head>
 <body>
   <div id="app"></div>

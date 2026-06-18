@@ -16,8 +16,9 @@ function applyDarkMode(value: boolean) {
 
 // Initialize from localStorage
 if (typeof window !== 'undefined') {
+  // Dark-first: default to dark (Grafana aesthetic) unless the user explicitly chose light.
   const stored = localStorage.getItem('darkMode')
-  isDark.value = stored === 'true' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches)
+  isDark.value = stored === null ? true : stored === 'true'
   applyDarkMode(isDark.value)
 }
 
