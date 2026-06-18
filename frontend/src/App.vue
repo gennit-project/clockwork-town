@@ -187,64 +187,44 @@
         <!-- Right sidebar - Residents -->
         <aside v-if="currentRegionId" class="hidden w-80 shrink-0 overflow-y-auto border-l border-gf-border bg-gf-surface p-3 lg:block">
           <h2 class="mb-3 text-[11px] font-semibold uppercase tracking-wider text-gf-text-weak">Residents</h2>
-          <div v-if="regionCharacters.length === 0 && regionAnimals.length === 0 && awayCharacters.length === 0" class="text-sm text-gf-text-faint">
+          <div v-if="residentHouseholds.length === 0 && regionAnimals.length === 0" class="text-sm text-gf-text-faint">
             No residents in this region yet.
           </div>
-          <div v-else class="space-y-4">
-            <div v-if="regionCharacters.length > 0">
-              <h3 class="mb-2 text-[10px] font-semibold uppercase tracking-wider text-gf-text-faint">
-                Characters ({{ regionCharacters.length }})
-              </h3>
-              <div class="space-y-1.5">
-                <div
-                  v-for="character in regionCharacters"
-                  :key="character.id"
-                  class="cursor-pointer rounded border px-3 py-2 transition-colors"
-                  :class="characterPanelStore.activeCharacterId === character.id
-                    ? 'border-gf-blue bg-gf-blue/10'
-                    : 'border-gf-border bg-gf-surface-2 hover:border-gf-border-weak'"
-                  @click="selectCharacter(character)"
+          <div v-else class="space-y-3">
+            <div v-for="household in residentHouseholds" :key="household.id">
+              <button
+                type="button"
+                class="mb-1.5 flex w-full items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-gf-text-faint hover:text-gf-text-weak"
+                @click="toggleHousehold(household.id)"
+              >
+                <svg
+                  class="h-3 w-3 shrink-0 transition-transform"
+                  :class="collapsedHouseholds[household.id] ? '' : 'rotate-90'"
+                  fill="none" stroke="currentColor" viewBox="0 0 24 24"
                 >
-                  <div class="mb-1 flex items-center justify-between">
-                    <p class="text-sm font-medium text-gf-text">{{ character.name }}, {{ character.age }}</p>
-                    <span class="text-xs">👤</span>
-                  </div>
-                  <div class="space-y-0.5 text-xs text-gf-text-faint">
-                    <div class="flex items-center gap-1 truncate">
-                      <svg class="h-3 w-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                      <span class="truncate">{{ getCharacterLocation(character.id) }}</span>
-                    </div>
-                    <div class="flex items-center gap-1 truncate text-gf-blue">
-                      <svg class="h-3 w-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                      </svg>
-                      <span class="truncate">{{ getCharacterStatus(character.id) }}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div v-if="awayCharacters.length > 0">
-              <h3 class="mb-2 text-[10px] font-semibold uppercase tracking-wider text-gf-text-faint">
-                Away ({{ awayCharacters.length }})
-              </h3>
-              <div class="space-y-1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+                <span class="truncate">{{ household.name }} ({{ household.members.length }})</span>
+              </button>
+              <div v-show="!collapsedHouseholds[household.id]" class="space-y-1.5">
                 <div
-                  v-for="character in awayCharacters"
-                  :key="character.id"
-                  class="cursor-pointer rounded border border-dashed border-gf-border px-3 py-2 opacity-70 transition-opacity hover:opacity-100"
-                  @click="selectCharacter(character)"
-                  title="Household member currently outside this region"
+                  v-for="member in household.members"
+                  :key="member.id"
+                  class="cursor-pointer rounded border px-3 py-2 transition-colors"
+                  :class="memberCardClass(member)"
+                  @click="selectCharacter(member)"
                 >
                   <div class="flex items-center justify-between">
-                    <p class="text-sm font-medium text-gf-text-weak">{{ character.name }}, {{ character.age }}</p>
-                    <span class="text-xs">🚶</span>
+                    <p class="text-sm font-medium" :class="member.present ? 'text-gf-text' : 'text-gf-text-weak'">
+                      {{ member.name }}, {{ member.age }}
+                    </p>
+                    <span class="text-xs">{{ member.present ? '👤' : '🚶' }}</span>
                   </div>
-                  <p class="mt-0.5 text-xs text-gf-text-faint">Currently elsewhere</p>
+                  <div v-if="member.present" class="mt-0.5 space-y-0.5 text-xs text-gf-text-faint">
+                    <div class="truncate">{{ getCharacterLocation(member.id) }}</div>
+                    <div class="truncate text-gf-blue">{{ getCharacterStatus(member.id) }}</div>
+                  </div>
+                  <p v-else class="mt-0.5 text-xs text-gf-text-faint">Currently elsewhere</p>
                 </div>
               </div>
             </div>
@@ -371,8 +351,20 @@ interface GetRegionResult {
   } | null
 }
 
+interface HouseholdMember {
+  id: string
+  name: string
+  age: number
+}
+
+interface HouseholdGroup {
+  id: string
+  name: string
+  characters: HouseholdMember[]
+}
+
 interface GetHouseholdsResult {
-  households?: Array<{ characters?: Array<{ id: string; name: string; age: number }> }>
+  households?: Array<{ id: string; name: string; characters?: HouseholdMember[] }>
 }
 
 function normalizeRouteParam(value: string | string[] | undefined): string | undefined {
@@ -393,7 +385,8 @@ const showActivityLog = ref(false)
 const showMobileNav = ref(false)
 const regionCharacters = ref<CharacterSummary[]>([])
 const regionAnimals = ref<AnimalSummary[]>([])
-const regionHouseholdMembers = ref<{ id: string; name: string; age: number }[]>([])
+const regionHouseholds = ref<HouseholdGroup[]>([])
+const collapsedHouseholds = ref<Record<string, boolean>>({})
 const selectedCharacterForPanel = ref<CharacterSummary | null>(null)
 const selectedCharacterWorldId = ref<string | null>(null)
 const selectedAnimalForPanel = ref<AnimalSummary | null>(null)
@@ -408,11 +401,31 @@ const showCharacterPane = computed(() =>
   )
 )
 
-// Household members not currently present on a lot in this region.
-const awayCharacters = computed(() => {
+// Town residents grouped by household, each member flagged present (on a lot
+// in this region) or away (elsewhere). Sourced from household membership so the
+// list is the full roster, not just whoever is currently standing here.
+const residentHouseholds = computed(() => {
   const present = new Set(regionCharacters.value.map((c) => c.id))
-  return regionHouseholdMembers.value.filter((member) => !present.has(member.id))
+  return regionHouseholds.value.map((household) => ({
+    id: household.id,
+    name: household.name,
+    members: household.characters.map((member) => ({ ...member, present: present.has(member.id) }))
+  }))
 })
+
+function toggleHousehold(id: string) {
+  collapsedHouseholds.value[id] = !collapsedHouseholds.value[id]
+}
+
+function memberCardClass(member: { id: string; present: boolean }): string {
+  if (characterPanelStore.activeCharacterId === member.id) {
+    return 'border-gf-blue bg-gf-blue/10'
+  }
+  if (!member.present) {
+    return 'border-dashed border-gf-border opacity-70 hover:opacity-100'
+  }
+  return 'border-gf-border bg-gf-surface-2 hover:border-gf-border-weak'
+}
 
 // Base path for region-scoped nav items (null when no region is active).
 const regionBase = computed(() =>
@@ -495,7 +508,7 @@ const loadRegionData = async () => {
   if (!currentRegionId.value) {
     regionCharacters.value = []
     regionAnimals.value = []
-    regionHouseholdMembers.value = []
+    regionHouseholds.value = []
     return
   }
 
@@ -506,12 +519,16 @@ const loadRegionData = async () => {
     ])
     regionCharacters.value = regionData.region?.characters || []
     regionAnimals.value = regionData.region?.animals || []
-    regionHouseholdMembers.value = (householdsData.households || []).flatMap((h) => h.characters || [])
+    regionHouseholds.value = (householdsData.households || []).map((h) => ({
+      id: h.id,
+      name: h.name,
+      characters: h.characters || []
+    }))
   } catch (e) {
     console.error('Failed to load region data:', e)
     regionCharacters.value = []
     regionAnimals.value = []
-    regionHouseholdMembers.value = []
+    regionHouseholds.value = []
   }
 }
 
