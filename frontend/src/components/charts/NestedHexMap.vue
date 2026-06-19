@@ -52,14 +52,18 @@
               @mouseleave="clearHover"
               @click="$emit('select', occ.id)"
             />
-            <polygon
+            <rect
               v-for="obj in room.objects"
               :key="obj.id"
-              :points="obj.points"
+              :x="obj.x"
+              :y="obj.y"
+              :width="obj.size"
+              :height="obj.size"
+              rx="2"
               :fill="obj.fill"
-              stroke="#111217"
+              :stroke="obj.stroke"
               stroke-width="1"
-              class="objhex"
+              class="objsq"
               :aria-label="`${obj.name} · ${obj.inUse ? 'in use' : 'idle'}`"
               @mouseenter="enterObject(obj, room.id)"
               @mouseleave="clearHover"
@@ -88,11 +92,11 @@
     </div>
     <div class="mt-1.5 flex items-center gap-4 text-[11px] text-gf-text-faint">
       <span class="flex items-center gap-1.5">
-        <span class="inline-block h-2.5 w-2.5 rounded-sm" style="background:#343b40" />
+        <span class="inline-block h-2.5 w-2.5 rounded-sm" style="background:#23262b; border:1px solid #3a4048" />
         object · idle
       </span>
       <span class="flex items-center gap-1.5">
-        <span class="inline-block h-2.5 w-2.5 rounded-sm" style="background:#1f9e75" />
+        <span class="inline-block h-2.5 w-2.5 rounded-sm" style="background:rgba(31,158,117,0.28); border:1px solid #1f9e75" />
         object · in use
       </span>
     </div>
@@ -148,15 +152,20 @@ const gradient = VIRIDIS_GRADIENT
 
 // Layout constants
 const CR = 14 // resident hex radius
-const OR = 9 // object (furniture/appliance) hex radius
+const OR = 9 // object cell radius (used for packing/room sizing)
+const OBJ_SIZE = 12 // furniture is a small rounded square, distinct from resident hexes
 const S = CR * 1.18 // resident centre spacing
 const PAD = 9 // padding from outermost cell to room edge
 const MIN_R = CR * 1.7 // smallest room hex (0-1 cells)
 const GAP = 12
 const BOX_W = 300
 
-const OBJ_IDLE = '#343b40'
-const OBJ_IN_USE = '#1f9e75'
+// Furniture recedes (dark fill, faint border) so resident hexes pop; in-use
+// objects get a subtle teal accent rather than a fill that competes with viridis.
+const OBJ_IDLE_FILL = '#23262b'
+const OBJ_IDLE_STROKE = '#3a4048'
+const OBJ_IN_USE_FILL = 'rgba(31, 158, 117, 0.28)'
+const OBJ_IN_USE_STROKE = '#1f9e75'
 
 function hexPoints(cx: number, cy: number, r: number): string {
   const pts: string[] = []
@@ -243,8 +252,11 @@ const renderBuildings = computed(() =>
           name: obj.name,
           inUse: obj.inUse,
           detail: obj.detail,
-          fill: obj.inUse ? OBJ_IN_USE : OBJ_IDLE,
-          points: hexPoints(cx + off.x, cy + off.y, OR)
+          fill: obj.inUse ? OBJ_IN_USE_FILL : OBJ_IDLE_FILL,
+          stroke: obj.inUse ? OBJ_IN_USE_STROKE : OBJ_IDLE_STROKE,
+          x: cx + off.x - OBJ_SIZE / 2,
+          y: cy + off.y - OBJ_SIZE / 2,
+          size: OBJ_SIZE
         }
       })
 
@@ -346,5 +358,11 @@ function clearHover() {
 .hex:hover {
   stroke: #ffffff;
   stroke-width: 2;
+}
+.objsq {
+  transition: stroke 0.1s ease;
+}
+.objsq:hover {
+  stroke: #cdd6f4;
 }
 </style>
