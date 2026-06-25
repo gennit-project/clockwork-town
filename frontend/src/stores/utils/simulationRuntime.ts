@@ -2,6 +2,7 @@ import type { Ref } from 'vue'
 import type {
   ActionName,
   ActivityLogEntry,
+  AnimalState,
   AutoTickSpeed,
   CharacterRelationship,
   CharacterState,
@@ -38,6 +39,7 @@ import {
   computeCharacterHappiness,
   computeTownHappiness
 } from './happinessMetrics'
+import { tickAnimals } from './animalRuntime'
 import {
   decayCharacterRelationships,
   recordRelationshipConversation,
@@ -60,6 +62,7 @@ export interface SimulationRuntimeRefs {
   activeCharacterId: Ref<string | null>
   autoTickSpeed: Ref<AutoTickSpeed>
   happinessHistory: Ref<HappinessSample[]>
+  animalStates: Ref<Record<string, AnimalState>>
 }
 
 export interface SimulationRuntimeDependencies {
@@ -548,6 +551,11 @@ export function createSimulationRuntime(
       progressTask
     })
 
+    tickAnimals({
+      animalStates: refs.animalStates.value,
+      worldData: refs.worldData.value
+    })
+
     recordHappinessSample()
   }
 
@@ -614,6 +622,7 @@ export function createSimulationRuntime(
     refs.itemOccupancy.value = {}
     refs.activeCharacterId.value = null
     refs.happinessHistory.value = []
+    refs.animalStates.value = {}
     logger.logSimulationReset()
   }
 

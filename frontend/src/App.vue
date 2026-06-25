@@ -244,7 +244,11 @@
                     <p class="text-sm font-medium text-gf-text">{{ animal.name }}, {{ animal.age }}</p>
                     <span class="text-xs">🐾</span>
                   </div>
-                  <div v-if="animal.traits && animal.traits.length > 0" class="text-xs text-gf-text-faint">
+                  <div v-if="getAnimalStatus(animal.id)" class="flex items-center gap-1 truncate text-xs text-gf-blue">
+                    <span>🐾</span>
+                    <span class="truncate">{{ getAnimalStatus(animal.id) }}</span>
+                  </div>
+                  <div v-else-if="animal.traits && animal.traits.length > 0" class="text-xs text-gf-text-faint">
                     {{ animal.traits.join(', ') }}
                   </div>
                 </div>
@@ -556,6 +560,26 @@ const selectCharacter = (character: CharacterSummary) => {
 
 const selectAnimal = (animal: AnimalSummary) => {
   selectedAnimalForPanel.value = animal
+}
+
+const ANIMAL_ACTION_VERBS: Record<string, string> = {
+  eat: 'eating',
+  sleep: 'sleeping',
+  relieve: 'relieving itself',
+  play: 'playing',
+  groom: 'grooming',
+  wander: 'wandering',
+  idle: 'resting'
+}
+
+// Live animal status (action + location) from the runtime, or '' if not loaded.
+const getAnimalStatus = (animalId: string): string => {
+  const state = simulationStore.animalStates[animalId]
+  if (!state) {
+    return ''
+  }
+  const verb = ANIMAL_ACTION_VERBS[state.currentAction] || state.currentAction
+  return state.location?.lotName ? `${verb} · ${state.location.lotName}` : verb
 }
 
 const closeCharacterPanel = () => {

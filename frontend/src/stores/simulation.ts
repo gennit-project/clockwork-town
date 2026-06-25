@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { Ref } from 'vue'
 import type {
+  AnimalState,
   AutoTickSpeed,
   CharacterState,
   WorldData,
@@ -28,6 +29,7 @@ import {
 import { buildWorldData } from './utils/pathfinding'
 import { createSimulationRuntime } from './utils/simulationRuntime'
 import { createSimulationDateTime, formatSimulationDateTime } from './utils/simulationCalendar'
+import { INITIAL_ANIMAL_NEEDS } from './config/animalConfig'
 import { deriveAccessibleLotIds } from './utils/accessControl'
 
 interface CharacterSimulationSeed {
@@ -64,6 +66,9 @@ export const useSimulationStore = defineStore('simulation', () => {
   // Character state (needs & cooldowns)
   // Structure: { [characterId]: { needs: {...}, cooldowns: {...}, currentAction: string, location: {...} } }
   const characterStates: Ref<Record<string, CharacterState>> = ref({})
+
+  // Animal runtime state (lean parallel to characterStates), keyed by animal id
+  const animalStates: Ref<Record<string, AnimalState>> = ref({})
 
   // Item occupancy tracking (which characters are using which items right now)
   // Structure: { [itemId]: [characterId1, characterId2, ...] }
@@ -174,7 +179,8 @@ export const useSimulationStore = defineStore('simulation', () => {
       itemOccupancy,
       activeCharacterId: ref<string | null>(null),
       autoTickSpeed,
-      happinessHistory
+      happinessHistory,
+      animalStates
     },
     {
       recordShortTermMemory,
@@ -200,6 +206,7 @@ export const useSimulationStore = defineStore('simulation', () => {
   function loadWorldData(lots: InputLot[], regionId: string, worldId?: string): void {
     if (worldId && worldId !== activeWorldId.value) {
       characterStates.value = {}
+      animalStates.value = {}
       itemOccupancy.value = {}
       happinessHistory.value = []
     }
@@ -209,8 +216,45 @@ export const useSimulationStore = defineStore('simulation', () => {
 
     worldData.value = buildWorldData(lots, regionId)
 
+    const allLotIds = Object.keys(worldData.value.lots)
     for (const state of Object.values(characterStates.value)) {
       state.accessibleLotIds = deriveAccessibleLotIds(state, worldData.value)
+    }
+    // Animals roam freely across the region's lots.
+    for (const animal of Object.values(animalStates.value)) {
+      animal.accessibleLotIds = allLotIds
+    }
+  }
+
+  /**
+   * Initialize an animal's runtime state. Lean parallel to initializeCharacter:
+   * animals start at the region's first residential lot (or first lot) and roam.
+   */
+  function initializeAnimal(animal: { id: string; name: string; traits?: string[] }): void {
+    if (animalStates.value[animal.id]) {
+      return
+    }
+
+    const lots = Object.values(worldData.value.lots)
+    const homeLot = lots.find((lot) => lot.lotType === 'RESIDENTIAL') ?? lots[0]
+    const firstSpaceId = homeLot?.spaceIds[0]
+    const firstSpace = firstSpaceId ? worldData.value.spaces[firstSpaceId] : undefined
+
+    animalStates.value[animal.id] = {
+      name: animal.name,
+      traits: animal.traits ?? [],
+      needs: { ...INITIAL_ANIMAL_NEEDS },
+      currentAction: 'idle',
+      homeLotId: homeLot?.id ?? null,
+      homeLotName: homeLot?.name ?? null,
+      accessibleLotIds: Object.keys(worldData.value.lots),
+      location: {
+        regionId: homeLot?.regionId ?? null,
+        lotId: homeLot?.id ?? null,
+        lotName: homeLot?.name ?? null,
+        spaceId: firstSpace?.id ?? null,
+        spaceName: firstSpace?.name ?? null
+      }
     }
   }
 
@@ -232,6 +276,7 @@ export const useSimulationStore = defineStore('simulation', () => {
     happinessHistory,
     activeWorldId,
     characterStates,
+    animalStates,
     worldData,
     autoTickSpeed,
 
@@ -244,6 +289,7 @@ export const useSimulationStore = defineStore('simulation', () => {
 
     // Actions
     initializeCharacter,
+    initializeAnimal,
     executeTick: runtime.executeTick,
     logActivity: runtime.logActivity,
     applyActionEffects: runtime.applyActionEffects,

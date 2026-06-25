@@ -95,6 +95,33 @@ export interface CharacterLocation {
   spaceName: string | null
 }
 
+// ============================================
+// ANIMAL RUNTIME
+// ============================================
+
+export type AnimalNeedName = 'food' | 'energy' | 'bladder' | 'affection' | 'hygiene'
+
+export interface AnimalNeeds {
+  food: number
+  energy: number
+  bladder: number
+  affection: number
+  hygiene: number
+}
+
+export type AnimalActionName = 'eat' | 'sleep' | 'relieve' | 'play' | 'groom' | 'wander' | 'idle'
+
+export interface AnimalState {
+  name: string
+  traits: string[]
+  needs: AnimalNeeds
+  currentAction: AnimalActionName
+  location: CharacterLocation
+  homeLotId: string | null
+  homeLotName: string | null
+  accessibleLotIds: string[]
+}
+
 export interface CharacterActivity {
   itemId: string | null
   actionName: string | null

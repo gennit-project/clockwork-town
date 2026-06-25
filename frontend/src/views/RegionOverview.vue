@@ -545,6 +545,10 @@ const loadData = async () => {
           }))
         })
       }
+
+      for (const animal of animals.value) {
+        simulationStore.initializeAnimal({ id: animal.id, name: animal.name, traits: animal.traits })
+      }
     } catch (e: unknown) {
       console.error('Error loading characters and animals:', e)
       characters.value = []

@@ -18,6 +18,12 @@ interface RegionCharacter {
   }>
 }
 
+interface RegionAnimal {
+  id: string
+  name: string
+  traits?: string[]
+}
+
 interface HouseholdSummary {
   id: string
   lotId?: string | null
@@ -44,7 +50,7 @@ export function useTownDataLoader() {
       const [lotsData, householdsData, regionData] = await Promise.all([
         client.request<{ lots: InputLot[] }>(queries.getLots, { regionId }),
         client.request<{ households: HouseholdSummary[] }>(queries.getHouseholds, { regionId }),
-        client.request<{ region?: { characters?: RegionCharacter[] } | null }>(queries.getRegion, { id: regionId })
+        client.request<{ region?: { characters?: RegionCharacter[]; animals?: RegionAnimal[] } | null }>(queries.getRegion, { id: regionId })
       ])
 
       const lots = lotsData.lots || []
@@ -70,6 +76,11 @@ export function useTownDataLoader() {
 
       const households = householdsData.households || []
       const characters = regionData.region?.characters || []
+      const animals = regionData.region?.animals || []
+
+      for (const animal of animals) {
+        simulationStore.initializeAnimal({ id: animal.id, name: animal.name, traits: animal.traits })
+      }
 
       for (const character of characters) {
         const household = households.find((entry) =>

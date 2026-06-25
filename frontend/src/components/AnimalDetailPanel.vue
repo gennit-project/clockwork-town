@@ -34,6 +34,29 @@
           </span>
         </div>
 
+        <!-- Live runtime status -->
+        <div v-if="state" class="mb-4 rounded-xl bg-gf-surface-2 p-4">
+          <div class="mb-2 flex items-center justify-between">
+            <p class="text-sm font-medium text-gf-text-weak">Status</p>
+            <span class="text-xs text-gf-text-faint">{{ locationText }}</span>
+          </div>
+          <div class="mb-3 flex items-center gap-2 text-sm text-gf-text">
+            <span>🐾</span>
+            <span>{{ actionVerb }}</span>
+            <span class="ml-auto text-xs text-gf-text-faint">contentment {{ pct(wellbeing) }}</span>
+          </div>
+          <div class="space-y-1.5">
+            <div v-for="need in needs" :key="need.name">
+              <div class="mb-0.5 flex justify-between text-[10px] text-gf-text-faint">
+                <span>{{ label(need.name) }}</span><span>{{ pct(need.value) }}</span>
+              </div>
+              <div class="h-1.5 overflow-hidden rounded bg-gf-surface-3">
+                <div class="h-full rounded" :style="{ width: pct(need.value), backgroundColor: needColor(need.value) }" />
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="rounded-xl bg-gf-surface-2 p-4">
           <p class="mb-2 text-sm font-medium text-gf-text-weak">Bio</p>
           <div class="max-h-[50vh] overflow-y-auto pr-1 text-gf-text">
@@ -56,14 +79,46 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import MarkdownRenderer from './MarkdownRenderer.vue'
+import { useSimulationStore } from '../stores/simulation'
+import { computeAnimalWellbeing } from '../stores/utils/animalRuntime'
+import { ANIMAL_NEED_NAMES } from '../stores/config/animalConfig'
+import type { AnimalActionName } from '../stores/types'
 
-defineProps({
-  animal: {
-    type: Object,
-    required: true
-  }
-})
+const props = defineProps<{
+  animal: { id: string; name: string; age?: number; traits?: string[]; bio?: string }
+}>()
 
 defineEmits(['close'])
+
+const store = useSimulationStore()
+const state = computed(() => store.animalStates[props.animal.id])
+
+const ACTION_VERBS: Record<AnimalActionName, string> = {
+  eat: 'eating',
+  sleep: 'sleeping',
+  relieve: 'relieving itself',
+  play: 'playing',
+  groom: 'grooming',
+  wander: 'wandering',
+  idle: 'resting'
+}
+
+const actionVerb = computed(() => (state.value ? ACTION_VERBS[state.value.currentAction] : ''))
+const wellbeing = computed(() => (state.value ? computeAnimalWellbeing(state.value) : 0))
+const needs = computed(() =>
+  state.value ? ANIMAL_NEED_NAMES.map((name) => ({ name, value: state.value!.needs[name] })) : []
+)
+const locationText = computed(() => {
+  const loc = state.value?.location
+  if (!loc?.lotName) {
+    return 'Unknown'
+  }
+  return loc.spaceName ? `${loc.lotName} → ${loc.spaceName}` : loc.lotName
+})
+
+const pct = (v: number) => `${Math.round(v * 100)}%`
+const label = (n: string) => n.charAt(0).toUpperCase() + n.slice(1)
+const needColor = (v: number) => (v < 0.3 ? '#f2495c' : v < 0.55 ? '#ff9830' : '#73bf69')
 </script>
