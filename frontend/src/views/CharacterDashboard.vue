@@ -76,6 +76,11 @@
         <NeedsBarGauge :needs="NEED_NAMES" :values="state.needs" />
       </Panel>
 
+      <!-- Weekly schedule -->
+      <Panel v-if="(state.workSchedule || []).length > 0" title="Schedule" class="mt-3">
+        <WeeklySchedule :entries="scheduleEntries" :today-weekday="simWeekday" :now-minutes="simMinutes" />
+      </Panel>
+
       <!-- Need trend over time -->
       <Panel title="Need trend / time" class="mt-3">
         <NeedTrendHeatmap :history="happinessHistory" :character-id="characterId || ''" :needs="NEED_NAMES" />
@@ -116,6 +121,7 @@ import NeedsBarGauge from '../components/charts/NeedsBarGauge.vue'
 import ResidentRelationships from '../components/ResidentRelationships.vue'
 import MemoryTimeline from '../components/MemoryTimeline.vue'
 import NeedTrendHeatmap from '../components/charts/NeedTrendHeatmap.vue'
+import WeeklySchedule from '../components/WeeklySchedule.vue'
 import { useSimulationStore } from '../stores/simulation'
 import { useTownDataLoader } from '../composables/useTownDataLoader'
 import { getCharacterStatusText } from '../composables/useCharacterStatus'
@@ -160,6 +166,11 @@ const statusTextClass = computed(() => (status.value === 'critical' ? 'text-gf-r
 const actionVerb = computed(() => getCharacterStatusText(state.value))
 
 const nowIso = computed(() => simulationStore.simulationDateTime.iso)
+const simWeekday = computed(() => simulationStore.simulationDateTime.weekday)
+const simMinutes = computed(() => simulationStore.simulationDateTime.hour * 60 + simulationStore.simulationDateTime.minute)
+const scheduleEntries = computed(() =>
+  state.value ? [{ id: characterId.value, name: displayName.value, shifts: state.value.workSchedule || [] }] : []
+)
 
 const residentNames = computed(() => {
   const map: Record<string, string> = {}

@@ -452,7 +452,7 @@ const navItems = computed<NavItem[]>(() => {
     { key: 'logs', label: 'Logs', to: base ? `${base}/activity-log` : '/', routeName: 'activity-log', requiresRegion: true },
     { key: 'tickets', label: 'Tickets', to: '/tickets', routeName: 'tickets' },
     { key: 'alerts', label: 'Alerts', to: '/alerts', routeName: 'alerts' },
-    { key: 'calendar', label: 'Calendar', to: '/calendar', routeName: 'calendar' },
+    { key: 'calendar', label: 'Calendar', to: base ? `${base}/calendar` : '/calendar', routeName: 'calendar-region', requiresRegion: true },
     { key: 'analytics', label: 'Analytics', to: '/analytics', routeName: 'analytics' },
     { key: 'reports', label: 'Reports', to: '/reports', routeName: 'reports' },
     { key: 'library', label: 'Library', to: '/library', routePrefix: '/library' },

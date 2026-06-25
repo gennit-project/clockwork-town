@@ -5,6 +5,7 @@ import RegionOverview from './views/RegionOverview.vue'
 import TownDashboard from './views/TownDashboard.vue'
 import ServiceDeskStub from './views/ServiceDeskStub.vue'
 import CharacterDashboard from './views/CharacterDashboard.vue'
+import CalendarView from './views/CalendarView.vue'
 import ActivityLog from './views/ActivityLog.vue'
 import LotList from './views/LotList.vue'
 import SpaceList from './views/SpaceList.vue'
@@ -53,6 +54,11 @@ export const router = createRouter({
       path: '/world/:worldId/region/:regionId/dashboard',
       name: 'town-dashboard',
       component: TownDashboard
+    },
+    {
+      path: '/world/:worldId/region/:regionId/calendar',
+      name: 'calendar-region',
+      component: CalendarView
     },
     {
       path: '/world/:worldId/region/:regionId/activity-log',
