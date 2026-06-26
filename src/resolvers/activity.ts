@@ -5,7 +5,10 @@ export const ActivityResolvers = {
   Mutation: {
     startActivity: async (_: any, { input }: { input: { characterId: string, activityTypeId?: string, actionName?: string, itemId?: string, note?: string } }) =>
       batch(async () => {
-        const REMOTE_CONTACT_ACTIONS = new Set(["text_romance", "call_romance", "invite_over", "propose_relationship", "call_mom"]);
+        // Actions that don't require a co-located item to perform. Remote
+        // contact (calls/texts) plus pet_animal, whose "target" is the animal
+        // rather than a piece of furniture.
+        const REMOTE_CONTACT_ACTIONS = new Set(["text_romance", "call_romance", "invite_over", "propose_relationship", "call_mom", "pet_animal"]);
         let activityType: any;
         let activityTypeId: string;
 

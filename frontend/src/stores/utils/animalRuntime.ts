@@ -9,7 +9,8 @@ import {
   ANIMAL_ACTION_FOR_NEED,
   ANIMAL_NEED_DECAY,
   ANIMAL_NEED_NAMES,
-  ANIMAL_NEED_THRESHOLD
+  ANIMAL_NEED_THRESHOLD,
+  PET_AFFECTION_BOOST
 } from '../config/animalConfig'
 
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v))
@@ -84,6 +85,16 @@ function applyAnimalAction(animal: AnimalState, action: AnimalActionName, worldD
   }
 
   animal.currentAction = action
+}
+
+/**
+ * Apply a human's pet/play interaction to an animal: a burst of affection and a
+ * visible "playing" state. Called when a character completes a `pet_animal`
+ * action targeting this animal.
+ */
+export function applyPetInteraction(animal: AnimalState): void {
+  animal.needs.affection = clamp01(animal.needs.affection + PET_AFFECTION_BOOST)
+  animal.currentAction = 'play'
 }
 
 export function tickAnimals({

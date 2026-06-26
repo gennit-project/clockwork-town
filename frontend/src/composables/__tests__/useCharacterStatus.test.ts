@@ -34,6 +34,7 @@ function createState(overrides: Partial<CharacterState> = {}): CharacterState {
       view_art: 0,
       view_movie: 0,
       volunteer: 0,
+      pet_animal: 0,
       work: 0
     },
     currentAction: 'idle',

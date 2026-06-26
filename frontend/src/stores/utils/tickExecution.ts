@@ -5,6 +5,7 @@
 import type { Ref } from 'vue'
 import type {
   ActionName,
+  AnimalState,
   CharacterState,
   WorldData,
   ItemOccupancy,
@@ -427,6 +428,7 @@ export interface ExecuteTickParams {
   worldData: Ref<WorldData>
   itemOccupancy: Ref<ItemOccupancy>
   activityLog: Ref<ActivityLogEntry[]>
+  animalStates?: Ref<Record<string, AnimalState>>
   executeAction: (characterId: string, intent: Intent) => Promise<void>
   decayRelationships?: (params: { characterState: CharacterState }) => Promise<void>
   progressTask?: (characterId: string) => Promise<boolean>
@@ -445,6 +447,7 @@ export async function executeTick({
   worldData,
   itemOccupancy,
   activityLog,
+  animalStates,
   executeAction,
   decayRelationships,
   progressTask
@@ -490,6 +493,13 @@ export async function executeTick({
   debugLog('\n--- Phase 2: Decision Making ---')
   const intents: Record<string, Intent> = {}
   const reservedCharacterIds = new Set<string>()
+  // Animals claimed by a petter this tick, so two people don't pet the same one.
+  const claimedAnimalIds = new Set<string>()
+  const claimAnimalTarget = (intent: Intent): void => {
+    if (intent.action === 'pet_animal' && intent.animalTargetId) {
+      claimedAnimalIds.add(intent.animalTargetId)
+    }
+  }
   for (const characterId in characterStates.value) {
     if (intents[characterId]) {
       continue
@@ -506,6 +516,7 @@ export async function executeTick({
 
     if (state.queuedActions && state.queuedActions.length > 0) {
       const queuedIntent = state.queuedActions.shift() as Intent
+      claimAnimalTarget(queuedIntent)
       intents[characterId] = assignSocialParticipation({
         currentTick: currentTick.value,
         characterId,
@@ -536,9 +547,12 @@ export async function executeTick({
       itemOccupancy: itemOccupancy.value,
       simulationDateTime: simulationDateTime?.value,
       characterStates: characterStates.value,
-      reservedCharacterIds: [...reservedCharacterIds]
+      reservedCharacterIds: [...reservedCharacterIds],
+      animalStates: animalStates?.value,
+      reservedAnimalIds: [...claimedAnimalIds]
     })
     intents[characterId] = intent
+    claimAnimalTarget(intent)
 
     const socialParticipationAssigned = assignSocialParticipation({
       currentTick: currentTick.value,

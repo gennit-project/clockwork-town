@@ -48,9 +48,35 @@ export function useCharacterIntentOptions(character: CharacterTarget, availableR
         ]))
     }
 
+    // Spending time with a pet is a fulfillment option alongside solo hobbies.
+    const petOptions: SelectableOption[] = selectedNeed.value === 'fulfillment'
+      ? Object.entries(simulationStore.animalStates)
+          .filter(([, animal]) => animal.location.regionId === state.location.regionId && animal.location.lotId)
+          .map(([animalId, animal]) => {
+            const sameSpace = animal.location.spaceId === state.location.spaceId
+            const sameLot = animal.location.lotId === state.location.lotId
+            const travelCost = sameSpace ? 0 : sameLot ? 1 : 2
+            return {
+              label: `Spend time with ${animal.name} in ${animal.location.lotName} → ${animal.location.spaceName}`,
+              intent: {
+                action: 'pet_animal' as const,
+                targetSpaceId: animal.location.spaceId || undefined,
+                targetSpaceName: animal.location.spaceName || undefined,
+                targetLotId: animal.location.lotId || undefined,
+                targetLotName: animal.location.lotName || undefined,
+                travelCost,
+                utility: 1,
+                source: 'manual' as const,
+                animalTargetId: animalId,
+                animalTargetName: animal.name
+              }
+            }
+          })
+      : []
+
     const action = NEED_TO_ACTION[selectedNeed.value as keyof typeof NEED_TO_ACTION] as ActionName
     if (!action) {
-      return []
+      return petOptions
     }
 
     const itemOptions = findItemsWithAffordance({
@@ -64,7 +90,7 @@ export function useCharacterIntentOptions(character: CharacterTarget, availableR
       ? availableSocialTargets
       : [{ id: '', name: '' }]
 
-    return itemOptions
+    const hobbyOptions = itemOptions
       .flatMap((option) => selectableTargets.map((target) => ({
         label: action === 'chat_friend'
           ? `Chat with ${target.name} at ${option.itemName} in ${option.lotName} → ${option.spaceName}`
@@ -109,6 +135,8 @@ export function useCharacterIntentOptions(character: CharacterTarget, availableR
 
         return (left.intent.travelCost ?? 0) - (right.intent.travelCost ?? 0)
       })
+
+    return [...petOptions, ...hobbyOptions]
   })
 
   return {

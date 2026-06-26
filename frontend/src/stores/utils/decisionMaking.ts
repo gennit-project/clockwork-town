@@ -4,6 +4,7 @@
 
 import type {
   ActionName,
+  AnimalState,
   Needs,
   CharacterState,
   WorldData,
@@ -25,6 +26,8 @@ export interface SelectBestIntentParams {
   simulationDateTime?: SimulationDateTime
   characterStates?: Record<string, CharacterState>
   reservedCharacterIds?: string[]
+  animalStates?: Record<string, AnimalState>
+  reservedAnimalIds?: string[]
 }
 
 /**
@@ -56,7 +59,9 @@ export function selectBestIntent({
   itemOccupancy = {},
   simulationDateTime,
   characterStates,
-  reservedCharacterIds = []
+  reservedCharacterIds = [],
+  animalStates = {},
+  reservedAnimalIds = []
 }: SelectBestIntentParams): Intent {
   debugLog(`\n🎯 selectBestIntent for character ${characterId}`)
   const workIntent = buildWorkIntent({
@@ -74,7 +79,9 @@ export function selectBestIntent({
     worldData,
     itemOccupancy,
     characterStates,
-    reservedCharacterIds
+    reservedCharacterIds,
+    animalStates,
+    reservedAnimalIds
   }).map((candidate) => {
     debugLog(`  ✓ ${candidate.goal}:${candidate.strategy} utility ${candidate.utility.toFixed(2)} (cost ${candidate.travelCost})`)
     return planCandidateToIntent(candidate)

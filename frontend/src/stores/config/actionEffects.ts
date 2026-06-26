@@ -112,6 +112,14 @@ export const ACTION_EFFECTS: ActionEffects = {
     secondaryEffects: { family: 0.10 },
     cooldownTicks: 18  // 90 minutes
   },
+  pet_animal: {
+    // Time with a pet is quietly restorative: it gives meaning (fulfillment)
+    // and a dose of companionship (friends).
+    primaryNeed: 'fulfillment',
+    primaryEffect: 0.22,
+    secondaryEffects: { friends: 0.12 },
+    cooldownTicks: 8  // 40 minutes
+  },
   work: {
     primaryNeed: null,
     primaryEffect: 0,

@@ -43,4 +43,7 @@ export const ANIMAL_ACTION_EFFECT: Partial<Record<AnimalActionName, { need: Anim
 /** Below this, a need is "pressing" and the animal acts on it. */
 export const ANIMAL_NEED_THRESHOLD = 0.55
 
+/** How much affection a human's pet/play interaction restores for the animal. */
+export const PET_AFFECTION_BOOST = 0.4
+
 export const ANIMAL_NEED_NAMES: AnimalNeedName[] = ['food', 'energy', 'bladder', 'affection', 'hygiene']

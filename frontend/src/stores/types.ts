@@ -24,6 +24,7 @@ export type ActionName =
   | 'view_art'
   | 'view_movie'
   | 'volunteer'
+  | 'pet_animal'
   | 'work'
   | 'idle'
 
@@ -81,6 +82,7 @@ export interface Cooldowns {
   view_art: number
   view_movie: number
   volunteer: number
+  pet_animal: number
   work: number
 }
 
@@ -351,6 +353,9 @@ export interface Intent {
   source?: 'auto' | 'manual'
   socialTargetId?: string
   socialTargetName?: string
+  /** When the action targets an animal (e.g. pet_animal), the animal being interacted with. */
+  animalTargetId?: string
+  animalTargetName?: string
   inviteContextType?: InviteOverContext
   proposedRelationshipLabel?: RelationshipProposalLabel
   hostedFollowUp?: TaskStep
@@ -370,6 +375,8 @@ export interface TaskStep {
   remainingTicks: number
   socialTargetId?: string
   socialTargetName?: string
+  animalTargetId?: string
+  animalTargetName?: string
   inviteContextType?: InviteOverContext
   proposedRelationshipLabel?: RelationshipProposalLabel
   hostedFollowUp?: Omit<TaskStep, 'hostedFollowUp'>

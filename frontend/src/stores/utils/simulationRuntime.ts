@@ -39,7 +39,7 @@ import {
   computeCharacterHappiness,
   computeTownHappiness
 } from './happinessMetrics'
-import { tickAnimals } from './animalRuntime'
+import { applyPetInteraction, tickAnimals } from './animalRuntime'
 import {
   decayCharacterRelationships,
   recordRelationshipConversation,
@@ -432,6 +432,18 @@ export function createSimulationRuntime(
       })
     }
 
+    if (intent.action === 'pet_animal' && intent.animalTargetId) {
+      const animalState = refs.animalStates.value[intent.animalTargetId]
+      if (animalState) {
+        applyPetInteraction(animalState)
+        logActivity(
+          characterId,
+          'pet_animal',
+          `spent time with ${animalState.name}`
+        )
+      }
+    }
+
     dependencies.recordShortTermMemory(characterId, intent)
   }
 
@@ -538,6 +550,7 @@ export function createSimulationRuntime(
       worldData: refs.worldData,
       itemOccupancy: refs.itemOccupancy,
       activityLog: refs.activityLog,
+      animalStates: refs.animalStates,
       executeAction,
       decayRelationships: async ({ characterState }) => {
         await decayCharacterRelationships({

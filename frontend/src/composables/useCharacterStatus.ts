@@ -18,6 +18,7 @@ const ACTION_VERBS: Record<ActionName, string> = {
   view_art: 'looking at',
   view_movie: 'watching',
   volunteer: 'volunteering',
+  pet_animal: 'spending time with a pet',
   work: 'working',
   idle: 'idle'
 }

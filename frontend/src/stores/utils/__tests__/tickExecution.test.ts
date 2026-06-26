@@ -53,6 +53,7 @@ describe('executeTick', () => {
             view_art: 0,
             view_movie: 0,
             volunteer: 0,
+            pet_animal: 0,
             work: 0
           }
         })
@@ -281,6 +282,7 @@ describe('executeTick', () => {
         view_art: 5,
         view_movie: 5,
         volunteer: 5,
+        pet_animal: 5,
         work: 5
       }
 

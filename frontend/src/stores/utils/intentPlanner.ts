@@ -1,5 +1,6 @@
 import type {
   ActionName,
+  AnimalState,
   CharacterRelationship,
   CharacterState,
   Cooldowns,
@@ -22,7 +23,12 @@ export interface BuildPlanCandidatesParams {
   itemOccupancy?: ItemOccupancy
   characterStates?: Record<string, CharacterState>
   reservedCharacterIds?: string[]
+  animalStates?: Record<string, AnimalState>
+  reservedAnimalIds?: string[]
 }
+
+/** Petting a nearby pet is a touch more appealing than a solo fulfillment hobby. */
+const PET_AFFORDANCE_WEIGHT = 1.25
 
 type CooldownAction = keyof Cooldowns
 
@@ -537,6 +543,104 @@ function buildRelationshipSocialPlanCandidates({
   return candidates
 }
 
+/**
+ * Build `pet_animal` candidates: for every reachable, unreserved animal, a plan
+ * to go to wherever the animal currently is and spend time with it. This is the
+ * human side of the human–animal interaction; completing it boosts the human's
+ * fulfillment/companionship and the animal's affection (applied in the runtime).
+ * Reserving an animal (reservedAnimalIds) keeps two people from claiming the
+ * same pet in one tick, mirroring the multi-participant social coordination.
+ */
+function buildAnimalInteractionCandidates({
+  characterId,
+  characterState,
+  worldData,
+  animalStates = {},
+  reservedAnimalIds = []
+}: {
+  characterId: string
+  characterState: CharacterState
+  worldData: WorldData
+  animalStates?: Record<string, AnimalState>
+  reservedAnimalIds?: string[]
+}): PlanCandidate[] {
+  const reservedAnimalIdSet = new Set(reservedAnimalIds)
+  const candidates: PlanCandidate[] = []
+
+  for (const [animalId, animalState] of Object.entries(animalStates)) {
+    if (reservedAnimalIdSet.has(animalId)) {
+      continue
+    }
+
+    const { lotId, lotName, spaceId, spaceName } = animalState.location
+    if (!lotId || !spaceId) {
+      continue
+    }
+
+    const lot = worldData.lots[lotId]
+    if (!lot) {
+      continue
+    }
+
+    if (!canAccessLot({ characterState, lotId, isPublic: lot.isPublic })) {
+      continue
+    }
+
+    const travelCost = calculateTravelCostToItem({
+      characterState,
+      itemOption: {
+        itemId: `animal:${animalId}`,
+        itemName: animalState.name,
+        spaceId,
+        spaceName: spaceName || lot.name,
+        lotId,
+        lotName: lotName || lot.name,
+        travelCost: 0,
+        affordanceWeight: PET_AFFORDANCE_WEIGHT
+      },
+      worldData
+    })
+    if (travelCost === null) {
+      continue
+    }
+
+    const utility = calculateUtility(characterId, 'pet_animal', characterState.needs, {
+      itemId: `animal:${animalId}`,
+      itemName: animalState.name,
+      spaceId,
+      spaceName: spaceName || lot.name,
+      lotId,
+      lotName: lotName || lot.name,
+      travelCost,
+      affordanceWeight: PET_AFFORDANCE_WEIGHT
+    })
+
+    const primaryStep: TaskStep = {
+      action: 'pet_animal',
+      label: `pet_animal:${animalState.name}`,
+      targetSpaceId: spaceId,
+      targetSpaceName: spaceName || lot.name,
+      targetLotId: lotId,
+      targetLotName: lotName || lot.name,
+      totalTicks: 1,
+      remainingTicks: 0,
+      animalTargetId: animalId,
+      animalTargetName: animalState.name
+    }
+
+    candidates.push({
+      goal: 'pet_animal',
+      strategy: 'pet_animal:with-animal',
+      utility,
+      travelCost,
+      primaryStep,
+      steps: [primaryStep]
+    })
+  }
+
+  return candidates
+}
+
 function getItemActionModifier({
   action,
   itemId,
@@ -917,7 +1021,9 @@ export function buildPlanCandidates({
   worldData,
   itemOccupancy = {},
   characterStates = {},
-  reservedCharacterIds = []
+  reservedCharacterIds = [],
+  animalStates = {},
+  reservedAnimalIds = []
 }: BuildPlanCandidatesParams): PlanCandidate[] {
   const candidates: PlanCandidate[] = buildRelationshipSocialPlanCandidates({
     characterId,
@@ -927,6 +1033,16 @@ export function buildPlanCandidates({
     characterStates,
     reservedCharacterIds
   })
+
+  if (characterState.cooldowns.pet_animal === 0) {
+    candidates.push(...buildAnimalInteractionCandidates({
+      characterId,
+      characterState,
+      worldData,
+      animalStates,
+      reservedAnimalIds
+    }))
+  }
 
   for (const action of DEFAULT_PLANNED_ACTIONS) {
     if (characterState.cooldowns[action] > 0) {
@@ -1002,6 +1118,8 @@ export function planCandidateToIntent(candidate: PlanCandidate): Intent {
     source: 'auto',
     socialTargetId: candidate.primaryStep.socialTargetId,
     socialTargetName: candidate.primaryStep.socialTargetName,
+    animalTargetId: candidate.primaryStep.animalTargetId,
+    animalTargetName: candidate.primaryStep.animalTargetName,
     inviteContextType: candidate.primaryStep.inviteContextType,
     hostedFollowUp: candidate.primaryStep.hostedFollowUp as TaskStep | undefined,
     steps: candidate.steps
