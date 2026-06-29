@@ -11,11 +11,16 @@ the flat, earnest language of uptime monitoring. The humor comes from the framin
 care is real. It is not a parody of mental health, and the heavier material (illness,
 loss, grief) is meant to be handled with that same affection, not for shock.
 
-> Status: early and actively evolving. The simulation core, the dashboard reskin, and
-> world/household/character authoring exist; much of the larger design is still ahead.
-> See [`docs/roadmap/`](docs/roadmap/README.md) for the full, dependency-ordered plan.
+> ⚠️ **Very early, experimental work-in-progress.** This is in active development with
+> incomplete features and rough edges throughout. The long-term vision is a town you
+> manage — many households, jobs, relationships, illness and grief, a tutorial, default
+> towns — but it is **not there yet**. Today you can stand up a small world and watch a
+> handful of residents tick through their needs and daily routines. The screenshot below
+> is a tiny test world with a single resident (and his cat), not a finished town. See
+> [`docs/roadmap/`](docs/roadmap/README.md) for the full, dependency-ordered plan of
+> where it's headed.
 
-![Clockwork Town — the region overview, residents as nodes with live status](docs/screenshot-dashboard.png)
+![Clockwork Town — a tiny test world in the region overview; residents appear as nodes with live status](docs/screenshot-dashboard.png)
 
 ## Architecture
 
