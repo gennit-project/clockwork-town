@@ -6,6 +6,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a text-based life simulator built with GraphQL, TypeScript, and Kùzu embedded graph database. The system models a virtual world with characters, locations, activities, relationships, and items using a graph-based data structure.
 
+## Roadmap
+
+The plan of record lives in [`docs/roadmap/`](docs/roadmap/README.md). Start with
+`docs/roadmap/README.md` for project orientation and the dependency-ordered epic list,
+then read the specific `epic-N-*.md` for the work at hand. These docs are written to be
+self-contained for sessions without prior chat context. Keep them updated as features land.
+
 ## Technology Stack
 
 - **Database**: Kùzu (embedded graph database) - state saved locally to `data/clockwork-town.kuzu`
