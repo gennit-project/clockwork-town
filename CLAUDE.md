@@ -11,7 +11,8 @@ This is a text-based life simulator built with GraphQL, TypeScript, and Kùzu em
 - **Database**: Kùzu (embedded graph database) - state saved locally to `data/clockwork-town.kuzu`
 - **Backend**: GraphQL Yoga server with TypeScript
 - **Schema**: GraphQL schema-first approach with resolver pattern
-- **Future**: Vue.js frontend wrapped in Capacitor for multi-device export (not yet implemented)
+- **Frontend**: Vue 3 + Vite (in `frontend/`)
+- **Future**: Package as a desktop Electron app — run GraphQL Yoga and the embedded Kùzu database inside the Electron main process so the whole app ships as a single double-click desktop binary (no separate backend/dev server to start). Desktop-only; mobile is a non-goal.
 
 ## Development Commands
 
@@ -129,6 +130,6 @@ When starting an activity (see `activity.ts:6`):
 ## Future Considerations
 
 - Backup/restore to Google Drive (schema includes mutations, not yet implemented)
-- Frontend implementation with Vue.js
+- Package as a desktop Electron app (backend + Kùzu in the main process; single distributable). Desktop-only — mobile/Capacitor is no longer planned.
 - Need decay system (decayPerHour defined but not implemented)
 - Activity duration tracking (defaultDurationMinutes defined but not used)
