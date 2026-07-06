@@ -40,11 +40,29 @@ for (const p of [DB_PATH, `${DB_PATH}.wal`, `${DB_PATH}.tmp`, `${DB_PATH}.lock`]
 const { applyDDL, db, conn } = await import("./db");
 const { WorldResolvers } = await import("./resolvers/world");
 const { HouseholdResolvers } = await import("./resolvers/household");
+const { upsertCharacterRelationship } = await import("./resolvers/relationship");
 
 const createWorld = WorldResolvers.Mutation.createWorld;
 const createRegion = WorldResolvers.Mutation.createRegion;
 const createLotWithSpacesAndItems = WorldResolvers.Mutation.createLotWithSpacesAndItems;
 const createHousehold = HouseholdResolvers.Mutation.createHousehold;
+
+// Create a mutual relationship between two characters, labelled from each side's
+// perspective (e.g. mother/daughter). Each side can carry several labels (a
+// relationship's `labels` is a list — the sim also appends its own over time).
+// Both directions get the same warmth/bond.
+async function relate(
+  a: string, b: string, roleAtoB: string | string[], roleBtoA: string | string[], warmth: number, bond: number
+) {
+  const labelsAtoB = Array.isArray(roleAtoB) ? roleAtoB : [roleAtoB];
+  const labelsBtoA = Array.isArray(roleBtoA) ? roleBtoA : [roleBtoA];
+  await upsertCharacterRelationship({ fromCharacterId: a, toCharacterId: b, labels: labelsAtoB, shortTermScore: warmth, longTermScore: bond });
+  await upsertCharacterRelationship({ fromCharacterId: b, toCharacterId: a, labels: labelsBtoA, shortTermScore: warmth, longTermScore: bond });
+}
+const FAMILY = { warmth: 0.75, bond: 0.9 };
+const COUPLE = { warmth: 0.8, bond: 0.95 };
+const COLLEAGUE = { warmth: 0.5, bond: 0.4 };
+const FRIEND = { warmth: 0.6, bond: 0.5 };
 
 // --- Types mirroring the createLotWithSpacesAndItems input ------------------
 interface LotItem { itemName: string; itemDescription: string }
@@ -230,6 +248,26 @@ async function seedDesertWillow() {
   });
   console.log("  · The Nguyen Household (2)");
 
+  console.log("Relationships:");
+  // Families
+  await relate("char-amina-lin", "char-ravi-lin", "spouse", "spouse", COUPLE.warmth, COUPLE.bond);
+  await relate("char-amina-lin", "char-priya-lin", "mother", "daughter", FAMILY.warmth, FAMILY.bond);
+  await relate("char-ravi-lin", "char-priya-lin", "father", "daughter", FAMILY.warmth, FAMILY.bond);
+  await relate("char-tom-marsh", "char-sara-marsh", "spouse", "spouse", COUPLE.warmth, COUPLE.bond);
+  await relate("char-sara-marsh", "char-leo-marsh", "mother", "son", FAMILY.warmth, FAMILY.bond);
+  await relate("char-tom-marsh", "char-leo-marsh", "father", "son", FAMILY.warmth, FAMILY.bond);
+  await relate("char-grace-okafor", "char-daniel-okafor", "spouse", "spouse", COUPLE.warmth, COUPLE.bond);
+  await relate("char-manny-reyes", "char-elena-reyes", ["spouse", "best friend"], ["spouse", "best friend"], COUPLE.warmth, COUPLE.bond);
+  await relate("char-kim-nguyen", "char-anh-nguyen", "older sister", "younger sibling", FAMILY.warmth, FAMILY.bond);
+  // Coworkers (some of whom are also friends)
+  await relate("char-amina-lin", "char-grace-okafor", ["colleague", "friend"], ["colleague", "friend"], COLLEAGUE.warmth, COLLEAGUE.bond);
+  await relate("char-ravi-lin", "char-daniel-okafor", "colleague", "colleague", COLLEAGUE.warmth, COLLEAGUE.bond);
+  await relate("char-sara-marsh", "char-kim-nguyen", "colleague", "colleague", COLLEAGUE.warmth, COLLEAGUE.bond);
+  // Schoolmates
+  await relate("char-priya-lin", "char-leo-marsh", "friend", "friend", FRIEND.warmth, FRIEND.bond);
+  await relate("char-leo-marsh", "char-anh-nguyen", "friend", "friend", FRIEND.warmth, FRIEND.bond);
+  console.log("  · 14 relationships");
+
   // The campground is a deliberate empty community lot (nice backdrop).
   void campground;
 }
@@ -277,6 +315,15 @@ async function seedPinehaven() {
     ]
   });
   console.log("  · The Hale Household (2)");
+
+  console.log("Relationships:");
+  await relate("char-owen-frost", "char-nadia-frost", "spouse", "spouse", COUPLE.warmth, COUPLE.bond);
+  await relate("char-owen-frost", "char-sam-frost", "father", "son", FAMILY.warmth, FAMILY.bond);
+  await relate("char-nadia-frost", "char-sam-frost", "mother", "son", FAMILY.warmth, FAMILY.bond);
+  await relate("char-june-hale", "char-riley-hale", "mother", "son", FAMILY.warmth, FAMILY.bond);
+  await relate("char-nadia-frost", "char-june-hale", ["colleague", "friend"], ["colleague", "friend"], COLLEAGUE.warmth, COLLEAGUE.bond);
+  await relate("char-sam-frost", "char-riley-hale", "friend", "friend", FRIEND.warmth, FRIEND.bond);
+  console.log("  · 6 relationships");
 }
 
 async function seed() {

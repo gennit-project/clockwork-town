@@ -146,7 +146,7 @@ const graphNodes = computed<GraphNode[]>(() =>
 
 const graphLinks = computed<GraphLink[]>(() => {
   const ids = new Set(Object.keys(characterStates.value))
-  const seen = new Map<string, GraphLink>()
+  const seen = new Map<string, GraphLink & { count: number }>()
 
   for (const [fromId, state] of Object.entries(characterStates.value)) {
     for (const rel of state.relationships || []) {
@@ -154,28 +154,32 @@ const graphLinks = computed<GraphLink[]>(() => {
       if (rel.isDeceasedTarget || !ids.has(toId) || fromId === toId) {
         continue
       }
-      const key = [fromId, toId].sort().join('::')
+      // Sort so both directions land on the same undirected edge, and we can
+      // record each side's label (mother vs daughter) independently.
+      const [a, b] = [fromId, toId].sort()
+      const key = `${a}::${b}`
       const warmth = Math.max(0, Math.min(1, rel.shortTermScore))
       const bond = Math.max(0, Math.min(1, rel.longTermScore))
-      const existing = seen.get(key)
-      if (existing) {
-        // Average the two directions; keep a label if either side has one.
-        existing.score = (existing.score + warmth) / 2
-        existing.bond = ((existing.bond ?? 0) + bond) / 2
-        existing.label = existing.label || rel.labels?.[0]
-      } else {
-        seen.set(key, {
-          source: fromId,
-          target: toId,
-          score: warmth,
-          bond,
-          label: rel.labels?.[0]
-        })
+      const labels = (rel.labels ?? []).filter(Boolean)
+
+      let link = seen.get(key)
+      if (!link) {
+        link = { source: a, target: b, score: 0, bond: 0, count: 0 }
+        seen.set(key, link)
+      }
+      link.score = (link.score * link.count + warmth) / (link.count + 1)
+      link.bond = ((link.bond ?? 0) * link.count + bond) / (link.count + 1)
+      link.count += 1
+      if (labels.length) {
+        // A relationship can carry several labels. labelsForward = source's roles
+        // toward target (e.g. ["colleague","friend"]); labelsBackward = the reverse.
+        const side = fromId === a ? 'labelsForward' : 'labelsBackward'
+        link[side] = [...new Set([...(link[side] ?? []), ...labels])]
       }
     }
   }
 
-  return [...seen.values()]
+  return [...seen.values()].map(({ count: _count, ...link }) => link)
 })
 
 async function ensureLoaded() {
