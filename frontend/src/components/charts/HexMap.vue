@@ -28,7 +28,15 @@
         <div class="mb-1.5 text-center text-[10px] text-gf-text-faint">
           {{ group.nodes.length }} {{ group.nodes.length === 1 ? 'resident' : 'residents' }}
         </div>
-        <svg v-if="group.hexes.length > 0" :viewBox="`0 0 ${viewBoxW} ${viewBoxH}`" width="100%">
+        <!-- Render at intrinsic pixel size (not 100%) so hexes stay the same
+             size regardless of how wide the lot card stretches. -->
+        <svg
+          v-if="group.hexes.length > 0"
+          :viewBox="`0 0 ${viewBoxW} ${viewBoxH}`"
+          :width="viewBoxW"
+          :height="viewBoxH"
+          class="mx-auto block max-w-full"
+        >
           <polygon
             v-for="hex in group.hexes"
             :key="hex.id"
