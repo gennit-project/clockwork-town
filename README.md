@@ -15,12 +15,10 @@ loss, grief) is meant to be handled with that same affection, not for shock.
 > incomplete features and rough edges throughout. The long-term vision is a town you
 > manage — many households, jobs, relationships, illness and grief, a tutorial, default
 > towns — but it is **not there yet**. Today you can stand up a small world and watch a
-> handful of residents tick through their needs and daily routines. The screenshot below
-> is a tiny test world with a single resident (and his cat), not a finished town. See
-> [`docs/roadmap/`](docs/roadmap/README.md) for the full, dependency-ordered plan of
-> where it's headed.
-
-![Clockwork Town — a tiny test world in the region overview; residents appear as nodes with live status](docs/screenshot-dashboard.png)
+> handful of residents tick through their needs and daily routines — dispersing to work
+> and school by day and heading home at night (see the [day/night screenshots](#day--night-screenshots)
+> further down). See [`docs/roadmap/`](docs/roadmap/README.md) for the full,
+> dependency-ordered plan of where it's headed.
 
 ## Architecture
 
@@ -207,7 +205,7 @@ near-future packaging goal is a **desktop Electron app** that runs the backend a
 embedded Kùzu database in the main process, so the whole thing ships as a single
 double-click app with no separate server to start. Desktop-only; mobile is not planned.
 The project is text-only by design — there are no images in the product, and none are
-planned. (The screenshot above is documentation, not a product asset.)
+planned. (The screenshots in this README are documentation, not product assets.)
 
 ## License
 
