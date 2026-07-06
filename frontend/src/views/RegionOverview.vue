@@ -120,6 +120,29 @@
       </Panel>
     </AsyncContainer>
 
+    <!-- Character detail popover (opened by clicking a hex) -->
+    <div
+      v-if="panelCharacter"
+      class="fixed inset-0 z-40 flex items-center justify-center bg-black/50 p-4"
+      @click.self="closeCharacterPopover"
+    >
+      <div class="flex max-h-[85vh] w-full max-w-md flex-col overflow-hidden rounded-lg shadow-xl">
+        <CharacterDetailPanel
+          :character="panelCharacter"
+          :available-romance-targets="characters"
+          class="min-h-0 flex-1"
+          @close="closeCharacterPopover"
+        />
+        <button
+          class="flex items-center justify-center gap-1.5 border border-t-0 border-gf-border bg-gf-surface-2 px-3 py-2.5 text-sm font-medium text-gf-blue transition-colors hover:bg-gf-surface-3"
+          @click="goToCharacterLot(panelCharacter.id)"
+        >
+          Go to {{ panelCharacter.name }}'s current lot
+          <span aria-hidden="true">→</span>
+        </button>
+      </div>
+    </div>
+
     <!-- Edit Region Modal -->
     <Modal :is-open="showEditModal" title="Edit Region" @close="closeEditModal">
       <form @submit.prevent="saveRegion">
@@ -180,6 +203,8 @@ import Panel from '../components/Panel.vue'
 import DebugActionPanel from '../components/DebugActionPanel.vue'
 import HexMap, { type HexGroup } from '../components/charts/HexMap.vue'
 import NestedHexMap, { type NestedBuilding } from '../components/charts/NestedHexMap.vue'
+import CharacterDetailPanel from '../components/CharacterDetailPanel.vue'
+import { useCharacterPanelStore } from '../stores/characterPanel'
 import { VIRIDIS_GRADIENT as gradient } from '../charts/viridis'
 import { client, queries } from '../graphql'
 import { useSimulationStore } from '../stores/simulation'
@@ -189,9 +214,13 @@ import { computeCharacterHappiness } from '../stores/utils/happinessMetrics'
 import type { InputLot, InputSpace, NeedName } from '../stores/types'
 
 const simulationStore = useSimulationStore()
+const characterPanelStore = useCharacterPanelStore()
 const router = useRouter()
 const { worldId, regionId } = useRouteParams()
 const { buildBreadcrumbs } = useBreadcrumbs()
+
+// Character clicked on the hex map — shows the detail popover.
+const panelCharacter = ref<CharacterSummary | null>(null)
 
 type FillMetric = 'happiness' | NeedName
 
@@ -450,12 +479,30 @@ const nestedGroups = computed<NestedBuilding[]>(() => {
 })
 
 function onSelectHex(characterId: string) {
+  const char = characters.value.find((c) => c.id === characterId)
+  if (!char) {
+    return
+  }
+  panelCharacter.value = char
+  // Hydrate relationships/memories for the panel's tabs.
+  void characterPanelStore.loadCharacterDetails(characterId)
+}
+
+function closeCharacterPopover() {
+  panelCharacter.value = null
+}
+
+// Navigate to the character's current lot/space (the popover's "go there" link).
+function goToCharacterLot(characterId: string) {
   const state = simulationStore.characterStates[characterId]
   const lotId = state?.location?.lotId
   const spaceId = state?.location?.spaceId
-  if (worldId.value && regionId.value && lotId && spaceId) {
-    router.push(`/world/${worldId.value}/region/${regionId.value}/lot/${lotId}/space/${spaceId}`)
+  if (worldId.value && regionId.value && lotId) {
+    router.push(spaceId
+      ? `/world/${worldId.value}/region/${regionId.value}/lot/${lotId}/space/${spaceId}`
+      : `/world/${worldId.value}/region/${regionId.value}/lot/${lotId}`)
   }
+  closeCharacterPopover()
 }
 
 function onSelectRoom(spaceId: string) {
