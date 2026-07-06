@@ -2,8 +2,8 @@
   <div class="flex h-full flex-col p-4">
     <Breadcrumbs :crumbs="breadcrumbs" />
 
-    <div class="mb-4 flex items-center justify-between gap-3">
-      <div class="flex items-center gap-3">
+    <div class="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      <div class="flex flex-wrap items-center gap-3">
         <h1 class="text-xl font-semibold text-gf-text">Region Overview: {{ region?.name || 'Loading…' }}</h1>
         <span
           class="flex items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium"
@@ -15,23 +15,23 @@
           <span class="opacity-70">· {{ timeOfDay.weekday }} {{ timeOfDay.clock }}</span>
         </span>
       </div>
-      <div class="flex items-center gap-2">
+      <div class="flex flex-wrap items-center gap-2">
         <button
           @click="showDebugPanel = !showDebugPanel"
-          class="rounded border border-gf-border bg-gf-surface px-3 py-1.5 text-sm text-gf-text-weak hover:bg-gf-surface-2"
+          class="whitespace-nowrap rounded border border-gf-border bg-gf-surface px-3 py-1.5 text-sm text-gf-text-weak hover:bg-gf-surface-2"
           title="Toggle debug action panel"
         >
           Debug
         </button>
         <button
           @click="showEditModal = true"
-          class="rounded border border-gf-border bg-gf-surface px-3 py-1.5 text-sm text-gf-text-weak hover:bg-gf-surface-2"
+          class="whitespace-nowrap rounded border border-gf-border bg-gf-surface px-3 py-1.5 text-sm text-gf-text-weak hover:bg-gf-surface-2"
         >
           Edit region
         </button>
         <router-link
           :to="`/world/${worldId}/region/${regionId}/lots`"
-          class="rounded border border-gf-border bg-gf-blue/15 px-3 py-1.5 text-sm text-gf-blue hover:bg-gf-blue/25"
+          class="whitespace-nowrap rounded border border-gf-border bg-gf-blue/15 px-3 py-1.5 text-sm text-gf-blue hover:bg-gf-blue/25"
         >
           Manage lots &amp; households
         </router-link>
@@ -92,11 +92,18 @@
         </router-link>
       </template>
 
-      <!-- Node-health host map (default) -->
-      <Panel v-if="viewMode === 'map'" title="Resident node health" class="flex-1 overflow-auto">
+      <!-- Fill-metric color scale, prominent above the map -->
+      <div class="mb-3 flex shrink-0 items-center gap-2 rounded border border-gf-border bg-gf-surface px-3 py-2">
+        <span class="text-xs font-medium text-gf-text-weak">{{ fillLabel }}</span>
+        <span class="text-[11px] text-gf-text-faint">0%</span>
+        <span class="h-2.5 flex-1 rounded" :style="{ background: gradient }" />
+        <span class="text-[11px] text-gf-text-faint">100%</span>
+      </div>
+
+      <!-- Resident-health host map (default) -->
+      <Panel v-if="viewMode === 'map'" title="Resident health" class="flex-1 overflow-auto">
         <HexMap
           :groups="hexGroups"
-          :legend-label="fillLabel"
           @select="onSelectHex"
           @select-building="onSelectBuilding"
         />
@@ -106,7 +113,6 @@
       <Panel v-else title="Rooms &amp; residents" class="flex-1 overflow-auto">
         <NestedHexMap
           :groups="nestedGroups"
-          :legend-label="fillLabel"
           @select="onSelectHex"
           @select-room="onSelectRoom"
           @select-building="onSelectBuilding"
@@ -174,6 +180,7 @@ import Panel from '../components/Panel.vue'
 import DebugActionPanel from '../components/DebugActionPanel.vue'
 import HexMap, { type HexGroup } from '../components/charts/HexMap.vue'
 import NestedHexMap, { type NestedBuilding } from '../components/charts/NestedHexMap.vue'
+import { VIRIDIS_GRADIENT as gradient } from '../charts/viridis'
 import { client, queries } from '../graphql'
 import { useSimulationStore } from '../stores/simulation'
 import { useRouteParams } from '../composables/useRouteParams'

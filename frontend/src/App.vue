@@ -66,8 +66,8 @@
         </div>
 
         <div class="flex items-center gap-2">
-          <!-- Live status + clock -->
-          <div class="hidden items-center gap-2 rounded border border-gf-border bg-gf-bg px-2.5 py-1.5 sm:flex">
+          <!-- Live status + clock (inline on large screens; own row below on smaller) -->
+          <div class="hidden items-center gap-2 rounded border border-gf-border bg-gf-bg px-2.5 py-1.5 lg:flex">
             <span class="flex items-center gap-1.5">
               <span
                 class="h-1.5 w-1.5 rounded-full"
@@ -169,6 +169,23 @@
           </button>
         </div>
       </header>
+
+      <!-- Live status + clock on its own row for small/medium screens -->
+      <div class="flex shrink-0 items-center gap-2 border-b border-gf-border bg-gf-surface px-3 py-1.5 lg:hidden">
+        <span class="flex items-center gap-1.5">
+          <span
+            class="h-1.5 w-1.5 rounded-full"
+            :class="simulationStore.isPaused ? 'bg-gf-text-faint' : 'bg-gf-green animate-pulse'"
+          />
+          <span class="text-[11px] font-medium text-gf-text-weak">
+            {{ simulationStore.isPaused ? 'Paused' : 'Live' }}
+          </span>
+        </span>
+        <span class="h-3 w-px bg-gf-border" />
+        <span class="font-mono text-[11px] text-gf-text" :title="`tick ${simulationStore.currentTick}`">
+          {{ simulationStore.formattedSimulationDateTime }}
+        </span>
+      </div>
 
       <!-- Mobile nav drawer -->
       <div v-if="showMobileNav" class="border-b border-gf-border bg-gf-surface px-2 py-2 md:hidden">
