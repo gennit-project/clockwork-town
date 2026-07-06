@@ -36,7 +36,7 @@
       </nav>
 
       <div class="flex flex-col items-center gap-0.5 border-t border-gf-border py-2 text-gf-text-faint">
-        <span class="text-[10px] font-semibold uppercase tracking-wider">Service Desk</span>
+        <span class="text-center text-[10px] font-semibold uppercase tracking-wider">Service Desk</span>
         <span class="font-mono text-[10px]">{{ appVersion }}</span>
       </div>
     </aside>
