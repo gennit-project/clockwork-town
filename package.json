@@ -12,6 +12,7 @@
     "dev:frontend": "vite",
     "build:frontend": "vite build",
     "ddl": "tsx src/db.ts --ddl",
+    "seed": "tsx src/seed.ts",
     "migrate": "tsx src/db.ts --migrate",
     "test": "vitest",
     "test:ui": "vitest --ui",

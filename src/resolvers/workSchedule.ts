@@ -2,6 +2,7 @@ interface StoredWorkShift {
   day: string
   start: string
   end: string
+  activity: string
   locationLotId: string
 }
 
@@ -16,6 +17,7 @@ export interface WorkShiftInput {
   day: string
   start: string
   end: string
+  activity?: string
   locationLotId: string
 }
 
@@ -24,6 +26,7 @@ export function serializeWorkSchedule(schedule: WorkShiftInput[] = []): string[]
     day: shift.day,
     start: shift.start,
     end: shift.end,
+    activity: shift.activity || "work",
     locationLotId: shift.locationLotId
   }))
 }
@@ -40,6 +43,7 @@ export function deserializeStoredWorkSchedule(entries: string[] = []): StoredWor
         day: parsed.day,
         start: parsed.start,
         end: parsed.end,
+        activity: parsed.activity || "work",
         locationLotId: parsed.locationLotId
       }]
     } catch {

@@ -4,7 +4,8 @@
       <div
         v-for="group in renderGroups"
         :key="group.key"
-        class="min-w-[180px] max-w-[360px] flex-1 rounded border border-gf-border p-2"
+        class="min-w-[180px] max-w-[360px] flex-1 rounded border p-2"
+        :class="group.kind === 'residential' ? 'border-gf-blue/40' : group.kind === 'community' ? 'border-gf-green/40' : 'border-gf-border'"
         :style="group.tint ? { backgroundColor: group.tint } : undefined"
       >
         <div class="mb-1 text-center">
@@ -15,6 +16,14 @@
           >
             {{ group.label }}
           </button>
+        </div>
+        <div v-if="group.kind && group.kind !== 'other'" class="mb-1 text-center">
+          <span
+            class="inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide"
+            :class="group.kind === 'residential' ? 'bg-gf-blue/15 text-gf-blue' : 'bg-gf-green/15 text-gf-green'"
+          >
+            {{ group.kind === 'residential' ? 'Residence' : 'Community' }}
+          </span>
         </div>
         <div class="mb-1.5 text-center text-[10px] text-gf-text-faint">
           {{ group.nodes.length }} {{ group.nodes.length === 1 ? 'resident' : 'residents' }}
@@ -79,6 +88,8 @@ export interface HexGroup {
   key: string
   label: string
   tint?: string
+  /** Lot kind, drives the Residence/Community badge. */
+  kind?: 'residential' | 'community' | 'other'
   nodes: HexNode[]
 }
 

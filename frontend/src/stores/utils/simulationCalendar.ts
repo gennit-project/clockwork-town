@@ -18,6 +18,25 @@ export function createSimulationDateTime(seedDate = new Date()): SimulationDateT
   return toSimulationDateTime(seedDate)
 }
 
+const WEEKDAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+
+/**
+ * Build a SimulationDateTime for the next occurrence (including today) of a
+ * given weekday at a given time. Used by the scene-jump controls to pose the
+ * town at, e.g., a weekday morning or late evening for screenshots.
+ */
+export function simulationDateTimeAt(weekday: string, hour: number, minute = 0): SimulationDateTime {
+  const target = WEEKDAY_NAMES.indexOf(weekday)
+  const date = new Date()
+  date.setHours(hour, minute, 0, 0)
+  if (target >= 0) {
+    while (date.getDay() !== target) {
+      date.setDate(date.getDate() + 1)
+    }
+  }
+  return toSimulationDateTime(date)
+}
+
 export function advanceSimulationDateTime(
   current: SimulationDateTime,
   tickCount = 1

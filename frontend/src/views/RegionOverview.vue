@@ -3,7 +3,18 @@
     <Breadcrumbs :crumbs="breadcrumbs" />
 
     <div class="mb-4 flex items-center justify-between gap-3">
-      <h1 class="text-xl font-semibold text-gf-text">Region Overview: {{ region?.name || 'Loading…' }}</h1>
+      <div class="flex items-center gap-3">
+        <h1 class="text-xl font-semibold text-gf-text">Region Overview: {{ region?.name || 'Loading…' }}</h1>
+        <span
+          class="flex items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium"
+          :style="{ backgroundColor: timeOfDay.bg, color: timeOfDay.fg, borderColor: timeOfDay.border }"
+          :title="`${timeOfDay.weekday} · ${timeOfDay.clock}`"
+        >
+          <span class="leading-none">{{ timeOfDay.icon }}</span>
+          <span>{{ timeOfDay.label }}</span>
+          <span class="opacity-70">· {{ timeOfDay.weekday }} {{ timeOfDay.clock }}</span>
+        </span>
+      </div>
       <div class="flex items-center gap-2">
         <button
           @click="showDebugPanel = !showDebugPanel"
@@ -180,6 +191,26 @@ type FillMetric = 'happiness' | NeedName
 const viewMode = ref<'map' | 'nested'>('map')
 const fillMetric = ref<FillMetric>('happiness')
 
+// Day/night indicator for the region header — makes day-vs-night screenshots
+// read at a glance and mirrors where the schedule sends everyone.
+const timeOfDay = computed(() => {
+  const dt = simulationStore.simulationDateTime
+  const h = dt.hour
+  let phase: { icon: string; label: string; bg: string; fg: string; border: string }
+  if (h >= 22 || h < 6) {
+    phase = { icon: '🌙', label: 'Night', bg: 'rgba(74,94,168,0.18)', fg: '#aab7e6', border: 'rgba(74,94,168,0.55)' }
+  } else if (h < 8) {
+    phase = { icon: '🌅', label: 'Dawn', bg: 'rgba(230,150,90,0.18)', fg: '#e6a878', border: 'rgba(230,150,90,0.55)' }
+  } else if (h < 18) {
+    phase = { icon: '☀️', label: 'Daytime', bg: 'rgba(240,190,80,0.18)', fg: '#e8c561', border: 'rgba(240,190,80,0.55)' }
+  } else {
+    phase = { icon: '🌇', label: 'Evening', bg: 'rgba(220,120,90,0.18)', fg: '#e0977a', border: 'rgba(220,120,90,0.55)' }
+  }
+  const hr12 = ((h + 11) % 12) + 1
+  const clock = `${hr12}:${String(dt.minute).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`
+  return { ...phase, clock, weekday: dt.weekday }
+})
+
 const FILL_OPTIONS: { value: FillMetric; label: string }[] = [
   { value: 'happiness', label: 'Happiness' },
   { value: 'food', label: 'Food' },
@@ -234,6 +265,7 @@ interface CharacterSummary {
     day: string
     start: string
     end: string
+    activity?: string | null
     location: { id: string; name: string }
   }>
   location?: CharacterLocationSummary | null
@@ -337,7 +369,8 @@ const hexGroups = computed<HexGroup[]>(() => {
     groups.push({
       key: lot.id,
       label: lot.name,
-      tint: lot.lotType === 'RESIDENTIAL' ? 'rgba(50,116,217,0.06)' : 'rgba(115,191,105,0.06)',
+      kind: lot.lotType === 'RESIDENTIAL' ? 'residential' : lot.lotType === 'COMMUNITY' ? 'community' : 'other',
+      tint: lot.lotType === 'RESIDENTIAL' ? 'rgba(50,116,217,0.10)' : 'rgba(115,191,105,0.10)',
       nodes: occupants.map((c) => ({ id: c.id, name: c.name, value: metricValue(c.id) }))
     })
   }
@@ -540,6 +573,7 @@ const loadData = async () => {
             day: shift.day,
             start: shift.start,
             end: shift.end,
+            activity: shift.activity,
             locationLotId: shift.location.id,
             locationLotName: shift.location.name
           }))

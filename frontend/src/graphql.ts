@@ -60,6 +60,7 @@ export const queries = {
             day
             start
             end
+            activity
             location {
               id
               name
@@ -216,6 +217,7 @@ export const queries = {
             day
             start
             end
+            activity
             location {
               id
               name
@@ -242,6 +244,7 @@ export const queries = {
             day
             start
             end
+            activity
             location {
               id
               name
@@ -313,6 +316,7 @@ export const queries = {
           day
           start
           end
+          activity
           location {
             id
             name
@@ -508,6 +512,7 @@ export const mutations = {
             day
             start
             end
+            activity
             location {
               id
               name
@@ -630,6 +635,7 @@ export const mutations = {
           day
           start
           end
+          activity
           location {
             id
             name
@@ -650,6 +656,7 @@ export const mutations = {
           day
           start
           end
+          activity
           location {
             id
             name

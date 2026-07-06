@@ -123,9 +123,29 @@ npm run dev:frontend # serves http://localhost:5173 and proxies /graphql to the 
 
 Then open **http://localhost:5173**.
 
-The database starts **empty** — there's no bundled town yet (shippable default towns
-and a tutorial are on the roadmap). Create a World → Region → Lots/Households/Characters
-in the UI to get going.
+### Seed the demo town
+
+The database starts **empty**. To populate a ready-made town — **Desert Willow**, with
+12 characters across 5 households, community lots (clinic, library, community center,
+school, campground) and residential homes — run the seed with the backend **stopped**:
+
+```bash
+npm run seed          # ⚠️ resets ./data/clockwork-town.kuzu, then builds Desert Willow
+```
+
+Then start the servers and open the **Desert Willow** region. Every character has a
+weekday schedule, so once you press **▶ play** the town comes to life: adults commute to
+work, kids head to school, and everyone returns home to sleep at night. (You can also
+still build your own World → Region → Lots/Households/Characters in the UI.)
+
+### Day / night screenshots
+
+The region header shows a **day/night indicator** (☀️/🌙 + clock), and community vs.
+residential lots are colour-coded (green **Community** / blue **Residence** badges). Two
+buttons in the top toolbar pose the town for screenshots without waiting for the clock:
+
+- **☀️** — jump to a weekday morning: characters dispersed to work and school.
+- **🌙** — jump to late evening: everyone home and asleep.
 
 **If port 4000 is already in use,** start the backend on another port and point the
 Vite `/graphql` proxy at the same port:

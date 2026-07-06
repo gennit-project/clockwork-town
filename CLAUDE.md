@@ -32,7 +32,20 @@ npm start
 
 # Apply DDL schema (creates/updates database tables)
 npm run ddl
+
+# Seed the demo "Desert Willow" town (⚠️ resets the DB; run with backend stopped)
+npm run seed
 ```
+
+## Demo Seed & Screenshots
+
+`npm run seed` (see `src/seed.ts`) wipes `data/clockwork-town.kuzu` and builds a
+reproducible town: 12 characters in 5 households, community + residential lots, each
+character carrying a weekday work/school schedule plus a nightly **sleep** block pointing
+at their home lot. Sleep is a scheduled activity (`Shift.activity: "work" | "sleep"`), not
+a global rule — a future night-shift resident just carries night work shifts and a daytime
+sleep block. The region view has a day/night indicator and ☀️/🌙 scene-jump buttons (top
+toolbar, wired to `simulationStore.jumpToScene`) for posing day/night screenshots.
 
 ## Database Architecture
 

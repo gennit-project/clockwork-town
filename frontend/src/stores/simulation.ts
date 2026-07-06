@@ -28,7 +28,7 @@ import {
 } from './utils/characterState'
 import { buildWorldData } from './utils/pathfinding'
 import { createSimulationRuntime } from './utils/simulationRuntime'
-import { createSimulationDateTime, formatSimulationDateTime } from './utils/simulationCalendar'
+import { createSimulationDateTime, formatSimulationDateTime, simulationDateTimeAt } from './utils/simulationCalendar'
 import { INITIAL_ANIMAL_NEEDS } from './config/animalConfig'
 import { deriveAccessibleLotIds } from './utils/accessControl'
 
@@ -258,6 +258,24 @@ export const useSimulationStore = defineStore('simulation', () => {
     }
   }
 
+  /**
+   * Pose the town at a specific weekday + time, then run a handful of ticks so
+   * characters travel into position (to work/school by day, home to bed at
+   * night). Used by the scene-jump buttons for repeatable screenshots.
+   */
+  async function jumpToScene(
+    weekday: string,
+    hour: number,
+    minute = 0,
+    settleTicks = 14
+  ): Promise<void> {
+    runtime.pauseAutoTick()
+    simulationDateTime.value = simulationDateTimeAt(weekday, hour, minute)
+    for (let i = 0; i < settleTicks; i++) {
+      await runtime.executeTick()
+    }
+  }
+
   function enqueueIntent(characterId: string, intent: Intent): void {
     const state = characterStates.value[characterId]
     if (!state) {
@@ -295,6 +313,7 @@ export const useSimulationStore = defineStore('simulation', () => {
     applyActionEffects: runtime.applyActionEffects,
     executeAction: runtime.executeAction,
     enqueueIntent,
+    jumpToScene,
     startAutoTick: runtime.startAutoTick,
     pauseAutoTick: runtime.pauseAutoTick,
     setAutoTickSpeed: runtime.setAutoTickSpeed,
