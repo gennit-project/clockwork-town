@@ -153,7 +153,7 @@ async function seedDesertWillow() {
   const regionId = "region-desert-willow";
   console.log(`\nSeeding "Desert Willow"…\n`);
   await createWorld(null, { input: { id: worldId, name: "Desert Willow" } });
-  await createRegion(null, { input: { id: regionId, worldId, name: "Desert Willow", kind: "town" } });
+  await createRegion(null, { input: { id: regionId, worldId, name: "Willow Flats", kind: "town" } });
   const lot = (input: LotInput) => makeLot(regionId, input);
 
   console.log("Community lots:");
@@ -240,7 +240,7 @@ async function seedPinehaven() {
   const regionId = "region-pinehaven";
   console.log(`\nSeeding "Pinehaven"…\n`);
   await createWorld(null, { input: { id: worldId, name: "Pinehaven" } });
-  await createRegion(null, { input: { id: regionId, worldId, name: "Pinehaven", kind: "town" } });
+  await createRegion(null, { input: { id: regionId, worldId, name: "Cedar Hollow", kind: "town" } });
   const lot = (input: LotInput) => makeLot(regionId, input);
 
   console.log("Community lots:");
