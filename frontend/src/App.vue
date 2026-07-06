@@ -127,24 +127,6 @@
               <option class="bg-gf-surface" value="normal">2.5x</option>
               <option class="bg-gf-surface" value="fast">6.5x</option>
             </select>
-            <span class="h-4 w-px bg-gf-border" />
-            <!-- Scene jumps: pose the town for day/night screenshots -->
-            <button
-              class="rounded p-1.5 text-gf-text-weak hover:bg-gf-surface-2 hover:text-gf-text disabled:opacity-40"
-              title="Jump to a weekday morning (everyone at work/school)"
-              :disabled="jumping"
-              @click="jumpToScene('Monday', 9, 15)"
-            >
-              <span class="text-sm leading-none">☀️</span>
-            </button>
-            <button
-              class="rounded p-1.5 text-gf-text-weak hover:bg-gf-surface-2 hover:text-gf-text disabled:opacity-40"
-              title="Jump to late evening (everyone home asleep)"
-              :disabled="jumping"
-              @click="jumpToScene('Monday', 22, 30)"
-            >
-              <span class="text-sm leading-none">🌙</span>
-            </button>
           </div>
 
           <!-- Log stream button -->
@@ -657,17 +639,6 @@ const manualTick = () => {
 const changePlaySpeed = (event: Event) => {
   const target = event.target as HTMLSelectElement
   simulationStore.setAutoTickSpeed(target.value as 'slow' | 'normal' | 'fast')
-}
-
-const jumping = ref(false)
-const jumpToScene = async (weekday: string, hour: number, minute: number) => {
-  if (jumping.value) return
-  jumping.value = true
-  try {
-    await simulationStore.jumpToScene(weekday, hour, minute)
-  } finally {
-    jumping.value = false
-  }
 }
 
 const resetSimulation = () => {

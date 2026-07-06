@@ -149,23 +149,20 @@ Some sidebar sections (Tickets, Alerts, Analytics, Reports, Settings, Calendar) 
 placeholders and are **hidden by default** so the app reads as finished. To see them while
 developing, run the frontend with `VITE_SHOW_UNFINISHED=true`.
 
-### Day / night screenshots
+### Day and night
 
 The region header shows a **day/night indicator** (☀️/🌙 + clock), and community vs.
-residential lots are colour-coded (green **Community** / blue **Residence** badges). Two
-buttons in the top toolbar pose the town for screenshots without waiting for the clock:
-
-- **☀️** — jump to a weekday morning: characters dispersed to work and school.
-- **🌙** — jump to late evening: everyone home and asleep.
+residential lots are colour-coded (green **Community** / blue **Residence** badges). Press
+**▶ play** and let the clock run to watch the town move through its day:
 
 | ☀️ Weekday morning | 🌙 Late evening |
 | --- | --- |
 | ![Desert Willow at a weekday morning — residents dispersed to the clinic, library, community center, and school](docs/images/region-day.png) | ![Desert Willow at night — every resident home and asleep](docs/images/region-night.png) |
 
-*The same town at 10:25 AM and 11:40 PM: by day the clinic, library, community center,
-and school fill up while homes empty out (only the retired Reyes couple stays in); by
-night everyone is back home asleep. The right rail lists each resident's current location
-and activity.*
+*The same town by day and by night: during the day the clinic, library, community center,
+and school fill up while homes empty out (only the retired Reyes couple stays in); at night
+everyone is back home asleep. The right rail lists each resident's current location and
+activity.*
 
 **If port 4000 is already in use,** start the backend on another port and point the
 Vite `/graphql` proxy at the same port:
