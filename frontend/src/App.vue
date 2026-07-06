@@ -171,8 +171,9 @@
             </svg>
           </button>
 
-          <!-- Theme toggle -->
+          <!-- Theme toggle (light mode not implemented yet — gated behind the flag) -->
           <button
+            v-if="showUnfinishedPages"
             class="rounded border border-gf-border bg-gf-bg p-1.5 text-gf-text-weak hover:text-gf-text"
             :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
             @click="toggleDarkMode"
