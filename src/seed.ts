@@ -45,6 +45,8 @@ const { upsertCharacterRelationship } = await import("./resolvers/relationship")
 const createWorld = WorldResolvers.Mutation.createWorld;
 const createRegion = WorldResolvers.Mutation.createRegion;
 const createLotWithSpacesAndItems = WorldResolvers.Mutation.createLotWithSpacesAndItems;
+const createLotTemplate = WorldResolvers.Mutation.createLotTemplate;
+const createHouseholdTemplate = WorldResolvers.Mutation.createHouseholdTemplate;
 const createHousehold = HouseholdResolvers.Mutation.createHousehold;
 
 // Create a mutual relationship between two characters, labelled from each side's
@@ -326,11 +328,78 @@ async function seedPinehaven() {
   console.log("  · 6 relationships");
 }
 
+// --- Template library --------------------------------------------------------
+// Reusable lot/household templates so the Library isn't empty. These mirror the
+// buildings and families used in the demo worlds.
+async function seedLibrary() {
+  console.log(`\nSeeding template library…\n`);
+
+  console.log("Lot templates:");
+  const lotTemplates: Array<{ file: string; tags: string[] }> = [
+    { file: "clinic.json", tags: ["community", "medical"] },
+    { file: "library.json", tags: ["community", "library"] },
+    { file: "community_center.json", tags: ["community"] },
+    { file: "campground.json", tags: ["community", "outdoors"] },
+    { file: "doctors-house.json", tags: ["residential"] },
+    { file: "teachers-house.json", tags: ["residential"] }
+  ];
+  for (const { file, tags } of lotTemplates) {
+    const input = loadLotTemplate(file);
+    await createLotTemplate(null, { input, tags });
+    console.log(`  · ${input.lotName}`);
+  }
+
+  console.log("Household templates:");
+  await createHouseholdTemplate(null, {
+    tags: ["family"],
+    input: {
+      householdName: "Two-Parent Family",
+      householdDescription: "Two working parents, two school-age kids, and a cat.",
+      characters: [
+        { characterName: "Parent", characterAge: 41, characterBio: "Works in town during the day." },
+        { characterName: "Parent", characterAge: 39, characterBio: "Works in town during the day." },
+        { characterName: "Child", characterAge: 12, characterBio: "In school on weekdays." },
+        { characterName: "Child", characterAge: 8, characterBio: "In school on weekdays." }
+      ],
+      animals: [{ animalName: "Cat", animalAge: 3, animalTraits: ["curious"] }]
+    }
+  });
+  console.log("  · Two-Parent Family");
+
+  await createHouseholdTemplate(null, {
+    tags: ["couple"],
+    input: {
+      householdName: "Retired Couple",
+      householdDescription: "A retired pair at home during the day, with an old cat.",
+      characters: [
+        { characterName: "Retiree", characterAge: 70, characterBio: "Retired; tinkers around the house." },
+        { characterName: "Retiree", characterAge: 68, characterBio: "Retired; keeps a garden." }
+      ],
+      animals: [{ animalName: "Cat", animalAge: 9, animalTraits: ["lazy", "affectionate"] }]
+    }
+  });
+  console.log("  · Retired Couple");
+
+  await createHouseholdTemplate(null, {
+    tags: ["couple"],
+    input: {
+      householdName: "Working Pair",
+      householdDescription: "Two working adults sharing a home.",
+      characters: [
+        { characterName: "Adult", characterAge: 31, characterBio: "Works in town during the day." },
+        { characterName: "Adult", characterAge: 33, characterBio: "Works in town during the day." }
+      ]
+    }
+  });
+  console.log("  · Working Pair");
+}
+
 async function seed() {
   await applyDDL();
 
   await seedDesertWillow();
   await seedPinehaven();
+  await seedLibrary();
 
   // Flush to disk. Short-lived scripts need an explicit checkpoint + close.
   try {
@@ -340,9 +409,10 @@ async function seed() {
   }
   await db.close();
 
-  console.log(`\n✅ Seeded 2 worlds:`);
+  console.log(`\n✅ Seeded 2 worlds + template library:`);
   console.log(`   Desert Willow — 12 residents, 2 cats, 5 households, 10 lots.`);
   console.log(`   Pinehaven     — 5 residents, 1 dog, 2 households, 5 lots.`);
+  console.log(`   Library       — 6 lot templates, 3 household templates.`);
   console.log(`   Start the app; the default world opens on load. Switch worlds from the top nav.\n`);
 }
 
