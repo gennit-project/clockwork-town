@@ -147,6 +147,15 @@ buttons in the top toolbar pose the town for screenshots without waiting for the
 - **☀️** — jump to a weekday morning: characters dispersed to work and school.
 - **🌙** — jump to late evening: everyone home and asleep.
 
+| ☀️ Weekday morning | 🌙 Late evening |
+| --- | --- |
+| ![Desert Willow at a weekday morning — residents dispersed to the clinic, library, community center, and school](docs/images/region-day.png) | ![Desert Willow at night — every resident home and asleep](docs/images/region-night.png) |
+
+*The same town at 10:25 AM and 11:40 PM: by day the clinic, library, community center,
+and school fill up while homes empty out (only the retired Reyes couple stays in); by
+night everyone is back home asleep. The right rail lists each resident's current location
+and activity.*
+
 **If port 4000 is already in use,** start the backend on another port and point the
 Vite `/graphql` proxy at the same port:
 
