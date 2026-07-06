@@ -121,20 +121,33 @@ npm run dev:frontend # serves http://localhost:5173 and proxies /graphql to the 
 
 Then open **http://localhost:5173**.
 
-### Seed the demo town
+### Seed the demo worlds
 
-The database starts **empty**. To populate a ready-made town — **Desert Willow**, with
-12 characters across 5 households, community lots (clinic, library, community center,
-school, campground) and residential homes — run the seed with the backend **stopped**:
+The database starts **empty**. To populate two ready-made towns, run the seed with the
+backend **stopped**:
 
 ```bash
-npm run seed          # ⚠️ resets ./data/clockwork-town.kuzu, then builds Desert Willow
+npm run seed          # ⚠️ resets ./data/clockwork-town.kuzu, then builds both worlds
 ```
 
-Then start the servers and open the **Desert Willow** region. Every character has a
-weekday schedule, so once you press **▶ play** the town comes to life: adults commute to
-work, kids head to school, and everyone returns home to sleep at night. (You can also
-still build your own World → Region → Lots/Households/Characters in the UI.)
+This builds:
+
+- **Desert Willow** — a full town: 12 characters across 5 households, community lots
+  (clinic, library, community center, school, campground) and residential homes.
+- **Pinehaven** — a smaller companion town: 5 characters across 2 households, with its own
+  clinic, library, and school (there to show the app handles more than one world).
+
+Then start the servers. On load the app opens the **default world's Overview** (Desert
+Willow) so there's data immediately; use the **world dropdown in the top nav** to switch
+between towns — it keeps you on the same section (Residents, World, Logs…) in the new
+world. Every character has a weekday schedule, so once you press **▶ play** each town comes
+to life: adults commute to work, kids head to school, and everyone returns home to sleep at
+night. (You can also still build your own World → Region → Lots/Households/Characters in
+the UI.)
+
+Some sidebar sections (Tickets, Alerts, Analytics, Reports, Settings, Calendar) are
+placeholders and are **hidden by default** so the app reads as finished. To see them while
+developing, run the frontend with `VITE_SHOW_UNFINISHED=true`.
 
 ### Day / night screenshots
 

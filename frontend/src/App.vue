@@ -63,6 +63,23 @@
               <span class="truncate text-gf-text-weak">{{ crumb }}</span>
             </template>
           </nav>
+
+          <!-- World switcher -->
+          <div v-if="worlds.length" class="flex shrink-0 items-center gap-1.5 border-l border-gf-border pl-2">
+            <svg class="h-4 w-4 shrink-0 text-gf-text-faint" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <select
+              :value="activeWorldId ?? ''"
+              class="max-w-[9rem] truncate rounded border border-gf-border bg-gf-bg px-2 py-1 text-xs font-medium text-gf-text focus:outline-none"
+              title="Switch world"
+              @change="switchWorld(($event.target as HTMLSelectElement).value)"
+            >
+              <option v-for="world in worlds" :key="world.id" :value="world.id" class="bg-gf-surface">
+                {{ world.name }}
+              </option>
+            </select>
+          </div>
         </div>
 
         <div class="flex items-center gap-2">
@@ -335,11 +352,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDarkMode } from './composables/useDarkMode'
 import { getCharacterStatusText } from './composables/useCharacterStatus'
 import { useSimulationStore } from './stores/simulation'
+import { showUnfinishedPages } from './config/features'
 import { useCharacterPanelStore } from './stores/characterPanel'
 import { client, queries } from './graphql'
 import CharacterDetailPanel from './components/CharacterDetailPanel.vue'
@@ -466,12 +484,114 @@ function memberCardClass(member: { id: string; present: boolean }): string {
   return 'border-gf-border bg-gf-surface-2 hover:border-gf-border-weak'
 }
 
-// Base path for region-scoped nav items (null when no region is active).
-const regionBase = computed(() =>
-  currentWorldId.value && currentRegionId.value
-    ? `/world/${currentWorldId.value}/region/${currentRegionId.value}`
-    : null
+// ---- Worlds & the world switcher --------------------------------------------
+interface WorldSummary {
+  id: string
+  name: string
+  createdAt?: string
+  regions: Array<{ id: string; name: string }>
+}
+
+const worlds = ref<WorldSummary[]>([])
+
+// Remember the last world the user was in so the switcher and region-scoped nav
+// icons keep working from global pages (Library, the root list) and survive a
+// reload, instead of falling back to '/'.
+const LAST_WORLD_KEY = 'clockwork:lastWorldId'
+const storedWorldId = ref<string | null>(
+  typeof localStorage !== 'undefined' ? localStorage.getItem(LAST_WORLD_KEY) : null
 )
+
+watch(
+  currentWorldId,
+  (worldId) => {
+    if (worldId) {
+      storedWorldId.value = worldId
+      try {
+        localStorage.setItem(LAST_WORLD_KEY, worldId)
+      } catch {
+        // ignore storage failures (private mode, etc.)
+      }
+    }
+  },
+  { immediate: true }
+)
+
+// The world in context: the one in the URL, else the last one visited, else the
+// first available. Drives the switcher and the region-scoped nav base.
+const activeWorldId = computed(
+  () => currentWorldId.value || storedWorldId.value || worlds.value[0]?.id || null
+)
+const activeWorld = computed(() => worlds.value.find((w) => w.id === activeWorldId.value) || null)
+
+function regionDashboardPath(world: WorldSummary | null | undefined): string | null {
+  const region = world?.regions?.[0]
+  return world && region ? `/world/${world.id}/region/${region.id}/dashboard` : null
+}
+
+// Base path for region-scoped nav items: the current region if we're on one,
+// otherwise the active world's first region (null until worlds load).
+const regionBase = computed(() => {
+  if (currentWorldId.value && currentRegionId.value) {
+    return `/world/${currentWorldId.value}/region/${currentRegionId.value}`
+  }
+  const world = activeWorld.value
+  return world?.regions?.[0] ? `/world/${world.id}/region/${world.regions[0].id}` : null
+})
+
+// Region-scoped sections that exist in every world, so they're safe to carry
+// across a world switch. Deeper detail routes (a specific lot/household/
+// character) are world-specific, so those fall back to the world's Overview.
+const WORLD_SECTION_SUFFIXES = ['/dashboard', '/lots', '/overview', '/activity-log', '/calendar']
+
+function switchWorld(worldId: string) {
+  if (worldId === activeWorldId.value && currentWorldId.value) {
+    return
+  }
+  const world = worlds.value.find((w) => w.id === worldId)
+  const region = world?.regions?.[0]
+  if (!world || !region) {
+    return
+  }
+  const targetBase = `/world/${world.id}/region/${region.id}`
+
+  // Stay on the current section (Residents, World, Logs, …) when switching
+  // worlds, rather than always dropping back to the Overview.
+  let suffix = '/dashboard'
+  if (currentWorldId.value && currentRegionId.value) {
+    const currentBase = `/world/${currentWorldId.value}/region/${currentRegionId.value}`
+    if (route.path.startsWith(currentBase)) {
+      const current = route.path.slice(currentBase.length)
+      if (WORLD_SECTION_SUFFIXES.includes(current)) {
+        suffix = current
+      }
+    }
+  }
+  router.push(targetBase + suffix)
+}
+
+onMounted(async () => {
+  try {
+    const data = await client.request<{ worlds: WorldSummary[] }>(queries.getWorldsWithRegions)
+    // Oldest-first, so the default world is the first one created.
+    worlds.value = [...(data.worlds ?? [])].sort((a, b) =>
+      (a.createdAt ?? '').localeCompare(b.createdAt ?? '')
+    )
+  } catch (e) {
+    console.error('Failed to load worlds', e)
+    return
+  }
+
+  // Default landing: if we're not inside a world yet, open the default world's
+  // Overview so data shows immediately (last-visited world, else the first).
+  if (!currentWorldId.value) {
+    const preferred = worlds.value.find((w) => w.id === storedWorldId.value) ?? worlds.value[0]
+    const path = regionDashboardPath(preferred)
+    if (path) {
+      router.replace(path)
+    }
+  }
+})
 
 interface NavItem {
   key: string
@@ -480,23 +600,26 @@ interface NavItem {
   routeName?: string
   routePrefix?: string
   requiresRegion?: boolean
+  /** Placeholder ("not yet instrumented") section, hidden unless the flag is on. */
+  unfinished?: boolean
 }
 
 const navItems = computed<NavItem[]>(() => {
   const base = regionBase.value
-  return [
+  const items: NavItem[] = [
     { key: 'overview', label: 'Overview', to: base ? `${base}/dashboard` : '/', routeName: 'town-dashboard', requiresRegion: true },
     { key: 'residents', label: 'Residents', to: base ? `${base}/lots` : '/', routeName: 'lots-and-households', requiresRegion: true },
     { key: 'world', label: 'World', to: base ? `${base}/overview` : '/', routeName: 'region-overview', requiresRegion: true },
     { key: 'logs', label: 'Logs', to: base ? `${base}/activity-log` : '/', routeName: 'activity-log', requiresRegion: true },
-    { key: 'tickets', label: 'Tickets', to: '/tickets', routeName: 'tickets' },
-    { key: 'alerts', label: 'Alerts', to: '/alerts', routeName: 'alerts' },
-    { key: 'calendar', label: 'Calendar', to: base ? `${base}/calendar` : '/calendar', routeName: 'calendar-region', requiresRegion: true },
-    { key: 'analytics', label: 'Analytics', to: '/analytics', routeName: 'analytics' },
-    { key: 'reports', label: 'Reports', to: '/reports', routeName: 'reports' },
+    { key: 'tickets', label: 'Tickets', to: '/tickets', routeName: 'tickets', unfinished: true },
+    { key: 'alerts', label: 'Alerts', to: '/alerts', routeName: 'alerts', unfinished: true },
+    { key: 'calendar', label: 'Calendar', to: base ? `${base}/calendar` : '/calendar', routeName: 'calendar-region', requiresRegion: true, unfinished: true },
+    { key: 'analytics', label: 'Analytics', to: '/analytics', routeName: 'analytics', unfinished: true },
+    { key: 'reports', label: 'Reports', to: '/reports', routeName: 'reports', unfinished: true },
     { key: 'library', label: 'Library', to: '/library', routePrefix: '/library' },
-    { key: 'settings', label: 'Settings', to: '/settings', routeName: 'settings' }
+    { key: 'settings', label: 'Settings', to: '/settings', routeName: 'settings', unfinished: true }
   ]
+  return showUnfinishedPages ? items : items.filter((item) => !item.unfinished)
 })
 
 function isNavActive(item: NavItem): boolean {

@@ -633,4 +633,10 @@ watch(characters, (newCharacters: CharacterSummary[]) => {
 onMounted(() => {
   void loadData()
 })
+
+// Refetch when the world/region changes (e.g. via the world switcher), since
+// vue-router reuses this component across param-only navigations.
+watch([worldId, regionId], () => {
+  void loadData()
+})
 </script>

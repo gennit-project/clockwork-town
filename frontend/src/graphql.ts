@@ -23,6 +23,20 @@ export const queries = {
     }
   `,
 
+  getWorldsWithRegions: `
+    query GetWorldsWithRegions {
+      worlds {
+        id
+        name
+        createdAt
+        regions {
+          id
+          name
+        }
+      }
+    }
+  `,
+
   getWorld: `
     query GetWorld($id: ID!) {
       world(id: $id) {

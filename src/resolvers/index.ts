@@ -25,6 +25,7 @@ export const resolvers = {
   },
   Relationship: RelationshipResolvers.Relationship,
   Memory: RelationshipResolvers.Memory,
+  World: WorldResolvers.World,
   Space: WorldResolvers.Space,
   Region: WorldResolvers.Region,
   Lot: WorldResolvers.Lot,
