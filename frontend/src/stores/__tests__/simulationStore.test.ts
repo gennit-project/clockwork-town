@@ -17,7 +17,7 @@ const persistenceMocks = vi.hoisted(() => ({
     lastSpokeAt: (input.lastSpokeAt as string | undefined) ?? null,
     isDeceasedTarget: Boolean(input.isDeceasedTarget ?? false)
   })),
-  createStructuredCharacterLongTermMemory: vi.fn(async () => {}),
+  createStructuredCharacterLongTermMemory: vi.fn(async (_input: unknown) => {}),
   fetchCharacterDetails: vi.fn(async () => ({ character: { longTermMemories: [] } })),
   persistCharacterBio: vi.fn(async () => {}),
   createCharacterLongTermMemory: vi.fn(async () => {}),

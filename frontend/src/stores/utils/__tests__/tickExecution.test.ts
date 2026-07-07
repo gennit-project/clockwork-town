@@ -488,6 +488,8 @@ describe('executeTick', () => {
 
     it('should skip executeAction when an in-progress task consumes the tick', async () => {
       params.characterStates.value['char-1'].currentTask = {
+        planId: 'task-1',
+        goal: 'sleep',
         action: 'sleep',
         itemId: 'item-2',
         itemName: 'Bed',
@@ -496,7 +498,9 @@ describe('executeTick', () => {
         targetLotId: 'lot-1',
         targetLotName: 'Test House',
         remainingTicks: 2,
-        totalTicks: 3
+        totalTicks: 3,
+        currentStepIndex: 0,
+        steps: [{ action: 'sleep', remainingTicks: 2, totalTicks: 3 }]
       }
       params.progressTask = vi.fn(async () => true)
 

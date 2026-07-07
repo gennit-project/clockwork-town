@@ -11,6 +11,7 @@
     "dev": "tsx watch src/server.ts",
     "dev:frontend": "vite",
     "build:frontend": "vite build",
+    "typecheck": "vue-tsc --noEmit",
     "ddl": "tsx src/db.ts --ddl",
     "seed": "tsx src/seed.ts",
     "migrate": "tsx src/db.ts --migrate",

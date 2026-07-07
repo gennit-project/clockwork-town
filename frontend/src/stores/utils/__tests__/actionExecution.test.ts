@@ -19,7 +19,18 @@ function createWorldData(): WorldData {
         regionId: 'region-1',
         allowedActivities: ['sleep'],
         affordances: [{ action: 'sleep', weight: 1 }],
-        maxSimultaneousUsers: 1
+        maxSimultaneousUsers: 1,
+        classification: {
+          isFoodStorage: false,
+          isTakeoutSource: false,
+          isGrocerySource: false,
+          isKitchenStation: false,
+          isTableSeat: false,
+          isChairSeat: false,
+          isLoungeSeat: false,
+          isBedSeat: true,
+          isBookSource: false
+        }
       }
     },
     itemsByAffordance: {}

@@ -467,7 +467,7 @@ function getHostedFollowUpStep(contextType: InviteOverContext): TaskStep | null 
   const currentState = props.characterState
   const currentLocation = currentState?.location
   const characterId = props.characterId
-  if (!relationship || !currentState || !currentLocation.lotId || !characterId) {
+  if (!relationship || !currentState || !currentLocation?.lotId || !characterId) {
     return null
   }
 
@@ -517,7 +517,7 @@ function queueHostedInvite(contextType: InviteOverContext) {
   const relationship = selectedRelationship.value
   const currentLocation = props.characterState?.location
   const hostedFollowUp = getHostedFollowUpStep(contextType)
-  if (!relationship || !currentLocation.lotId || !hostedFollowUp || !canQueueHostedInvite(contextType)) {
+  if (!relationship || !currentLocation?.lotId || !hostedFollowUp || !canQueueHostedInvite(contextType)) {
     return
   }
 

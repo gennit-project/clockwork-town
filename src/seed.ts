@@ -407,7 +407,7 @@ async function seed() {
   } catch {
     // CHECKPOINT can be a no-op depending on WAL state; safe to ignore.
   }
-  await db.close();
+  await (db as { close: () => Promise<void> }).close();
 
   console.log(`\n✅ Seeded 2 worlds + template library:`);
   console.log(`   Desert Willow — 12 residents, 2 cats, 5 households, 10 lots.`);

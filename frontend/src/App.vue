@@ -204,17 +204,6 @@
 
       <!-- Content + side panes -->
       <div class="flex min-h-0 flex-1 overflow-hidden">
-        <aside
-          v-if="showCharacterPane"
-          class="hidden w-80 shrink-0 flex-col border-r border-gf-border bg-gf-surface lg:flex"
-        >
-          <CharacterDetailPanel
-            :character="selectedCharacterForPanel"
-            :available-romance-targets="regionCharacters"
-            @close="closeCharacterPanel"
-          />
-        </aside>
-
         <main class="min-w-0 flex-1 overflow-auto">
           <router-view />
         </main>
@@ -343,7 +332,6 @@ import { useSimulationStore } from './stores/simulation'
 import { showUnfinishedPages } from './config/features'
 import { useCharacterPanelStore } from './stores/characterPanel'
 import { client, queries } from './graphql'
-import CharacterDetailPanel from './components/CharacterDetailPanel.vue'
 import AnimalDetailPanel from './components/AnimalDetailPanel.vue'
 
 const appVersion = 'v0.1.0'
@@ -427,19 +415,10 @@ const regionCharacters = ref<CharacterSummary[]>([])
 const regionAnimals = ref<AnimalSummary[]>([])
 const regionHouseholds = ref<HouseholdGroup[]>([])
 const collapsedHouseholds = ref<Record<string, boolean>>({})
-const selectedCharacterForPanel = ref<CharacterSummary | null>(null)
-const selectedCharacterWorldId = ref<string | null>(null)
 const selectedAnimalForPanel = ref<AnimalSummary | null>(null)
 
 const currentWorldId = computed(() => normalizeRouteParam(route.params.worldId))
 const currentRegionId = computed(() => normalizeRouteParam(route.params.regionId))
-const showCharacterPane = computed(() =>
-  Boolean(
-    selectedCharacterForPanel.value &&
-    currentWorldId.value &&
-    selectedCharacterWorldId.value === currentWorldId.value
-  )
-)
 
 // Town residents grouped by household, each member flagged present (on a lot
 // in this region) or away (elsewhere). Sourced from household membership so the
@@ -724,8 +703,6 @@ const getAnimalStatus = (animalId: string): string => {
 }
 
 const closeCharacterPanel = () => {
-  selectedCharacterForPanel.value = null
-  selectedCharacterWorldId.value = null
   characterPanelStore.resetPanel()
 }
 

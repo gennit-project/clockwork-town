@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createCharacterState } from '../characterState'
 import { progressActiveTask } from '../taskProgression'
+import type { ActiveTask } from '../../types'
 
-function createTask(overrides: Record<string, unknown> = {}) {
+function createTask(overrides: Partial<ActiveTask> = {}): ActiveTask {
   return {
     planId: 'task-1',
     goal: 'sleep',

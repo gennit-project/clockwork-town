@@ -221,7 +221,10 @@ const testAction = (action: ActionName) => {
     return
   }
 
-  simulationStore.applyActionEffects(selectedCharacterId.value, action, `Debug test: ${action}`)
+  simulationStore.applyActionEffects({
+    characterId: selectedCharacterId.value,
+    intent: { action, utility: 0 }
+  })
 }
 
 const testFindItems = (action: ActionName) => {
