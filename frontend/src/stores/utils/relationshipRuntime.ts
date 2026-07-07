@@ -1,4 +1,5 @@
 import type { CharacterRelationship, CharacterState, Intent } from '../types'
+import { hasBloodFamilyLabel } from './family'
 
 const REUNION_ABSENCE_THRESHOLD_MINUTES = 6 * 60
 const LUNCH_START_HOUR = 11
@@ -109,6 +110,9 @@ function buildRelationshipMilestoneLabels({
   const sharedExperienceEventTypes = [...eventTypes].filter((eventType) => SHARED_EXPERIENCE_EVENT_TYPES.has(eventType))
   const nextLabels: string[] = []
 
+  // Blood relatives never gain romantic milestone labels ("attracted to" etc.).
+  const isBloodRelative = hasBloodFamilyLabel(relationship.labels)
+
   if (
     relationship.longTermScore >= 0.55
     && eventTypes.has('first_met')
@@ -118,7 +122,8 @@ function buildRelationshipMilestoneLabels({
   }
 
   if (
-    relationship.longTermScore >= 0.35
+    !isBloodRelative
+    && relationship.longTermScore >= 0.35
     && relationship.shortTermScore >= 0.15
     && romanticEventTypes.length >= 1
   ) {
@@ -126,7 +131,8 @@ function buildRelationshipMilestoneLabels({
   }
 
   if (
-    relationship.longTermScore >= 0.5
+    !isBloodRelative
+    && relationship.longTermScore >= 0.5
     && relationship.shortTermScore >= 0.3
     && romanticEventTypes.length >= 2
     && (eventTypes.has('invite_over') || eventTypes.has('date'))

@@ -15,6 +15,7 @@ import { calculateUtility } from './actionUtility'
 import { findItemsWithAffordance } from './pathfinding'
 import { canAccessLot } from './accessControl'
 import { evaluateRelationshipAvailability } from './relationshipAvailability'
+import { hasBloodFamilyLabel } from './family'
 
 export interface BuildPlanCandidatesParams {
   characterId: string
@@ -346,6 +347,14 @@ function buildSocialPlanCandidates({
 
       if (socialTargetState.cooldowns[action] > 0) {
         continue
+      }
+
+      // No romancing blood relatives.
+      if (action === 'date') {
+        const relationship = characterState.relationships?.find((rel) => rel.toCharacterId === socialTargetId)
+        if (hasBloodFamilyLabel(relationship?.labels)) {
+          continue
+        }
       }
 
       if (!canAccessLot({
