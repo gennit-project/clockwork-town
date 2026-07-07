@@ -11,14 +11,15 @@ the flat, earnest language of uptime monitoring. The humor comes from the framin
 care is real. It is not a parody of mental health, and the heavier material (illness,
 loss, grief) is meant to be handled with that same affection, not for shock.
 
-> ⚠️ **Very early, experimental work-in-progress.** This is in active development with
-> incomplete features and rough edges throughout. The long-term vision is a town you
-> manage — many households, jobs, relationships, illness and grief, a tutorial, default
-> towns — but it is **not there yet**. Today you can stand up a small world and watch a
-> handful of residents tick through their needs and daily routines — dispersing to work
-> and school by day and heading home at night (see the [day/night screenshots](#day--night-screenshots)
-> further down). See [`docs/roadmap/`](docs/roadmap/README.md) for the full,
-> dependency-ordered plan of where it's headed.
+> **Status: a work-in-progress portfolio project.** The core loop works today — seed a
+> town and watch its residents move through a day: commuting to work and school by day,
+> heading home to sleep at night, and building friendships and family ties that surface on
+> a live relationship graph (see the [day/night screenshots](#day--night-screenshots)
+> below). It is not feature-complete, and I'm not pretending otherwise — the roadmap (more
+> households, jobs, illness and grief, a tutorial) is deliberately larger than what's
+> built. What's here is meant to show the shape of the idea and the engineering under it:
+> a browser-side simulation over a typed GraphQL persistence layer, lint- and type-checked
+> with CI. The full, dependency-ordered plan lives in [`docs/roadmap/`](docs/roadmap/README.md).
 
 ## Architecture
 
@@ -179,8 +180,8 @@ npm run build:frontend
 npm start             # visit http://localhost:4000
 ```
 
-**Tests:** `npx vitest run` (a few `taskLifecycle` tests are known-failing and unrelated
-to current work).
+**Quality checks:** `npm run lint`, `npm run typecheck`, and `npx vitest run` all pass, and
+run on every push/PR via GitHub Actions (`.github/workflows/ci.yml`).
 
 ## Troubleshooting
 
@@ -189,9 +190,9 @@ to current work).
   (`npm run dev:frontend`) — in separate terminals. The frontend proxies `/graphql` to
   the backend, so it can't load data on its own.
 - **The app loads but there are no worlds / nothing is happening.** That's expected on a
-  fresh clone — the database starts empty. Create a World → Region → Lots/Households/
-  Characters in the UI, then use the play/▶ control to run the simulation. (A bundled
-  starter town is on the roadmap.)
+  fresh clone — the database starts empty. Run `npm run seed` (with the backend stopped) to
+  build the demo towns, or create a World → Region → Lots/Households/Characters in the UI,
+  then use the play/▶ control to run the simulation.
 - **`npm ci` fails while building/installing `kuzu`.** Kùzu is a native module. Make
   sure you're on Node 20+ (`nvm use` honors the bundled `.nvmrc`). If a prebuilt binary
   isn't available for your OS/architecture, you may need standard native-build tools
@@ -215,7 +216,7 @@ near-future packaging goal is a **desktop Electron app** that runs the backend a
 embedded Kùzu database in the main process, so the whole thing ships as a single
 double-click app with no separate server to start. Desktop-only; mobile is not planned.
 The project is text-only by design — there are no images in the product, and none are
-planned. (The screenshots in this README are documentation, not product assets.)
+planned; the screenshots above are of the actual dashboard UI.
 
 ## License
 
