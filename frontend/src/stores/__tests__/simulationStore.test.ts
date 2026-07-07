@@ -696,7 +696,7 @@ describe('simulation store integration', () => {
     const store = setupStore()
     store.simulationDateTime = {
       ...store.simulationDateTime,
-      iso: '2026-04-06T19:00:00.000Z',
+      iso: '2026-04-06T12:00:00.000Z',
       hour: 12,
       minute: 0
     }
@@ -737,7 +737,7 @@ describe('simulation store integration', () => {
     const store = setupStore()
     store.simulationDateTime = {
       ...store.simulationDateTime,
-      iso: '2026-04-06T19:00:00.000Z',
+      iso: '2026-04-06T12:00:00.000Z',
       hour: 12,
       minute: 0
     }
@@ -823,7 +823,7 @@ describe('simulation store integration', () => {
     const store = setupStore()
     store.simulationDateTime = {
       ...store.simulationDateTime,
-      iso: '2026-04-06T19:00:00.000Z',
+      iso: '2026-04-06T12:00:00.000Z',
       hour: 12,
       minute: 0
     }

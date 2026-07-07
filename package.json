@@ -17,9 +17,9 @@
     "ddl": "tsx src/db.ts --ddl",
     "seed": "tsx src/seed.ts",
     "migrate": "tsx src/db.ts --migrate",
-    "test": "vitest",
-    "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
+    "test": "TZ=UTC vitest",
+    "test:ui": "TZ=UTC vitest --ui",
+    "test:coverage": "TZ=UTC vitest --coverage"
   },
   "dependencies": {
     "@graphql-tools/schema": "^10.0.25",
