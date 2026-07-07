@@ -152,7 +152,6 @@ const gradient = VIRIDIS_GRADIENT
 
 // Layout constants
 const CR = 14 // resident hex radius
-const OR = 9 // object cell radius (used for packing/room sizing)
 const OBJ_SIZE = 12 // furniture is a small rounded square, distinct from resident hexes
 const S = CR * 1.18 // resident centre spacing
 const PAD = 9 // padding from outermost cell to room edge

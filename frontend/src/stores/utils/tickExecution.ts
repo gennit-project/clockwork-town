@@ -22,7 +22,6 @@ import { createActivityLogEntry } from './characterState'
 import { calculateUtility } from './actionUtility'
 import { evaluateRelationshipAvailability } from './relationshipAvailability'
 
-const MULTI_PARTICIPANT_ACTIONS = new Set<ActionName>(['chat_friend', 'date'])
 const INVITATION_RESPONSE_ACTIONS = new Set<ActionName>(['chat_friend', 'date', 'invite_over', 'propose_relationship'])
 
 function calculateTravelCostToIntentTarget({

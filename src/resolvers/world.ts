@@ -60,7 +60,7 @@ export const WorldResolvers = {
       `, { id: parent.id });
       return lots;
     },
-    naturalAreas: async (parent: any) => {
+    naturalAreas: async (_parent: any) => {
       // TODO: Implement when natural areas are added
       return [];
     }
@@ -90,7 +90,7 @@ export const WorldResolvers = {
       `, { id: parent.id });
       return users;
     },
-    activeAnimalUsers: async (parent: any) => {
+    activeAnimalUsers: async (_parent: any) => {
       // TODO: Add when animal USING edges are implemented
       return [];
     }

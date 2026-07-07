@@ -3,18 +3,14 @@
  */
 
 import type {
-  ActionName,
   AnimalState,
-  Needs,
   CharacterState,
   WorldData,
   ItemOccupancy,
-  ItemOption,
   Intent,
   SimulationDateTime
 } from '../types'
 import { buildPlanCandidates, planCandidateToIntent } from './intentPlanner'
-import { calculateUtility } from './actionUtility'
 import { debugLog } from './simulationDebug'
 import { buildScheduleIntent } from './workSchedule'
 

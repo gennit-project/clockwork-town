@@ -6,7 +6,6 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { calculateUtility, selectBestIntent } from '../decisionMaking'
 import {
   createMockNeeds,
-  createMockCooldowns,
   createMockCharacterState,
   createMockWorldData,
   createMockItemOccupancy,

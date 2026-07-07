@@ -204,7 +204,7 @@ interface CharacterSummary {
   name: string
 }
 
-const props = defineProps<{
+defineProps<{
   characters: CharacterSummary[]
 }>()
 

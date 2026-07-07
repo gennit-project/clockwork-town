@@ -1,5 +1,5 @@
 import type { Ref } from 'vue'
-import type { ActivityLogEntry, CharacterState } from '../types'
+import type { ActivityLogEntry } from '../types'
 import { createActivityLogEntry } from './characterState'
 
 const MAX_LOG_ENTRIES = 100

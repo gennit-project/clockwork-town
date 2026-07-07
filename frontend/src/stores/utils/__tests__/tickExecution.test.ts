@@ -11,7 +11,7 @@ import {
   createMockItemOccupancy,
   mockConsole
 } from '../../__tests__/mockData'
-import type { CharacterState, Intent, ActivityLogEntry } from '../../types'
+import type { CharacterState, ActivityLogEntry } from '../../types'
 
 mockConsole()
 
@@ -529,8 +529,6 @@ describe('executeTick', () => {
     })
 
     it('should handle multiple ticks correctly', async () => {
-      const initialFood = 0.5
-
       await executeTick(params)
       await executeTick(params)
       await executeTick(params)
