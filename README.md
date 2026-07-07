@@ -159,9 +159,13 @@ The region header shows a **day/night indicator** (☀️/🌙 + clock), and com
 residential lots are colour-coded (green **Community** / blue **Residence** badges). Press
 **▶ play** and let the clock run to watch the town move through its day:
 
-| ☀️ Weekday morning | 🌙 Late evening |
-| --- | --- |
-| ![Desert Willow at a weekday morning, residents dispersed to the clinic, library, community center, and school](docs/images/region-day.png) | ![Desert Willow at night, every resident home and asleep](docs/images/region-night.png) |
+**☀️ Weekday morning**
+
+![Desert Willow at a weekday morning, residents dispersed to the clinic, library, community center, and school](docs/images/region-day.png)
+
+**🌙 Late evening**
+
+![Desert Willow at night, every resident home and asleep](docs/images/region-night.png)
 
 *The same town by day and by night: during the day the clinic, library, community center,
 and school fill up while homes empty out (only the retired Reyes couple stays in); at night
