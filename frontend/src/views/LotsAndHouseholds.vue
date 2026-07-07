@@ -144,7 +144,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
 import { client, queries, mutations } from '../graphql'
@@ -269,6 +269,12 @@ const viewHousehold = (householdId: string) => {
 }
 
 onMounted(() => {
+  void loadData()
+})
+
+// Refetch when the world/region changes (e.g. via the world switcher), since
+// vue-router reuses this component across param-only navigations.
+watch([worldId, regionId], () => {
   void loadData()
 })
 </script>

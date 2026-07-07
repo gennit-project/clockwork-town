@@ -45,6 +45,13 @@ export const WorldResolvers = {
       return characters;
     }
   },
+  World: {
+    regions: async (parent: any) =>
+      q(`
+        MATCH (w:World {id:$id})-[:HAS_REGION]->(r:Region)
+        RETURN r.id AS id, r.name AS name, r.worldId AS worldId, r.kind AS kind
+      `, { id: parent.id })
+  },
   Region: {
     lots: async (parent: any) => {
       const lots = await q(`
@@ -53,7 +60,7 @@ export const WorldResolvers = {
       `, { id: parent.id });
       return lots;
     },
-    naturalAreas: async (parent: any) => {
+    naturalAreas: async (_parent: any) => {
       // TODO: Implement when natural areas are added
       return [];
     }
@@ -83,7 +90,7 @@ export const WorldResolvers = {
       `, { id: parent.id });
       return users;
     },
-    activeAnimalUsers: async (parent: any) => {
+    activeAnimalUsers: async (_parent: any) => {
       // TODO: Add when animal USING edges are implemented
       return [];
     }
@@ -126,7 +133,7 @@ export const WorldResolvers = {
       q(`
         MATCH (w:World)
         RETURN w.id AS id, w.name AS name, w.createdAt AS createdAt
-        ORDER BY w.createdAt DESC
+        ORDER BY w.createdAt ASC
       `),
     world: async (_: any, { id }: { id: string }) => {
       const [w] = await q(`

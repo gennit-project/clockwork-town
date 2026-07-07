@@ -17,7 +17,7 @@ const persistenceMocks = vi.hoisted(() => ({
     lastSpokeAt: (input.lastSpokeAt as string | undefined) ?? null,
     isDeceasedTarget: Boolean(input.isDeceasedTarget ?? false)
   })),
-  createStructuredCharacterLongTermMemory: vi.fn(async () => {}),
+  createStructuredCharacterLongTermMemory: vi.fn(async (_input: unknown) => {}),
   fetchCharacterDetails: vi.fn(async () => ({ character: { longTermMemories: [] } })),
   persistCharacterBio: vi.fn(async () => {}),
   createCharacterLongTermMemory: vi.fn(async () => {}),
@@ -696,7 +696,7 @@ describe('simulation store integration', () => {
     const store = setupStore()
     store.simulationDateTime = {
       ...store.simulationDateTime,
-      iso: '2026-04-06T19:00:00.000Z',
+      iso: '2026-04-06T12:00:00.000Z',
       hour: 12,
       minute: 0
     }
@@ -737,7 +737,7 @@ describe('simulation store integration', () => {
     const store = setupStore()
     store.simulationDateTime = {
       ...store.simulationDateTime,
-      iso: '2026-04-06T19:00:00.000Z',
+      iso: '2026-04-06T12:00:00.000Z',
       hour: 12,
       minute: 0
     }
@@ -823,7 +823,7 @@ describe('simulation store integration', () => {
     const store = setupStore()
     store.simulationDateTime = {
       ...store.simulationDateTime,
-      iso: '2026-04-06T19:00:00.000Z',
+      iso: '2026-04-06T12:00:00.000Z',
       hour: 12,
       minute: 0
     }

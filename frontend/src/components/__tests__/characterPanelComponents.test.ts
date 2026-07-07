@@ -165,7 +165,7 @@ describe('character panel components', () => {
     app.use(pinia)
     app.mount(container)
 
-    let textarea = container.querySelector('textarea') as HTMLTextAreaElement
+    const textarea = container.querySelector('textarea') as HTMLTextAreaElement
     textarea.value = 'Created'
     textarea.dispatchEvent(new Event('input'))
     await nextTick()

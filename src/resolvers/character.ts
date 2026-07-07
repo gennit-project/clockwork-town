@@ -66,6 +66,7 @@ export const CharacterResolvers = {
           day: shift.day,
           start: shift.start,
           end: shift.end,
+          activity: shift.activity,
           location: lotCache.get(shift.locationLotId)
         };
       }));

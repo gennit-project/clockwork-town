@@ -258,6 +258,7 @@ export const useSimulationStore = defineStore('simulation', () => {
     }
   }
 
+
   function enqueueIntent(characterId: string, intent: Intent): void {
     const state = characterStates.value[characterId]
     if (!state) {

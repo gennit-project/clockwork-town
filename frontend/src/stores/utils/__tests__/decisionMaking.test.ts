@@ -6,7 +6,6 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { calculateUtility, selectBestIntent } from '../decisionMaking'
 import {
   createMockNeeds,
-  createMockCooldowns,
   createMockCharacterState,
   createMockWorldData,
   createMockItemOccupancy,
@@ -392,6 +391,63 @@ describe('selectBestIntent', () => {
     })
 
     expect(intent.action).toBe('work')
+  })
+
+  it('should send the character home to sleep during a sleep shift', () => {
+    characterState.homeLotId = 'lot-1'
+    characterState.location = {
+      regionId: 'region-1',
+      lotId: 'lot-2',
+      lotName: 'Community Center',
+      spaceId: 'space-3',
+      spaceName: 'Library'
+    }
+    characterState.workSchedule = [{
+      day: 'Monday',
+      start: '22:00',
+      end: '06:00',
+      activity: 'sleep',
+      locationLotId: 'lot-1'
+    }]
+
+    const intent = selectBestIntent({
+      characterId: 'char-1',
+      characterState,
+      worldData,
+      itemOccupancy,
+      simulationDateTime: {
+        iso: '2026-04-06T23:00:00.000Z',
+        year: 2026, month: 4, day: 6, weekday: 'Monday', hour: 23, minute: 0
+      }
+    })
+
+    expect(intent.action).toBe('sleep')
+    expect(intent.targetLotId).toBe('lot-1')
+  })
+
+  it('should keep the sleep shift active after midnight (wrap-around)', () => {
+    characterState.homeLotId = 'lot-1'
+    characterState.workSchedule = [{
+      day: 'Monday',
+      start: '22:00',
+      end: '06:00',
+      activity: 'sleep',
+      locationLotId: 'lot-1'
+    }]
+
+    const intent = selectBestIntent({
+      characterId: 'char-1',
+      characterState,
+      worldData,
+      itemOccupancy,
+      simulationDateTime: {
+        iso: '2026-04-06T02:00:00.000Z',
+        year: 2026, month: 4, day: 6, weekday: 'Monday', hour: 2, minute: 0
+      }
+    })
+
+    expect(intent.action).toBe('sleep')
+    expect(intent.targetLotId).toBe('lot-1')
   })
 
   it('should send the character to the scheduled work lot', () => {

@@ -481,7 +481,7 @@ interface CharacterSummary {
   location?: CharacterLocationSummary | null
 }
 
-interface EditableItem extends SpaceItem {}
+type EditableItem = SpaceItem
 
 interface ItemCard extends SpaceItem {
   activeUsers: ActiveUserSummary[]

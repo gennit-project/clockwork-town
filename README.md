@@ -1,5 +1,7 @@
 # Clockwork Town
 
+[![CI](https://github.com/gennit-project/clockwork-town/actions/workflows/ci.yml/badge.svg)](https://github.com/gennit-project/clockwork-town/actions/workflows/ci.yml)
+
 A **text-based life simulator** with an unusual skin: it's presented as a Grafana-style
 observability dashboard — an "IT service desk for the human soul." Residents are nodes,
 their needs are metrics, their lives stream past as logs, and a neglected friendship or
@@ -11,16 +13,14 @@ the flat, earnest language of uptime monitoring. The humor comes from the framin
 care is real. It is not a parody of mental health, and the heavier material (illness,
 loss, grief) is meant to be handled with that same affection, not for shock.
 
-> ⚠️ **Very early, experimental work-in-progress.** This is in active development with
-> incomplete features and rough edges throughout. The long-term vision is a town you
-> manage — many households, jobs, relationships, illness and grief, a tutorial, default
-> towns — but it is **not there yet**. Today you can stand up a small world and watch a
-> handful of residents tick through their needs and daily routines. The screenshot below
-> is a tiny test world with a single resident (and his cat), not a finished town. See
-> [`docs/roadmap/`](docs/roadmap/README.md) for the full, dependency-ordered plan of
-> where it's headed.
-
-![Clockwork Town — a tiny test world in the region overview; residents appear as nodes with live status](docs/screenshot-dashboard.png)
+> **Status: a work-in-progress portfolio project.** The core loop works today — seed a
+> town and watch its residents move through a day: commuting to work and school by day,
+> heading home to sleep at night, and building friendships and family ties that surface on
+> a live relationship graph (see the [day/night screenshots](#day-and-night) below). It is not feature-complete, and I'm not pretending otherwise — the roadmap (more
+> households, jobs, illness and grief, a tutorial) is deliberately larger than what's
+> built. What's here is meant to show the shape of the idea and the engineering under it:
+> a browser-side simulation over a typed GraphQL persistence layer, lint- and type-checked
+> with CI. The full, dependency-ordered plan lives in [`docs/roadmap/`](docs/roadmap/README.md).
 
 ## Architecture
 
@@ -123,9 +123,48 @@ npm run dev:frontend # serves http://localhost:5173 and proxies /graphql to the 
 
 Then open **http://localhost:5173**.
 
-The database starts **empty** — there's no bundled town yet (shippable default towns
-and a tutorial are on the roadmap). Create a World → Region → Lots/Households/Characters
-in the UI to get going.
+### Seed the demo worlds
+
+The database starts **empty**. To populate two ready-made towns, run the seed with the
+backend **stopped**:
+
+```bash
+npm run seed          # ⚠️ resets ./data/clockwork-town.kuzu, then builds both worlds
+```
+
+This builds:
+
+- **Desert Willow** — a full town: 12 characters across 5 households, community lots
+  (clinic, library, community center, school, campground) and residential homes.
+- **Pinehaven** — a smaller companion town: 5 characters across 2 households, with its own
+  clinic, library, and school (there to show the app handles more than one world).
+
+Then start the servers. On load the app opens the **default world's Overview** (Desert
+Willow) so there's data immediately; use the **world dropdown in the top nav** to switch
+between towns — it keeps you on the same section (Residents, World, Logs…) in the new
+world. Every character has a weekday schedule, so once you press **▶ play** each town comes
+to life: adults commute to work, kids head to school, and everyone returns home to sleep at
+night. (You can also still build your own World → Region → Lots/Households/Characters in
+the UI.)
+
+Some sidebar sections (Tickets, Alerts, Analytics, Reports, Settings, Calendar) are
+placeholders and are **hidden by default** so the app reads as finished. To see them while
+developing, run the frontend with `VITE_SHOW_UNFINISHED=true`.
+
+### Day and night
+
+The region header shows a **day/night indicator** (☀️/🌙 + clock), and community vs.
+residential lots are colour-coded (green **Community** / blue **Residence** badges). Press
+**▶ play** and let the clock run to watch the town move through its day:
+
+| ☀️ Weekday morning | 🌙 Late evening |
+| --- | --- |
+| ![Desert Willow at a weekday morning — residents dispersed to the clinic, library, community center, and school](docs/images/region-day.png) | ![Desert Willow at night — every resident home and asleep](docs/images/region-night.png) |
+
+*The same town by day and by night: during the day the clinic, library, community center,
+and school fill up while homes empty out (only the retired Reyes couple stays in); at night
+everyone is back home asleep. The right rail lists each resident's current location and
+activity.*
 
 **If port 4000 is already in use,** start the backend on another port and point the
 Vite `/graphql` proxy at the same port:
@@ -142,8 +181,8 @@ npm run build:frontend
 npm start             # visit http://localhost:4000
 ```
 
-**Tests:** `npx vitest run` (a few `taskLifecycle` tests are known-failing and unrelated
-to current work).
+**Quality checks:** `npm run lint`, `npm run typecheck`, and `npx vitest run` all pass, and
+run on every push/PR via GitHub Actions (`.github/workflows/ci.yml`).
 
 ## Troubleshooting
 
@@ -152,9 +191,9 @@ to current work).
   (`npm run dev:frontend`) — in separate terminals. The frontend proxies `/graphql` to
   the backend, so it can't load data on its own.
 - **The app loads but there are no worlds / nothing is happening.** That's expected on a
-  fresh clone — the database starts empty. Create a World → Region → Lots/Households/
-  Characters in the UI, then use the play/▶ control to run the simulation. (A bundled
-  starter town is on the roadmap.)
+  fresh clone — the database starts empty. Run `npm run seed` (with the backend stopped) to
+  build the demo towns, or create a World → Region → Lots/Households/Characters in the UI,
+  then use the play/▶ control to run the simulation.
 - **`npm ci` fails while building/installing `kuzu`.** Kùzu is a native module. Make
   sure you're on Node 20+ (`nvm use` honors the bundled `.nvmrc`). If a prebuilt binary
   isn't available for your OS/architecture, you may need standard native-build tools
@@ -178,7 +217,7 @@ near-future packaging goal is a **desktop Electron app** that runs the backend a
 embedded Kùzu database in the main process, so the whole thing ships as a single
 double-click app with no separate server to start. Desktop-only; mobile is not planned.
 The project is text-only by design — there are no images in the product, and none are
-planned. (The screenshot above is documentation, not a product asset.)
+planned; the screenshots above are of the actual dashboard UI.
 
 ## License
 

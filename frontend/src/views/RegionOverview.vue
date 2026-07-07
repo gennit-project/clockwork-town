@@ -2,25 +2,36 @@
   <div class="flex h-full flex-col p-4">
     <Breadcrumbs :crumbs="breadcrumbs" />
 
-    <div class="mb-4 flex items-center justify-between gap-3">
-      <h1 class="text-xl font-semibold text-gf-text">Region Overview: {{ region?.name || 'Loading…' }}</h1>
-      <div class="flex items-center gap-2">
+    <div class="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      <div class="flex flex-wrap items-center gap-3">
+        <h1 class="text-xl font-semibold text-gf-text">Region Overview: {{ region?.name || 'Loading…' }}</h1>
+        <span
+          class="flex items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium"
+          :style="{ backgroundColor: timeOfDay.bg, color: timeOfDay.fg, borderColor: timeOfDay.border }"
+          :title="`${timeOfDay.weekday} · ${timeOfDay.clock}`"
+        >
+          <span class="leading-none">{{ timeOfDay.icon }}</span>
+          <span>{{ timeOfDay.label }}</span>
+          <span class="opacity-70">· {{ timeOfDay.weekday }} {{ timeOfDay.clock }}</span>
+        </span>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
         <button
           @click="showDebugPanel = !showDebugPanel"
-          class="rounded border border-gf-border bg-gf-surface px-3 py-1.5 text-sm text-gf-text-weak hover:bg-gf-surface-2"
+          class="whitespace-nowrap rounded border border-gf-border bg-gf-surface px-3 py-1.5 text-sm text-gf-text-weak hover:bg-gf-surface-2"
           title="Toggle debug action panel"
         >
           Debug
         </button>
         <button
           @click="showEditModal = true"
-          class="rounded border border-gf-border bg-gf-surface px-3 py-1.5 text-sm text-gf-text-weak hover:bg-gf-surface-2"
+          class="whitespace-nowrap rounded border border-gf-border bg-gf-surface px-3 py-1.5 text-sm text-gf-text-weak hover:bg-gf-surface-2"
         >
           Edit region
         </button>
         <router-link
           :to="`/world/${worldId}/region/${regionId}/lots`"
-          class="rounded border border-gf-border bg-gf-blue/15 px-3 py-1.5 text-sm text-gf-blue hover:bg-gf-blue/25"
+          class="whitespace-nowrap rounded border border-gf-border bg-gf-blue/15 px-3 py-1.5 text-sm text-gf-blue hover:bg-gf-blue/25"
         >
           Manage lots &amp; households
         </router-link>
@@ -81,11 +92,18 @@
         </router-link>
       </template>
 
-      <!-- Node-health host map (default) -->
-      <Panel v-if="viewMode === 'map'" title="Resident node health" class="flex-1 overflow-auto">
+      <!-- Fill-metric color scale, prominent above the map -->
+      <div class="mb-3 flex shrink-0 items-center gap-2 rounded border border-gf-border bg-gf-surface px-3 py-2">
+        <span class="text-xs font-medium text-gf-text-weak">{{ fillLabel }}</span>
+        <span class="text-[11px] text-gf-text-faint">0%</span>
+        <span class="h-2.5 flex-1 rounded" :style="{ background: gradient }" />
+        <span class="text-[11px] text-gf-text-faint">100%</span>
+      </div>
+
+      <!-- Resident-health host map (default) -->
+      <Panel v-if="viewMode === 'map'" title="Resident health" class="flex-1 overflow-auto">
         <HexMap
           :groups="hexGroups"
-          :legend-label="fillLabel"
           @select="onSelectHex"
           @select-building="onSelectBuilding"
         />
@@ -95,13 +113,35 @@
       <Panel v-else title="Rooms &amp; residents" class="flex-1 overflow-auto">
         <NestedHexMap
           :groups="nestedGroups"
-          :legend-label="fillLabel"
           @select="onSelectHex"
           @select-room="onSelectRoom"
           @select-building="onSelectBuilding"
         />
       </Panel>
     </AsyncContainer>
+
+    <!-- Character detail popover (opened by clicking a hex) -->
+    <div
+      v-if="panelCharacter"
+      class="fixed inset-0 z-40 flex items-center justify-center bg-black/50 p-4"
+      @click.self="closeCharacterPopover"
+    >
+      <div class="flex max-h-[85vh] w-full max-w-md flex-col overflow-hidden rounded-lg shadow-xl">
+        <CharacterDetailPanel
+          :character="panelCharacter"
+          :available-romance-targets="characters"
+          class="min-h-0 flex-1"
+          @close="closeCharacterPopover"
+        />
+        <button
+          class="flex items-center justify-center gap-1.5 border border-t-0 border-gf-border bg-gf-surface-2 px-3 py-2.5 text-sm font-medium text-gf-blue transition-colors hover:bg-gf-surface-3"
+          @click="goToCharacterLot(panelCharacter.id)"
+        >
+          Go to {{ panelCharacter.name }}'s current lot
+          <span aria-hidden="true">→</span>
+        </button>
+      </div>
+    </div>
 
     <!-- Edit Region Modal -->
     <Modal :is-open="showEditModal" title="Edit Region" @close="closeEditModal">
@@ -163,6 +203,9 @@ import Panel from '../components/Panel.vue'
 import DebugActionPanel from '../components/DebugActionPanel.vue'
 import HexMap, { type HexGroup } from '../components/charts/HexMap.vue'
 import NestedHexMap, { type NestedBuilding } from '../components/charts/NestedHexMap.vue'
+import CharacterDetailPanel from '../components/CharacterDetailPanel.vue'
+import { useCharacterPanelStore } from '../stores/characterPanel'
+import { VIRIDIS_GRADIENT as gradient } from '../charts/viridis'
 import { client, queries } from '../graphql'
 import { useSimulationStore } from '../stores/simulation'
 import { useRouteParams } from '../composables/useRouteParams'
@@ -171,14 +214,38 @@ import { computeCharacterHappiness } from '../stores/utils/happinessMetrics'
 import type { InputLot, InputSpace, NeedName } from '../stores/types'
 
 const simulationStore = useSimulationStore()
+const characterPanelStore = useCharacterPanelStore()
 const router = useRouter()
 const { worldId, regionId } = useRouteParams()
 const { buildBreadcrumbs } = useBreadcrumbs()
+
+// Character clicked on the hex map — shows the detail popover.
+const panelCharacter = ref<CharacterSummary | null>(null)
 
 type FillMetric = 'happiness' | NeedName
 
 const viewMode = ref<'map' | 'nested'>('map')
 const fillMetric = ref<FillMetric>('happiness')
+
+// Day/night indicator for the region header — makes day-vs-night screenshots
+// read at a glance and mirrors where the schedule sends everyone.
+const timeOfDay = computed(() => {
+  const dt = simulationStore.simulationDateTime
+  const h = dt.hour
+  let phase: { icon: string; label: string; bg: string; fg: string; border: string }
+  if (h >= 22 || h < 6) {
+    phase = { icon: '🌙', label: 'Night', bg: 'rgba(74,94,168,0.18)', fg: '#aab7e6', border: 'rgba(74,94,168,0.55)' }
+  } else if (h < 8) {
+    phase = { icon: '🌅', label: 'Dawn', bg: 'rgba(230,150,90,0.18)', fg: '#e6a878', border: 'rgba(230,150,90,0.55)' }
+  } else if (h < 18) {
+    phase = { icon: '☀️', label: 'Daytime', bg: 'rgba(240,190,80,0.18)', fg: '#e8c561', border: 'rgba(240,190,80,0.55)' }
+  } else {
+    phase = { icon: '🌇', label: 'Evening', bg: 'rgba(220,120,90,0.18)', fg: '#e0977a', border: 'rgba(220,120,90,0.55)' }
+  }
+  const hr12 = ((h + 11) % 12) + 1
+  const clock = `${hr12}:${String(dt.minute).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`
+  return { ...phase, clock, weekday: dt.weekday }
+})
 
 const FILL_OPTIONS: { value: FillMetric; label: string }[] = [
   { value: 'happiness', label: 'Happiness' },
@@ -234,6 +301,7 @@ interface CharacterSummary {
     day: string
     start: string
     end: string
+    activity?: string | null
     location: { id: string; name: string }
   }>
   location?: CharacterLocationSummary | null
@@ -337,7 +405,8 @@ const hexGroups = computed<HexGroup[]>(() => {
     groups.push({
       key: lot.id,
       label: lot.name,
-      tint: lot.lotType === 'RESIDENTIAL' ? 'rgba(50,116,217,0.06)' : 'rgba(115,191,105,0.06)',
+      kind: lot.lotType === 'RESIDENTIAL' ? 'residential' : lot.lotType === 'COMMUNITY' ? 'community' : 'other',
+      tint: lot.lotType === 'RESIDENTIAL' ? 'rgba(50,116,217,0.10)' : 'rgba(115,191,105,0.10)',
       nodes: occupants.map((c) => ({ id: c.id, name: c.name, value: metricValue(c.id) }))
     })
   }
@@ -410,12 +479,30 @@ const nestedGroups = computed<NestedBuilding[]>(() => {
 })
 
 function onSelectHex(characterId: string) {
+  const char = characters.value.find((c) => c.id === characterId)
+  if (!char) {
+    return
+  }
+  panelCharacter.value = char
+  // Hydrate relationships/memories for the panel's tabs.
+  void characterPanelStore.loadCharacterDetails(characterId)
+}
+
+function closeCharacterPopover() {
+  panelCharacter.value = null
+}
+
+// Navigate to the character's current lot/space (the popover's "go there" link).
+function goToCharacterLot(characterId: string) {
   const state = simulationStore.characterStates[characterId]
   const lotId = state?.location?.lotId
   const spaceId = state?.location?.spaceId
-  if (worldId.value && regionId.value && lotId && spaceId) {
-    router.push(`/world/${worldId.value}/region/${regionId.value}/lot/${lotId}/space/${spaceId}`)
+  if (worldId.value && regionId.value && lotId) {
+    router.push(spaceId
+      ? `/world/${worldId.value}/region/${regionId.value}/lot/${lotId}/space/${spaceId}`
+      : `/world/${worldId.value}/region/${regionId.value}/lot/${lotId}`)
   }
+  closeCharacterPopover()
 }
 
 function onSelectRoom(spaceId: string) {
@@ -540,6 +627,7 @@ const loadData = async () => {
             day: shift.day,
             start: shift.start,
             end: shift.end,
+            activity: shift.activity,
             locationLotId: shift.location.id,
             locationLotName: shift.location.name
           }))
@@ -590,6 +678,12 @@ watch(characters, (newCharacters: CharacterSummary[]) => {
 })
 
 onMounted(() => {
+  void loadData()
+})
+
+// Refetch when the world/region changes (e.g. via the world switcher), since
+// vue-router reuses this component across param-only navigations.
+watch([worldId, regionId], () => {
   void loadData()
 })
 </script>

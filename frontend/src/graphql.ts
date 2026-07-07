@@ -23,6 +23,20 @@ export const queries = {
     }
   `,
 
+  getWorldsWithRegions: `
+    query GetWorldsWithRegions {
+      worlds {
+        id
+        name
+        createdAt
+        regions {
+          id
+          name
+        }
+      }
+    }
+  `,
+
   getWorld: `
     query GetWorld($id: ID!) {
       world(id: $id) {
@@ -60,6 +74,7 @@ export const queries = {
             day
             start
             end
+            activity
             location {
               id
               name
@@ -216,6 +231,7 @@ export const queries = {
             day
             start
             end
+            activity
             location {
               id
               name
@@ -242,6 +258,7 @@ export const queries = {
             day
             start
             end
+            activity
             location {
               id
               name
@@ -313,6 +330,7 @@ export const queries = {
           day
           start
           end
+          activity
           location {
             id
             name
@@ -508,6 +526,7 @@ export const mutations = {
             day
             start
             end
+            activity
             location {
               id
               name
@@ -630,6 +649,7 @@ export const mutations = {
           day
           start
           end
+          activity
           location {
             id
             name
@@ -650,6 +670,7 @@ export const mutations = {
           day
           start
           end
+          activity
           location {
             id
             name

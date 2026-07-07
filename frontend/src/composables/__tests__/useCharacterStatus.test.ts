@@ -49,6 +49,8 @@ function createState(overrides: Partial<CharacterState> = {}): CharacterState {
     accessibleLotIds: [],
     workSchedule: [],
     currentTask: null,
+    incomingSocialInvitations: [],
+    outgoingSocialInvitations: [],
     ...overrides
   }
 }

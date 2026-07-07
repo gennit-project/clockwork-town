@@ -21,7 +21,8 @@ const hasData = computed(() => props.history.length > 0)
 const characterIds = computed(() => Object.keys(props.names))
 
 const option = computed(() => ({
-  grid: { top: 16, right: 16, bottom: 24, left: 40 },
+  // Extra right margin leaves room for the diagonal end-of-line name labels.
+  grid: { top: 16, right: 120, bottom: 40, left: 40 },
   tooltip: {
     trigger: 'axis',
     valueFormatter: (value: number) => (value == null ? '–' : `${value.toFixed(1)}%`)
@@ -35,7 +36,9 @@ const option = computed(() => ({
   xAxis: {
     type: 'category',
     boundaryGap: false,
-    data: props.history.map((sample) => sample.tick)
+    data: props.history.map((sample) => sample.tick),
+    // Tilt the time labels so dense ticks don't clip into each other.
+    axisLabel: { rotate: 30, hideOverlap: true }
   },
   yAxis: {
     type: 'value',
@@ -49,6 +52,17 @@ const option = computed(() => ({
     showSymbol: false,
     emphasis: { focus: 'series' },
     lineStyle: { width: 1.5 },
+    // Label each line at its right end, tilted diagonally, so the many
+    // character names don't run into each other. Colliding ones are hidden.
+    endLabel: {
+      show: true,
+      formatter: (params: { seriesName: string }) => params.seriesName,
+      fontSize: 10,
+      rotate: 25,
+      align: 'left',
+      color: 'inherit'
+    },
+    labelLayout: { hideOverlap: true },
     data: props.history.map((sample) => {
       const value = sample.perCharacter[id]
       return value == null ? null : +(value * 100).toFixed(2)

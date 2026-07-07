@@ -1,3 +1,4 @@
+import { GraphQLError } from "graphql";
 import { batch, q } from "../kuzuHelpers";
 
 export const ActivityResolvers = {
@@ -5,10 +6,10 @@ export const ActivityResolvers = {
   Mutation: {
     startActivity: async (_: any, { input }: { input: { characterId: string, activityTypeId?: string, actionName?: string, itemId?: string, note?: string } }) =>
       batch(async () => {
-        // Actions that don't require a co-located item to perform. Remote
-        // contact (calls/texts) plus pet_animal, whose "target" is the animal
-        // rather than a piece of furniture.
-        const REMOTE_CONTACT_ACTIONS = new Set(["text_romance", "call_romance", "invite_over", "propose_relationship", "call_mom", "pet_animal"]);
+        // Actions that don't require a co-located item to perform: remote
+        // contact (calls/texts), pet_animal (target is the animal), and work
+        // (you work simply by being at the workplace — no furniture affordance).
+        const ITEMLESS_ACTIONS = new Set(["text_romance", "call_romance", "invite_over", "propose_relationship", "call_mom", "pet_animal", "work"]);
         let activityType: any;
         let activityTypeId: string;
 
@@ -71,18 +72,21 @@ export const ActivityResolvers = {
         `, { cid: input.characterId });
 
         if (!currentLot?.lotId) {
-          throw new Error('Character has no current location');
+          throw new GraphQLError('Character has no current location');
         }
 
-        let items;
+        let items: any[] = [];
+        // Prefer the requested item if one was hinted.
         if (input.itemId) {
           items = await q(`
             MATCH (l:Lot {id:$lotId})-[:HAS_SPACE]->(s:Space)<-[:ON_SPACE]-(i:Item {id:$itemId})
             WHERE $activityName IN i.allowedActivities
             RETURN i.id AS id, i.name AS name, i.maxSimultaneousUsers AS maxUsers
           `, { lotId: currentLot.lotId, itemId: input.itemId, activityName: activityType.name });
-        } else {
-          // Find items across ALL spaces in the lot that allow this activity
+        }
+        // Fall back to any item at the current lot that allows this activity, so
+        // a stale or taken item hint doesn't fail an otherwise-doable action.
+        if (items.length === 0) {
           items = await q(`
             MATCH (l:Lot {id:$lotId})-[:HAS_SPACE]->(s:Space)<-[:ON_SPACE]-(i:Item)
             WHERE $activityName IN i.allowedActivities
@@ -90,10 +94,8 @@ export const ActivityResolvers = {
           `, { lotId: currentLot.lotId, activityName: activityType.name });
         }
 
-        if (items.length === 0 && !REMOTE_CONTACT_ACTIONS.has(activityType.name)) {
-          throw new Error(input.itemId
-            ? `Requested item is unavailable for ${activityType.name} at this location`
-            : `No items available for ${activityType.name} at this location`);
+        if (items.length === 0 && !ITEMLESS_ACTIONS.has(activityType.name)) {
+          throw new GraphQLError(`No ${activityType.name} spot available at this location`);
         }
 
         let selectedItem: any = null;
@@ -114,8 +116,8 @@ export const ActivityResolvers = {
           }
         }
 
-        if (!selectedItem && !REMOTE_CONTACT_ACTIONS.has(activityType.name)) {
-          throw new Error(`All ${activityType.name} items are currently in use`);
+        if (!selectedItem && !ITEMLESS_ACTIONS.has(activityType.name)) {
+          throw new GraphQLError(`All ${activityType.name} spots are currently in use`);
         }
 
         // Create new activity

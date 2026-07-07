@@ -207,10 +207,6 @@ const headerBgClass = computed(() => {
   return (props.variant ?? 'blue') === 'blue' ? 'bg-gf-surface-2 text-gf-blue' : 'bg-gf-surface-2 text-gf-green'
 })
 
-const subtitleClass = computed(() => {
-  return props.variant === 'blue' ? 'text-gf-text-weak' : 'text-gf-text-weak'
-})
-
 const toggleButtonClass = computed(() => {
   return props.variant === 'blue'
     ? 'text-gf-blue hover:underline'

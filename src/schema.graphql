@@ -238,6 +238,7 @@ type Shift {
   day: String!     # e.g., "Mon", "Tue", or "Monday" (your choice)
   start: String!   # "09:00"
   end: String!     # "17:00"
+  activity: String # "work" (default) or "sleep"; sleep shifts point at the home lot
   location: Lot!
 }
 
@@ -469,6 +470,7 @@ input WorkShiftInput {
   day: String!
   start: String!
   end: String!
+  activity: String
   locationLotId: ID!
 }
 

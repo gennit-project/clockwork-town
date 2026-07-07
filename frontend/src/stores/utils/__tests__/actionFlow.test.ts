@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { CharacterState, Intent } from '../../types'
+import type { ActiveTask, CharacterState, Intent } from '../../types'
 import { createCharacterState } from '../characterState'
 import {
   finalizeStartedIntent,
@@ -13,7 +13,7 @@ function createState(): CharacterState {
   return createCharacterState({ id: 'char-1', name: 'Alice' })
 }
 
-function createTask() {
+function createTask(): ActiveTask {
   return {
     planId: 'task-1',
     goal: 'sleep',

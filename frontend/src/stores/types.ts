@@ -311,6 +311,8 @@ export interface WorkShift {
   day: string
   start: string
   end: string
+  /** "work" (default) or "sleep". Sleep shifts point at the character's home lot. */
+  activity?: string | null
   locationLotId?: string | null
   locationLotName?: string | null
 }

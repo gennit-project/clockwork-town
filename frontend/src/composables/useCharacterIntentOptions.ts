@@ -41,7 +41,7 @@ export function useCharacterIntentOptions(character: CharacterTarget, availableR
 
     if (selectedNeed.value === 'romance') {
       return availableSocialTargets
-        .flatMap((target) => ([
+        .flatMap((target): SelectableOption[] => ([
           { label: `Text ${target.name}`, intent: { action: 'text_romance', utility: 1, source: 'manual', socialTargetId: target.id, socialTargetName: target.name } },
           { label: `Call ${target.name}`, intent: { action: 'call_romance', utility: 1, source: 'manual', socialTargetId: target.id, socialTargetName: target.name } },
           { label: `Invite ${target.name} over`, intent: { action: 'invite_over', utility: 1, source: 'manual', socialTargetId: target.id, socialTargetName: target.name } }
@@ -91,7 +91,7 @@ export function useCharacterIntentOptions(character: CharacterTarget, availableR
       : [{ id: '', name: '' }]
 
     const hobbyOptions = itemOptions
-      .flatMap((option) => selectableTargets.map((target) => ({
+      .flatMap((option) => selectableTargets.map((target): SelectableOption => ({
         label: action === 'chat_friend'
           ? `Chat with ${target.name} at ${option.itemName} in ${option.lotName} → ${option.spaceName}`
           : `${option.itemName} in ${option.lotName} → ${option.spaceName}`,
@@ -110,7 +110,7 @@ export function useCharacterIntentOptions(character: CharacterTarget, availableR
           socialTargetName: target.name || undefined
         }
       })))
-      .map((option) => ({
+      .map((option): SelectableOption => ({
         ...option,
         intent: action === 'chat_friend' && !option.intent.socialTargetId
           ? { ...option.intent, action: 'idle', utility: 0 }

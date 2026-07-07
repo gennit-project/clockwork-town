@@ -20,7 +20,8 @@ describe('taskLifecycle', () => {
       utility: 2
     })
 
-    expect(task).toEqual({
+    expect(task).toMatchObject({
+      goal: 'sleep',
       action: 'sleep',
       itemId: 'bed-1',
       itemName: 'Bed',
@@ -30,24 +31,23 @@ describe('taskLifecycle', () => {
       targetLotName: 'Home',
       remainingTicks: 2,
       totalTicks: 3,
-      socialTargetId: undefined,
-      socialTargetName: undefined
+      currentStepIndex: 0
     })
+    expect(task.planId).toEqual(expect.any(String))
+    expect(task.steps).toHaveLength(1)
+    expect(task.steps[0]).toMatchObject({ action: 'sleep', totalTicks: 3, remainingTicks: 2 })
   })
 
   it('advances and completes tasks', () => {
-    const advanced = advanceTask({
-      action: 'shower',
-      remainingTicks: 1,
-      totalTicks: 2
-    })
+    const task = createTaskFromIntent({ action: 'shower', utility: 1 })
+    const advanced = advanceTask(task)
 
     expect(advanced.remainingTicks).toBe(0)
     expect(isTaskComplete(advanced)).toBe(true)
   })
 
   it('builds completion intent from a task', () => {
-    expect(buildCompletionIntent({
+    const task = createTaskFromIntent({
       action: 'invite_over',
       itemId: 'door-1',
       itemName: 'Front Door',
@@ -55,11 +55,14 @@ describe('taskLifecycle', () => {
       targetSpaceName: 'Porch',
       targetLotId: 'lot-1',
       targetLotName: 'Home',
-      remainingTicks: 0,
-      totalTicks: 2,
       socialTargetId: 'char-2',
-      socialTargetName: 'Alex'
-    })).toEqual({
+      socialTargetName: 'Alex',
+      utility: 1
+    })
+
+    expect(buildCompletionIntent(task)).toEqual({
+      goal: 'invite_over',
+      strategy: 'task:completion',
       action: 'invite_over',
       itemId: 'door-1',
       itemName: 'Front Door',

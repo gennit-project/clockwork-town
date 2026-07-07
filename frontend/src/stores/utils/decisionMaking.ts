@@ -3,20 +3,16 @@
  */
 
 import type {
-  ActionName,
   AnimalState,
-  Needs,
   CharacterState,
   WorldData,
   ItemOccupancy,
-  ItemOption,
   Intent,
   SimulationDateTime
 } from '../types'
 import { buildPlanCandidates, planCandidateToIntent } from './intentPlanner'
-import { calculateUtility } from './actionUtility'
 import { debugLog } from './simulationDebug'
-import { buildWorkIntent } from './workSchedule'
+import { buildScheduleIntent } from './workSchedule'
 
 export interface SelectBestIntentParams {
   characterId: string
@@ -64,13 +60,13 @@ export function selectBestIntent({
   reservedAnimalIds = []
 }: SelectBestIntentParams): Intent {
   debugLog(`\n🎯 selectBestIntent for character ${characterId}`)
-  const workIntent = buildWorkIntent({
+  const scheduleIntent = buildScheduleIntent({
     characterState,
     simulationDateTime,
     worldData
   })
-  if (workIntent) {
-    return workIntent
+  if (scheduleIntent) {
+    return scheduleIntent
   }
 
   const intents: Intent[] = buildPlanCandidates({

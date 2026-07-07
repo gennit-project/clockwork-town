@@ -2,6 +2,11 @@ import { defineConfig } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
 import { resolve } from 'path'
 
+// Pin the timezone so time-of-day-sensitive simulation tests are deterministic
+// regardless of the machine/CI runner locale. (Set before workers spawn so they
+// inherit it.)
+process.env.TZ = process.env.TZ || 'UTC'
+
 export default defineConfig({
   plugins: [vue()],
   test: {

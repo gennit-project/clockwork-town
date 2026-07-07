@@ -98,7 +98,7 @@ export async function migrateDatabase(): Promise<{
 
     const escapedId = String(item.id).replace(/'/g, "\\'");
     const comfort = getDefaultItemComfort({
-      name: item.name,
+      name: item.name ?? "",
       itemRoles: item.itemRoles || []
     });
 

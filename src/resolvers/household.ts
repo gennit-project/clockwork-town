@@ -55,7 +55,7 @@ export const HouseholdResolvers = {
         name: string;
         age: number;
         bio?: string;
-        workSchedule?: Array<{ day: string; start: string; end: string; locationLotId: string }>;
+        workSchedule?: Array<{ day: string; start: string; end: string; activity?: string; locationLotId: string }>;
       }>;
       animals?: Array<{ id: string; name: string; age: number; traits: string[]; ownerId: string; bio?: string }>
     }) => {
@@ -142,7 +142,7 @@ export const HouseholdResolvers = {
         name: string;
         age: number;
         bio?: string;
-        workSchedule?: Array<{ day: string; start: string; end: string; locationLotId: string }>;
+        workSchedule?: Array<{ day: string; start: string; end: string; activity?: string; locationLotId: string }>;
       }>;
       animals?: Array<{ id: string; name: string; age: number; traits: string[]; ownerId: string; bio?: string }>
     }) => {
