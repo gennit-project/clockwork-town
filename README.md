@@ -1,5 +1,7 @@
 # Clockwork Town
 
+[![CI](https://github.com/gennit-project/clockwork-town/actions/workflows/ci.yml/badge.svg)](https://github.com/gennit-project/clockwork-town/actions/workflows/ci.yml)
+
 A **text-based life simulator** with an unusual skin: it's presented as a Grafana-style
 observability dashboard — an "IT service desk for the human soul." Residents are nodes,
 their needs are metrics, their lives stream past as logs, and a neglected friendship or
@@ -14,8 +16,7 @@ loss, grief) is meant to be handled with that same affection, not for shock.
 > **Status: a work-in-progress portfolio project.** The core loop works today — seed a
 > town and watch its residents move through a day: commuting to work and school by day,
 > heading home to sleep at night, and building friendships and family ties that surface on
-> a live relationship graph (see the [day/night screenshots](#day--night-screenshots)
-> below). It is not feature-complete, and I'm not pretending otherwise — the roadmap (more
+> a live relationship graph (see the [day/night screenshots](#day-and-night) below). It is not feature-complete, and I'm not pretending otherwise — the roadmap (more
 > households, jobs, illness and grief, a tutorial) is deliberately larger than what's
 > built. What's here is meant to show the shape of the idea and the engineering under it:
 > a browser-side simulation over a typed GraphQL persistence layer, lint- and type-checked
