@@ -82,7 +82,7 @@ flowchart TB
   state, which maps well onto Vue's reactivity with little glue. The sim's per-tick loop
   lives in the Pinia store; Vite gives fast hot-reload during development.
 - **Tailwind CSS v4**: quick, consistent styling for a dense dashboard UI, with design
-  tokens modelling the Grafana-dark theme.
+  tokens modeling the Grafana-dark theme.
 - **ECharts**: time-series (happiness over time, need trends) and node-graph
   (relationships) visualizations that fit the observability-dashboard concept.
 
@@ -156,7 +156,7 @@ developing, run the frontend with `VITE_SHOW_UNFINISHED=true`.
 ### Day and night
 
 The region header shows a **day/night indicator** (☀️/🌙 + clock), and community vs.
-residential lots are colour-coded (green **Community** / blue **Residence** badges). Press
+residential lots are color-coded (green **Community** / blue **Residence** badges). Press
 **▶ play** and let the clock run to watch the town move through its day:
 
 **☀️ Weekday morning**
