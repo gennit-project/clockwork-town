@@ -606,12 +606,32 @@ export function createSimulationRuntime(
     logger.logAutoTickPaused()
   }
 
+  // True while an auto-tick is mid-flight. A tick does async GraphQL work, so at
+  // faster speeds the interval can fire again before the previous tick finishes;
+  // without this guard those ticks stack up and keep draining (and advancing the
+  // sim) even after the user hits pause.
+  let autoTickInProgress = false
+
   function startAutoTick() {
-    if (refs.tickIntervalId.value) return
+    // Clear any existing timer first so we never stack duplicate intervals —
+    // a second interval would keep ticking after a single pause.
+    if (refs.tickIntervalId.value) {
+      clearInterval(refs.tickIntervalId.value)
+      refs.tickIntervalId.value = null
+    }
 
     refs.isPaused.value = false
-    refs.tickIntervalId.value = setInterval(() => {
-      executeTick()
+    refs.tickIntervalId.value = setInterval(async () => {
+      // Pause is authoritative, and never overlap ticks.
+      if (refs.isPaused.value || autoTickInProgress) {
+        return
+      }
+      autoTickInProgress = true
+      try {
+        await executeTick()
+      } finally {
+        autoTickInProgress = false
+      }
     }, AUTO_TICK_INTERVALS[refs.autoTickSpeed.value])
 
     logger.logAutoTickStarted()
