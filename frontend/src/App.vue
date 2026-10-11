@@ -329,6 +329,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useDarkMode } from './composables/useDarkMode'
 import { getCharacterStatusText } from './composables/useCharacterStatus'
 import { useSimulationStore } from './stores/simulation'
+import { useServiceDeskStore } from './stores/serviceDesk'
 import { showUnfinishedPages } from './config/features'
 import { useCharacterPanelStore } from './stores/characterPanel'
 import { client, queries } from './graphql'
@@ -407,6 +408,8 @@ const route = useRoute()
 const router = useRouter()
 const { isDark, toggle: toggleDarkMode } = useDarkMode()
 const simulationStore = useSimulationStore()
+// Instantiate so alerts/tickets evaluate every tick, not just while their pages are open
+useServiceDeskStore()
 const characterPanelStore = useCharacterPanelStore()
 
 const showActivityLog = ref(false)
@@ -573,8 +576,8 @@ const navItems = computed<NavItem[]>(() => {
     { key: 'residents', label: 'Residents', to: base ? `${base}/lots` : '/', routeName: 'lots-and-households', requiresRegion: true },
     { key: 'world', label: 'World', to: base ? `${base}/overview` : '/', routeName: 'region-overview', requiresRegion: true },
     { key: 'logs', label: 'Logs', to: base ? `${base}/activity-log` : '/', routeName: 'activity-log', requiresRegion: true },
-    { key: 'tickets', label: 'Tickets', to: '/tickets', routeName: 'tickets', unfinished: true },
-    { key: 'alerts', label: 'Alerts', to: '/alerts', routeName: 'alerts', unfinished: true },
+    { key: 'tickets', label: 'Tickets', to: '/tickets', routeName: 'tickets' },
+    { key: 'alerts', label: 'Alerts', to: '/alerts', routeName: 'alerts' },
     { key: 'calendar', label: 'Calendar', to: base ? `${base}/calendar` : '/calendar', routeName: 'calendar-region', requiresRegion: true, unfinished: true },
     { key: 'analytics', label: 'Analytics', to: '/analytics', routeName: 'analytics', unfinished: true },
     { key: 'reports', label: 'Reports', to: '/reports', routeName: 'reports', unfinished: true },

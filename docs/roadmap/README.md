@@ -59,15 +59,15 @@ Design tokens (Grafana-dark) are in `frontend/src/style.css` (`gf-bg`, `gf-surfa
 
 ## Current state at a glance (verified against the code)
 
-**Built:** 9-need utility sim; directed relationships (short/long-term scores + labels, proposals, decay); short/long-term memories + memory timeline with eventType filtering; activity log / log stream; employment & work shifts; read-only calendar; **animal runtime** (needs, movement, action choice) + **human↔animal petting**; coordinated `chat_friend`/`date` (pairwise); Grafana reskin (world/region hexmap, town & character dashboards, relationships graph); world isolation; character editor (name/age/bio/schedule); household editor (members + animals); lot & household **template libraries**; lot/space/item creation (item authoring is inline per-room in `SpaceDetail.vue`); **backup/restore to Google Drive** (encrypted).
+**Built:** live `/alerts` and `/tickets` (derived alerts, in-memory ticket lifecycle); 9-need utility sim; directed relationships (short/long-term scores + labels, proposals, decay); short/long-term memories + memory timeline with eventType filtering; activity log / log stream; employment & work shifts; read-only calendar; **animal runtime** (needs, movement, action choice) + **human↔animal petting**; coordinated `chat_friend`/`date` (pairwise); Grafana reskin (world/region hexmap, town & character dashboards, relationships graph); world isolation; character editor (name/age/bio/schedule); household editor (members + animals); lot & household **template libraries**; lot/space/item creation (item authoring is inline per-room in `SpaceDetail.vue`); **backup/restore to Google Drive** (encrypted).
 
 **Schema-only, no behavior yet:** `Trait` (with `basicNeedModifiers`/`emotionalNeedModifiers`), `Value`, `Employment.salary`.
 
-**Stubs (route exists → `ServiceDeskStub.vue`):** `/alerts`, `/tickets`, `/analytics`, `/reports`, `/settings`, and `/library/{characters,items,regions}` (`LibraryStub.vue`).
+**Stubs (route exists → `ServiceDeskStub.vue`):** `/analytics`, `/reports`, `/settings`, and `/library/{characters,items,regions}` (`LibraryStub.vue`).
 
 **Partial:** death (only `isDeceasedTarget` + a "Deceased" badge); world/lot build UI (list-based via `LotsAndHouseholds.vue` / `LotTemplateEdit.vue`, no map, no roads); relationship memory filtering (eventType only, no family-tree relation filters).
 
-**Absent:** alerts/tickets logic, trait/value behavior, need-gating, daily memory summary, group activities, finances, cooking rota, chores, weather/climate config, job slots, NPCs, illness, death triggers/warnings/grief, childcare/foster, difficulty levels, tutorial.
+**Absent:** richer ticket generators (grief, disapproval), ticket persistence, trait/value behavior, need-gating, daily memory summary, group activities, finances, cooking rota, chores, weather/climate config, job slots, NPCs, illness, death triggers/warnings/grief, childcare/foster, difficulty levels, tutorial.
 
 ## The ordering, and why
 

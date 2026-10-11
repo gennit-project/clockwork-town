@@ -434,3 +434,41 @@ export interface InputLot {
   indoorRooms?: InputSpace[]
   outdoorAreas?: InputSpace[]
 }
+
+// ============================================
+// SERVICE DESK (ALERTS & TICKETS)
+// ============================================
+
+export type ServiceDeskSeverity = 'critical' | 'warning' | 'info'
+
+/** A threshold condition on current state. Alerts are derived, never stored. */
+export interface Alert {
+  /** Stable key: same condition on the same resident always yields the same id. */
+  id: string
+  rule: string
+  severity: ServiceDeskSeverity
+  characterId: string
+  characterName: string
+  message: string
+}
+
+export type TicketStatus = 'open' | 'acknowledged' | 'resolved'
+
+/** A discrete resident incident with a lifecycle. */
+export interface Ticket {
+  id: string
+  /** Dedup key; at most one unresolved ticket exists per key. */
+  key: string
+  rule: string
+  severity: ServiceDeskSeverity
+  characterId: string
+  characterName: string
+  title: string
+  status: TicketStatus
+  openedTick: number
+  updatedTick: number
+  /** True when the sim closed it because the underlying condition cleared. */
+  autoResolved?: boolean
+}
+
+export type TicketCandidate = Omit<Ticket, 'id' | 'status' | 'openedTick' | 'updatedTick' | 'autoResolved'>

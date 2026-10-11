@@ -29,8 +29,13 @@ None. This is the starting epic.
 
 ### 0.1 — Alerts + Tickets wired to real data `[S–M]`
 
-**Status:** Not started. Routes `/alerts` and `/tickets` currently render
-`frontend/src/views/ServiceDeskStub.vue`.
+**Status:** Implemented and verified in a live session against the seeded Desert Willow town. `/alerts` is `AlertsView.vue`
+and `/tickets` is `TicketsView.vue`, both fed by `frontend/src/stores/serviceDesk.ts`, which
+re-evaluates every sim tick. Rules are pure evaluators in `stores/utils/alertEvaluators.ts`
+and `ticketEvaluators.ts`; thresholds are in `frontend/src/config/serviceDesk.ts`; ticket
+lifecycle (dedup, auto-resolve, transitions) is in `ticketLifecycle.ts`. Tickets are
+in-memory only and reset with the sim. Only one ticket generator exists (sustained critical
+need); later epics add evaluators to `TICKET_EVALUATORS`.
 
 **What to build.** Replace the two stubs with real pages computed from existing sim
 state (no new backend needed — the data already lives in the Pinia store).

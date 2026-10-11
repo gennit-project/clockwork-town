@@ -4,6 +4,8 @@ import RegionList from './views/RegionList.vue'
 import RegionOverview from './views/RegionOverview.vue'
 import TownDashboard from './views/TownDashboard.vue'
 import ServiceDeskStub from './views/ServiceDeskStub.vue'
+import AlertsView from './views/AlertsView.vue'
+import TicketsView from './views/TicketsView.vue'
 import CharacterDashboard from './views/CharacterDashboard.vue'
 import CalendarView from './views/CalendarView.vue'
 import ActivityLog from './views/ActivityLog.vue'
@@ -107,22 +109,12 @@ export const router = createRouter({
     {
       path: '/tickets',
       name: 'tickets',
-      component: ServiceDeskStub,
-      meta: {
-        sectionTitle: 'Tickets',
-        sectionBlurb:
-          'Resident incidents — unmet wants, complaints, grief, and disapproval reactions — will be filed here as the desire/complaint systems land.'
-      }
+      component: TicketsView
     },
     {
       path: '/alerts',
       name: 'alerts',
-      component: ServiceDeskStub,
-      meta: {
-        sectionTitle: 'Alerts',
-        sectionBlurb:
-          'Threshold-based pages: critical needs, value-neglect, and advance death warnings will surface here.'
-      }
+      component: AlertsView
     },
     {
       path: '/calendar',
