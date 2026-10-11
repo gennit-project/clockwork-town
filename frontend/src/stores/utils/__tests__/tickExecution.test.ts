@@ -5,6 +5,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { ref } from 'vue'
 import { executeTick, type ExecuteTickParams } from '../tickExecution'
+import { NEED_DECAY_RATES } from '../../config/needs'
 import {
   createMockCharacterState,
   createMockWorldData,
@@ -90,18 +91,18 @@ describe('executeTick', () => {
 
       const state = params.characterStates.value['char-1']
 
-      // Food decays by 0.04 per tick
-      expect(state.needs.food).toBeCloseTo(initialFood - 0.04, 2)
+      // Food decays by its configured per-tick rate
+      expect(state.needs.food).toBeCloseTo(initialFood - NEED_DECAY_RATES.food, 4)
 
-      // Sleep decays by 0.02 per tick
-      expect(state.needs.sleep).toBeCloseTo(initialSleep - 0.02, 2)
+      // Sleep decays by its configured per-tick rate
+      expect(state.needs.sleep).toBeCloseTo(initialSleep - NEED_DECAY_RATES.sleep, 4)
 
-      // Health decays by 0.01 per tick
-      expect(state.needs.health).toBeCloseTo(initialHealth - 0.01, 2)
+      // Health decays by its configured per-tick rate
+      expect(state.needs.health).toBeCloseTo(initialHealth - NEED_DECAY_RATES.health, 4)
     })
 
     it('should not allow needs to go below 0', async () => {
-      params.characterStates.value['char-1'].needs.food = 0.01
+      params.characterStates.value['char-1'].needs.food = NEED_DECAY_RATES.food / 2
 
       await executeTick(params)
 
@@ -120,17 +121,17 @@ describe('executeTick', () => {
 
       const state = params.characterStates.value['char-1']
 
-      // Friends decays by 0.015 per tick
-      expect(state.needs.friends).toBeCloseTo(initialFriends - 0.015, 2)
+      // Friends decays by its configured per-tick rate
+      expect(state.needs.friends).toBeCloseTo(initialFriends - NEED_DECAY_RATES.friends, 4)
 
-      // Family decays by 0.01 per tick
-      expect(state.needs.family).toBeCloseTo(initialFamily - 0.01, 2)
+      // Family decays by its configured per-tick rate
+      expect(state.needs.family).toBeCloseTo(initialFamily - NEED_DECAY_RATES.family, 4)
 
-      // Romance decays by 0.01 per tick
-      expect(state.needs.romance).toBeCloseTo(initialRomance - 0.01, 2)
+      // Romance decays by its configured per-tick rate
+      expect(state.needs.romance).toBeCloseTo(initialRomance - NEED_DECAY_RATES.romance, 4)
 
-      // Fulfillment decays by 0.008 per tick
-      expect(state.needs.fulfillment).toBeCloseTo(initialFulfillment - 0.008, 2)
+      // Fulfillment decays by its configured per-tick rate
+      expect(state.needs.fulfillment).toBeCloseTo(initialFulfillment - NEED_DECAY_RATES.fulfillment, 4)
     })
 
     it('should decrement cooldowns', async () => {
@@ -170,8 +171,8 @@ describe('executeTick', () => {
 
       await executeTick(params)
 
-      expect(params.characterStates.value['char-1'].needs.food).toBeCloseTo(0.46, 2)
-      expect(params.characterStates.value['char-2'].needs.food).toBeCloseTo(0.76, 2)
+      expect(params.characterStates.value['char-1'].needs.food).toBeCloseTo(0.5 - NEED_DECAY_RATES.food, 4)
+      expect(params.characterStates.value['char-2'].needs.food).toBeCloseTo(0.8 - NEED_DECAY_RATES.food, 4)
     })
   })
 
@@ -535,8 +536,8 @@ describe('executeTick', () => {
 
       expect(params.currentTick.value).toBe(3)
 
-      // Food decayed 3 times: 0.5 - (0.04 * 3) = 0.38
-      expect(params.characterStates.value['char-1'].needs.food).toBeCloseTo(0.38, 2)
+      // Food decayed 3 times from 0.5
+      expect(params.characterStates.value['char-1'].needs.food).toBeCloseTo(0.5 - NEED_DECAY_RATES.food * 3, 4)
 
       expect(params.executeAction).toHaveBeenCalledTimes(3)
     })
@@ -585,9 +586,9 @@ describe('executeTick', () => {
 
     it('should accumulate needs decay over multiple ticks', async () => {
       // Start with moderate food
-      params.characterStates.value['char-1'].needs.food = 0.2
+      params.characterStates.value['char-1'].needs.food = NEED_DECAY_RATES.food * 4.5
 
-      // Run 5 ticks: 0.2 - (0.04 * 5) = 0.0
+      // Run 5 ticks: enough to cross the floor
       await executeTick(params)
       await executeTick(params)
       await executeTick(params)

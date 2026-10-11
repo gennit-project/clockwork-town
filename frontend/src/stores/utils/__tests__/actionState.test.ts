@@ -33,7 +33,7 @@ describe('actionState utilities', () => {
   it('clamps need values within bounds', () => {
     const state = createCharacterState({ id: 'char-1', name: 'Alice' })
     state.needs.food = 0.9
-    state.needs.sleep = 0.05
+    state.needs.sleep = 0.001
 
     const eatResult = applyActionToCharacterState(state, 'eat', ACTION_EFFECTS.eat)
     const workResult = applyActionToCharacterState(state, 'work', ACTION_EFFECTS.work)
@@ -42,9 +42,9 @@ describe('actionState utilities', () => {
     expect(workResult.secondaryNeedChanges).toEqual([
       {
         need: 'sleep',
-        oldValue: 0.05,
+        oldValue: 0.001,
         newValue: 0,
-        effect: -0.15
+        effect: ACTION_EFFECTS.work.secondaryEffects.sleep
       }
     ])
   })

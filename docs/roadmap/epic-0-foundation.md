@@ -147,7 +147,15 @@ raises an alert; the dashboard shows per-value fulfillment bars (or the edit pro
 
 ### 0.4 — Need gating `[S]`
 
-**Status:** Not started.
+**Status:** Implemented. Tiers and thresholds live in `frontend/src/stores/config/needGating.ts`;
+pure helpers in `utils/needGating.ts`. Gating is applied in one place, `calculateUtility`
+(`utils/actionUtility.ts`), which every planner candidate routes through: need-driven utility
+for a locked tier is multiplied by 0.1 (a penalty, not a hard block, so a resident with nothing
+else to do can still act). Shipped alongside a **decay rebalance** (`NEED_DECAY_RATES` cut ~5-10x
+to match 5-minute ticks; `work`'s per-tick sleep cost cut from -0.15 to -0.002) and a fix for a
+loader bug (`useTownDataLoader.ts` dropped `Shift.activity`, so every nightly sleep block ran as a
+work shift). Verified live for the first ~20 ticks including the 22:00 sleep block; a full simulated
+day has not been observed, so expect to tune rates.
 
 **What to build.** Maslow-style gating in the planner: a character cannot meaningfully
 pursue emotional needs (friends/family/romance) unless basic needs

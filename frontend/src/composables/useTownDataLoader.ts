@@ -14,6 +14,7 @@ interface RegionCharacter {
     day: string
     start: string
     end: string
+    activity?: string | null
     location: { id: string; name: string }
   }>
 }
@@ -90,6 +91,7 @@ export function useTownDataLoader() {
           day: shift.day,
           start: shift.start,
           end: shift.end,
+          activity: shift.activity,
           locationLotId: shift.location.id,
           locationLotName: shift.location.name
         }))

@@ -6,19 +6,21 @@ import type { NeedDecayRates, Needs, Cooldowns } from '../types'
 import { debugLog } from '../utils/simulationDebug'
 
 /**
- * Need decay rates per tick
- * Higher value = faster decay
+ * Need decay rates per tick (one tick = 5 simulated minutes, 288 per day).
+ * Sized so a resident needs roughly: 3 meals, ~3-4 toilet visits, 1-2 showers,
+ * a few chats and a few fulfilling activities per day. See ACTION_EFFECTS for
+ * how much each action restores.
  */
 export const NEED_DECAY_RATES: NeedDecayRates = {
-  food: 0.04,
-  sleep: 0.02,
-  bladder: 0.03,
-  hygiene: 0.015,
-  health: 0.01,
-  friends: 0.015,
-  family: 0.01,
-  romance: 0.01,
-  fulfillment: 0.008
+  food: 0.004,
+  sleep: 0.003,
+  bladder: 0.006,
+  hygiene: 0.0025,
+  health: 0.001,
+  friends: 0.0035,
+  family: 0.0015,
+  romance: 0.0015,
+  fulfillment: 0.0025
 }
 
 /**

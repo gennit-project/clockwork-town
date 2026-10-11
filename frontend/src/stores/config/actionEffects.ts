@@ -123,7 +123,9 @@ export const ACTION_EFFECTS: ActionEffects = {
   work: {
     primaryNeed: null,
     primaryEffect: 0,
-    secondaryEffects: { sleep: -0.15 },
+    // Applied every tick of a scheduled shift (~96 ticks for 9-5), so this is a
+    // small per-tick cost, not a per-shift one.
+    secondaryEffects: { sleep: -0.002 },
     cooldownTicks: 48  // 240 minutes
   },
   idle: {

@@ -4,6 +4,7 @@ import type {
   Needs
 } from '../types'
 import { ACTION_EFFECTS, NEED_WEIGHTS } from '../config/actionEffects'
+import { gatingMultiplier } from './needGating'
 
 export function calculateUtility(
   characterId: string,
@@ -25,7 +26,8 @@ export function calculateUtility(
   const currentNeedValue = characterNeeds[primaryNeed] || 0
   const needDeficit = 1.0 - currentNeedValue
   const needWeight = NEED_WEIGHTS[primaryNeed] || 1.0
-  const baseUtility = needWeight * needDeficit
+  // Higher-tier needs are suppressed until the tier below is satisfied (see needGating)
+  const baseUtility = needWeight * needDeficit * gatingMultiplier(primaryNeed, characterNeeds)
   const travelPenalty = itemOption.travelCost
   const affordanceBonus = itemOption.affordanceWeight - 1
   const contextBonus = 0
