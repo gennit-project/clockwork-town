@@ -7,6 +7,7 @@ import type {
   ActionName,
   AnimalState,
   CharacterState,
+  NeedName,
   WorldData,
   ItemOccupancy,
   Intent,
@@ -15,6 +16,7 @@ import type {
   SocialInvitation
 } from '../types'
 import { NEED_DECAY_RATES } from '../config/needs'
+import { effectiveDecayRate, isActionDisabled, pinDisabledNeeds } from './traitEffects'
 import { selectBestIntent } from './decisionMaking'
 import { debugLog } from './simulationDebug'
 import { advanceSimulationDateTime } from './simulationCalendar'
@@ -244,6 +246,10 @@ function evaluateInvitationAcceptance({
   simulationDateTime?: SimulationDateTime
   reservedCharacterIds: Set<string>
 }): { accepted: boolean; reason?: string } {
+  if (isActionDisabled(intent.action, participantState.traitIds)) {
+    return { accepted: false, reason: `${participantState.name} isn't interested in ${intent.action}` }
+  }
+
   const invitationUtility = calculateInvitationUtility({
     participantState,
     intent,
@@ -468,16 +474,11 @@ export async function executeTick({
       await decayRelationships({ characterState: state })
     }
 
-    // Decay needs using constants from config
-    state.needs.food = Math.max(0, state.needs.food - NEED_DECAY_RATES.food)
-    state.needs.sleep = Math.max(0, state.needs.sleep - NEED_DECAY_RATES.sleep)
-    state.needs.bladder = Math.max(0, state.needs.bladder - NEED_DECAY_RATES.bladder)
-    state.needs.hygiene = Math.max(0, state.needs.hygiene - NEED_DECAY_RATES.hygiene)
-    state.needs.health = Math.max(0, state.needs.health - NEED_DECAY_RATES.health)
-    state.needs.friends = Math.max(0, state.needs.friends - NEED_DECAY_RATES.friends)
-    state.needs.family = Math.max(0, state.needs.family - NEED_DECAY_RATES.family)
-    state.needs.romance = Math.max(0, state.needs.romance - NEED_DECAY_RATES.romance)
-    state.needs.fulfillment = Math.max(0, state.needs.fulfillment - NEED_DECAY_RATES.fulfillment)
+    // Decay needs using config rates, adjusted per character by their traits
+    for (const need of Object.keys(NEED_DECAY_RATES) as NeedName[]) {
+      state.needs[need] = Math.max(0, state.needs[need] - effectiveDecayRate(need, state.traitIds))
+    }
+    pinDisabledNeeds(state.needs, state.traitIds)
 
     // Decrement cooldowns
     for (const action in state.cooldowns) {

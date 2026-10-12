@@ -23,6 +23,7 @@ export const resolvers = {
     ...CharacterResolvers.Character,
     ...RelationshipResolvers.Character,
   },
+  Trait: CharacterResolvers.Trait,
   Relationship: RelationshipResolvers.Relationship,
   Memory: RelationshipResolvers.Memory,
   World: WorldResolvers.World,

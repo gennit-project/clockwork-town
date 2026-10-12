@@ -31,11 +31,13 @@ import { createSimulationRuntime } from './utils/simulationRuntime'
 import { createSimulationDateTime, formatSimulationDateTime } from './utils/simulationCalendar'
 import { INITIAL_ANIMAL_NEEDS } from './config/animalConfig'
 import { deriveAccessibleLotIds } from './utils/accessControl'
+import { pinDisabledNeeds } from './utils/traitEffects'
 
 interface CharacterSimulationSeed {
   id: string
   name: string
   traits?: string[]
+  traitIds?: string[]
   householdId?: string | null
   homeLotId?: string | null
   homeLotName?: string | null
@@ -124,6 +126,9 @@ export const useSimulationStore = defineStore('simulation', () => {
     }
 
     const state = characterStates.value[character.id]
+    state.traits = character.traits ?? state.traits ?? []
+    state.traitIds = character.traitIds ?? state.traitIds ?? []
+    pinDisabledNeeds(state.needs, state.traitIds)
     state.householdId = character.householdId ?? state.householdId ?? null
     state.homeLotId = character.homeLotId ?? state.homeLotId ?? null
     state.homeLotName = character.homeLotName ?? state.homeLotName ?? null

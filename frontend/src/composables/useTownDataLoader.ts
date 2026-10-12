@@ -3,12 +3,14 @@ import { client, queries } from '../graphql'
 import { useSimulationStore } from '../stores/simulation'
 import { fetchCharacterDetails } from '../stores/simulationPersistence'
 import { refreshCharacterDetails } from '../stores/utils/characterDetails'
+import { toTraitSeed, type TraitSummary } from '../stores/utils/traitSeed'
 import type { InputLot, WorkShift } from '../stores/types'
 
 interface RegionCharacter {
   id: string
   name: string
   age?: number
+  traits?: TraitSummary[]
   location?: { id: string; name: string } | null
   workSchedule?: Array<{
     day: string
@@ -99,6 +101,7 @@ export function useTownDataLoader() {
         simulationStore.initializeCharacter({
           id: character.id,
           name: character.name,
+          ...toTraitSeed(character.traits),
           householdId: household?.id ?? null,
           homeLotId: household?.lotId ?? character.location?.id ?? null,
           homeLotName: household?.lotName ?? character.location?.name ?? null,

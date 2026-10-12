@@ -7,6 +7,7 @@ interface CharacterSeed {
   id: string
   name: string
   traits?: string[]
+  traitIds?: string[]
   householdId?: string | null
   homeLotId?: string | null
   homeLotName?: string | null
@@ -21,6 +22,7 @@ export function createCharacterState(character: CharacterSeed): CharacterState {
     currentAction: 'idle',
     location: createEmptyLocation(),
     traits: character.traits || [],
+    traitIds: character.traitIds || [],
     queuedActions: [],
     incomingSocialInvitations: [],
     outgoingSocialInvitations: [],

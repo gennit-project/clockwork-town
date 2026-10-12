@@ -73,6 +73,7 @@
             :icon="need.icon"
             :label="need.label"
             :percentage="(characterState?.needs?.[need.key] || 0) * 100"
+            :disabled-reason="disabledNeedReasons[need.key]"
             clickable
             @select="openNeedPicker(need.key)"
           />
@@ -123,6 +124,7 @@ import CharacterMemoriesTab from './CharacterMemoriesTab.vue'
 import CharacterNeedPicker from './CharacterNeedPicker.vue'
 import CharacterRelationshipsTab from './CharacterRelationshipsTab.vue'
 import NeedBar from './NeedBar.vue'
+import { getDisabledNeedReasons } from '../stores/utils/traitEffects'
 import NeedSummaryStrip from './NeedSummaryStrip.vue'
 import { createNeedSummaries } from '../composables/useNeedSummary'
 
@@ -170,6 +172,7 @@ const { characterState, selectedNeed, selectableOptions } = useCharacterIntentOp
   props.availableRomanceTargets ?? []
 )
 
+const disabledNeedReasons = computed(() => (characterState.value ? getDisabledNeedReasons(characterState.value) : {}))
 const statusMeta = computed(() => getCharacterStatusMeta(characterState.value))
 const statusSummary = computed(() => statusMeta.value.summary)
 const statusLocation = computed(() => statusMeta.value.location)

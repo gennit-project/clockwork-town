@@ -41,6 +41,7 @@ const { applyDDL, db, conn } = await import("./db");
 const { WorldResolvers } = await import("./resolvers/world");
 const { HouseholdResolvers } = await import("./resolvers/household");
 const { upsertCharacterRelationship } = await import("./resolvers/relationship");
+const { ensureTraitCatalog, setCharacterTraits } = await import("./traits");
 
 const createWorld = WorldResolvers.Mutation.createWorld;
 const createRegion = WorldResolvers.Mutation.createRegion;
@@ -394,11 +395,28 @@ async function seedLibrary() {
   console.log("  · Working Pair");
 }
 
+// A few behavioral traits so the demo shows per-character decay and a disabled need.
+async function seedTraits() {
+  await ensureTraitCatalog();
+  const assignments: Record<string, string[]> = {
+    "char-amina-lin": ["trait-needs-little-sleep"],
+    "char-elena-reyes": ["trait-needs-lots-of-sleep"],
+    "char-leo-marsh": ["trait-big-appetite"],
+    "char-priya-lin": ["trait-small-appetite"],
+    "char-kim-nguyen": ["trait-asexual"],
+    "char-june-hale": ["trait-aromantic"]
+  };
+  for (const [characterId, traitIds] of Object.entries(assignments)) {
+    await setCharacterTraits(characterId, traitIds);
+  }
+}
+
 async function seed() {
   await applyDDL();
 
   await seedDesertWillow();
   await seedPinehaven();
+  await seedTraits();
   await seedLibrary();
 
   // Flush to disk. Short-lived scripts need an explicit checkpoint + close.

@@ -6,7 +6,8 @@
  * history recorder agree on one definition.
  */
 
-import type { CharacterState, Needs } from '../types'
+import type { CharacterState, NeedName, Needs } from '../types'
+import { getDisabledNeeds } from './traitEffects'
 
 /** Maximum number of happiness samples retained in the ring buffer. */
 export const HAPPINESS_HISTORY_LIMIT = 720
@@ -23,8 +24,12 @@ export const HAPPINESS_THRESHOLDS = {
 export type HealthStatus = 'healthy' | 'warning' | 'critical'
 
 /** Compute a single character's happiness as the mean of their needs (0..1). */
-export function computeCharacterHappiness(needs: Needs): number {
-  const values = Object.values(needs)
+export function computeCharacterHappiness(needs: Needs, traitIds: readonly string[] = []): number {
+  // Needs a trait switches off are pinned full; leave them out so they don't inflate the mean.
+  const disabled = getDisabledNeeds(traitIds)
+  const values = (Object.keys(needs) as NeedName[])
+    .filter((need) => !(need in disabled))
+    .map((need) => needs[need])
   if (values.length === 0) {
     return 0
   }
@@ -40,7 +45,7 @@ export function computeTownHappiness(states: Record<string, CharacterState>): nu
     return 0
   }
 
-  const total = characters.reduce((sum, state) => sum + computeCharacterHappiness(state.needs), 0)
+  const total = characters.reduce((sum, state) => sum + computeCharacterHappiness(state.needs, state.traitIds), 0)
   return total / characters.length
 }
 

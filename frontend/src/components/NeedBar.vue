@@ -2,21 +2,25 @@
   <button
     type="button"
     class="flex items-center w-full text-left"
-    :disabled="!clickable"
-    :class="clickable ? 'cursor-pointer hover:opacity-90' : 'cursor-default'"
+    :disabled="!clickable || !!disabledReason"
+    :title="disabledReason ? `disabled because of trait: ${disabledReason}` : undefined"
+    :class="[
+      clickable && !disabledReason ? 'cursor-pointer hover:opacity-90' : 'cursor-default',
+      disabledReason ? 'opacity-50' : ''
+    ]"
     @click="$emit('select')"
   >
     <span class="text-lg mr-2">{{ icon }}</span>
     <div class="flex-1">
       <div class="flex items-center justify-between mb-1">
         <span class="text-xs font-medium text-gf-text-weak">{{ label }}</span>
-        <span class="text-xs text-gf-text-weak">{{ Math.round(percentage) }}%</span>
+        <span class="text-xs text-gf-text-weak">{{ disabledReason ? 'off' : `${Math.round(percentage)}%` }}</span>
       </div>
       <div class="w-full bg-gf-surface-3 h-2 rounded-full overflow-hidden">
         <div
           class="h-full rounded-full transition-all"
-          :class="getColorClass(percentage / 100)"
-          :style="{ width: percentage + '%' }"
+          :class="disabledReason ? 'bg-gf-text-faint' : getColorClass(percentage / 100)"
+          :style="{ width: (disabledReason ? 100 : percentage) + '%' }"
         />
       </div>
     </div>
@@ -29,6 +33,8 @@ defineProps<{
   label: string
   percentage: number
   clickable?: boolean
+  /** Display name of the trait that switches this need off; greys the bar. */
+  disabledReason?: string
 }>()
 
 defineEmits<{

@@ -67,9 +67,24 @@ individual evaluator functions with unit tests.
 
 ### 0.2 — Traits as live modifiers `[M]`
 
-**Status:** Not started. Backend `Trait` type exists with `basicNeedModifiers` and
-`emotionalNeedModifiers` (arrays of `Need`); `Character.traits` and `traitIds` are
-wired in `src/resolvers/character.ts`. **No frontend behavior or editor.**
+**Status:** Implemented and verified live (behavioral subset only). Note: the original
+status claim that traits were "wired" was wrong; only create-time `traitIds` existed. Shipped now:
+trait catalog in `src/traits.ts` (ensured at server startup and in the seed; ids like
+`trait-asexual`), `traits` query, `Character.traits` resolver, `traitIds` on `updateCharacter`,
+frontend `traitIds` on `CharacterState`, declarative `config/traitEffects.ts` + pure
+`utils/traitEffects.ts`, per-character decay in `tickExecution.ts`, planner/invitation gating,
+greyed "off" need bars with a "disabled because of trait" tooltip, and a trait picker in
+`CharacterEditor.vue`. Behavioral traits: needs little/lots of sleep (×0.5 / ×1.5 sleep decay),
+big/small appetite (×1.5 / ×0.6 food decay), asexual and aromantic (both switch off the romance
+need: pinned full, excluded from happiness, romance-need actions dropped for the resident and as
+a target). The seed assigns a few to demo residents.
+
+**Known gaps / follow-ups:** the canonical trait list from Epic 5 is not loaded; asexual and
+aromantic are identical until a physical-intimacy mechanic exists; `invite_over` is a
+romance-need action, so these residents won't host `invite_over` hang-outs (chat_friend is
+unaffected); `NeedSummaryStrip` group averages still include a pinned romance need; trait chips
+have no effect tooltips; traits are not editable on template characters; `useTownDataLoader.ts`
+and `RegionOverview.vue` duplicate character-loading logic and must be kept in sync.
 
 **What to build.**
 1. Load each character's traits into their `CharacterState` (the sim store) at

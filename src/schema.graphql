@@ -376,6 +376,7 @@ type Query {
   households(regionId: ID!): [Household!]!
   household(id: ID!): Household
 
+  traits: [Trait!]!
   character(id: ID!): Character
   characters(page: Page): CharacterConnection!
   charactersInLot(lotId: ID!): [Character!]!
@@ -464,6 +465,7 @@ input UpdateCharacterInput {
   age: Int
   bio: String
   workSchedule: [WorkShiftInput!]
+  traitIds: [ID!]      # when provided, replaces the character's traits
 }
 
 input WorkShiftInput {

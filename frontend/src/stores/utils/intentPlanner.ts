@@ -12,6 +12,7 @@ import type {
   WorldData
 } from '../types'
 import { calculateUtility } from './actionUtility'
+import { isActionDisabled } from './traitEffects'
 import { findItemsWithAffordance } from './pathfinding'
 import { canAccessLot } from './accessControl'
 import { evaluateRelationshipAvailability } from './relationshipAvailability'
@@ -1098,17 +1099,28 @@ export function buildPlanCandidates({
     }))
   }
 
-  return candidates.sort((left, right) => {
-    if (right.utility !== left.utility) {
-      return right.utility - left.utility
-    }
+  // Traits can switch a need off; drop actions that serve it, for the character
+  // and for any social target who would have to take part.
+  return candidates
+    .filter((candidate) => {
+      if (isActionDisabled(candidate.goal, characterState.traitIds)) {
+        return false
+      }
+      const targetId = candidate.primaryStep.socialTargetId
+      const targetState = targetId ? characterStates[targetId] : undefined
+      return !targetState || !isActionDisabled(candidate.goal, targetState.traitIds)
+    })
+    .sort((left, right) => {
+      if (right.utility !== left.utility) {
+        return right.utility - left.utility
+      }
 
-    if (left.travelCost !== right.travelCost) {
-      return left.travelCost - right.travelCost
-    }
+      if (left.travelCost !== right.travelCost) {
+        return left.travelCost - right.travelCost
+      }
 
-    return left.strategy.localeCompare(right.strategy)
-  })
+      return left.strategy.localeCompare(right.strategy)
+    })
 }
 
 export function planCandidateToIntent(candidate: PlanCandidate): Intent {

@@ -70,6 +70,10 @@ export const queries = {
           name
           age
           bio
+          traits {
+            id
+            name
+          }
           workSchedule {
             day
             start
@@ -319,6 +323,16 @@ export const queries = {
     }
   `,
 
+  getTraits: `
+    query GetTraits {
+      traits {
+        id
+        name
+        description
+      }
+    }
+  `,
+
   getCharacter: `
     query GetCharacter($id: ID!) {
       character(id: $id) {
@@ -326,6 +340,10 @@ export const queries = {
         name
         age
         bio
+        traits {
+          id
+          name
+        }
         workSchedule {
           day
           start
@@ -666,6 +684,10 @@ export const mutations = {
         name
         age
         bio
+        traits {
+          id
+          name
+        }
         workSchedule {
           day
           start

@@ -5,6 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { applyDDL, migrateDatabase } from "./db";
+import { ensureTraitCatalog } from "./traits";
 import { resolvers } from "./resolvers";
 import { backfillMissingItemAffordances } from "./resolvers/itemAffordanceInference";
 
@@ -18,6 +19,7 @@ async function main() {
 
   await applyDDL();
   const migrationResult = await migrateDatabase();
+  await ensureTraitCatalog();
   const repairedItems = await backfillMissingItemAffordances();
 
   const typeDefs = fs.readFileSync(schemaPath, "utf8");

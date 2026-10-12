@@ -46,6 +46,7 @@ function createState(overrides: Partial<CharacterState> = {}): CharacterState {
       spaceName: 'Living Room'
     },
     traits: [],
+    traitIds: [],
     accessibleLotIds: [],
     workSchedule: [],
     currentTask: null,

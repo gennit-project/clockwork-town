@@ -59,6 +59,7 @@ export const createMockCharacterState = (overrides: Partial<CharacterState> = {}
     spaceName: 'Living Room'
   },
   traits: [],
+  traitIds: [],
   queuedActions: [],
   incomingSocialInvitations: [],
   outgoingSocialInvitations: [],

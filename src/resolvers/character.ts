@@ -1,9 +1,22 @@
 import { batch, q } from "../kuzuHelpers";
 import { deserializeStoredWorkSchedule, serializeWorkSchedule } from "./workSchedule";
 import { syncMemoryRelationships } from "./relationship";
+import { setCharacterTraits } from "../traits";
 
 export const CharacterResolvers = {
+  Trait: {
+    // Modifiers live in the frontend's TRAIT_EFFECTS map, not the database.
+    basicNeedModifiers: () => [],
+    emotionalNeedModifiers: () => []
+  },
   Character: {
+    traits: async (parent: { id: string }) => {
+      return q(`
+        MATCH (c:Character {id:$cid})-[:HAS_TRAIT]->(t:Trait)
+        RETURN t.id AS id, t.name AS name, t.description AS description
+        ORDER BY t.name ASC
+      `, { cid: parent.id });
+    },
     location: async (parent: { id: string }) => {
       const [loc] = await q(`
         MATCH (c:Character {id:$cid})-[:AT]->(l:Lot)
@@ -74,6 +87,14 @@ export const CharacterResolvers = {
   },
 
   Query: {
+    traits: async () => {
+      return q(`
+        MATCH (t:Trait)
+        RETURN t.id AS id, t.name AS name, t.description AS description
+        ORDER BY t.name ASC
+      `);
+    },
+
     character: async (_: any, { id }: { id: string }) => {
       const [c] = await q(`
         MATCH (c:Character {id:$id})
@@ -167,8 +188,9 @@ export const CharacterResolvers = {
       age?: number;
       bio?: string | null;
       workSchedule?: Array<{ day: string; start: string; end: string; locationLotId: string }>;
+      traitIds?: string[];
     } }) => {
-      const { id, ...updates } = input;
+      const { id, traitIds, ...updates } = input;
       const setFields: string[] = [];
       const params: Record<string, unknown> = { id };
 
@@ -189,8 +211,20 @@ export const CharacterResolvers = {
         params.workSchedule = serializeWorkSchedule(updates.workSchedule);
       }
 
-      if (setFields.length === 0) {
+      if (setFields.length === 0 && traitIds === undefined) {
         throw new Error('No character fields to update');
+      }
+
+      if (traitIds !== undefined) {
+        await setCharacterTraits(id, traitIds);
+      }
+
+      if (setFields.length === 0) {
+        const [unchanged] = await q(`
+          MATCH (c:Character {id:$id})
+          RETURN c.id AS id, c.name AS name, c.age AS age, c.bio AS bio, c.workSchedule AS workSchedule
+        `, { id });
+        return unchanged ?? null;
       }
 
       const [updated] = await q(`

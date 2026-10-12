@@ -39,7 +39,7 @@ export function useTownMetrics() {
 
   const characters = computed<CharacterMetric[]>(() =>
     Object.entries(characterStates.value).map(([id, state]) => {
-      const happiness = computeCharacterHappiness(state.needs)
+      const happiness = computeCharacterHappiness(state.needs, state.traitIds)
       let lowest: { name: NeedName; value: number } = { name: 'food', value: Infinity }
       for (const need of NEED_NAMES) {
         const value = state.needs[need]

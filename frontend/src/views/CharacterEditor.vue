@@ -46,6 +46,29 @@
         </div>
 
         <div class="mb-6">
+          <label class="mb-2 block text-sm font-medium text-gf-text-weak">Traits</label>
+          <div v-if="availableTraits.length === 0" class="text-sm text-gf-text-faint">
+            No traits available.
+          </div>
+          <div v-else class="flex flex-wrap gap-2">
+            <button
+              v-for="trait in availableTraits"
+              :key="trait.id"
+              type="button"
+              :title="trait.description"
+              :aria-pressed="formData.traitIds.includes(trait.id)"
+              class="rounded border px-2.5 py-1 text-xs transition-colors"
+              :class="formData.traitIds.includes(trait.id)
+                ? 'border-gf-blue bg-gf-blue/20 text-gf-blue'
+                : 'border-gf-border bg-gf-surface-2 text-gf-text-weak hover:bg-gf-surface-3'"
+              @click="toggleTrait(trait.id)"
+            >
+              {{ trait.name }}
+            </button>
+          </div>
+        </div>
+
+        <div class="mb-6">
           <div class="mb-3 flex items-center justify-between">
             <label class="block text-sm font-medium text-gf-text-weak">Work Schedule</label>
             <button
@@ -67,7 +90,14 @@
               :key="`${shift.day}-${shift.start}-${index}`"
               class="rounded border border-gf-border bg-gf-surface-2 p-4"
             >
-              <div class="mb-2 flex justify-end">
+              <div class="mb-2 flex items-center justify-between">
+                <span
+                  v-if="shift.activity === 'sleep'"
+                  class="rounded border border-gf-border bg-gf-surface-3 px-1.5 py-0.5 text-[11px] text-gf-text-weak"
+                >
+                  Sleep block (at home)
+                </span>
+                <span v-else />
                 <button
                   type="button"
                   class="text-xs text-gf-red hover:opacity-80"
@@ -132,6 +162,7 @@ import { client, queries } from '../graphql'
 import { useRouteParams } from '../composables/useRouteParams'
 import { createCharacterDetails, persistCharacterDetails } from '../stores/simulationPersistence'
 import { useSimulationStore } from '../stores/simulation'
+import { pinDisabledNeeds } from '../stores/utils/traitEffects'
 
 interface WorldSummary {
   id: string
@@ -155,16 +186,24 @@ interface CharacterResult {
     name: string
     age: number
     bio?: string | null
+    traits?: Array<{ id: string; name: string }>
     workSchedule?: Array<{
       day: string
       start: string
       end: string
+      activity?: string | null
       location: {
         id: string
         name: string
       }
     }>
   } | null
+}
+
+interface TraitOption {
+  id: string
+  name: string
+  description: string
 }
 
 interface HouseholdResult {
@@ -187,14 +226,19 @@ const lots = ref<LotSummary[]>([])
 const householdLotId = ref<string | null>(null)
 const weekdayOptions = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
+const availableTraits = ref<TraitOption[]>([])
+
 const formData = ref({
   name: '',
   age: 0,
   bio: '',
+  traitIds: [] as string[],
   workSchedule: [] as Array<{
     day: string
     start: string
     end: string
+    // Preserved from the loaded shift so editing never turns a sleep block into work.
+    activity?: string | null
     locationLotId: string
   }>
 })
@@ -211,8 +255,19 @@ function addWorkShift() {
     day: 'Monday',
     start: '09:00',
     end: '17:00',
+    activity: 'work',
     locationLotId: lots.value[0]?.id || ''
   })
+}
+
+function toggleTrait(traitId: string) {
+  const ids = formData.value.traitIds
+  const index = ids.indexOf(traitId)
+  if (index === -1) {
+    ids.push(traitId)
+  } else {
+    ids.splice(index, 1)
+  }
 }
 
 function removeWorkShift(index: number) {
@@ -229,11 +284,13 @@ async function loadData() {
     loading.value = true
     error.value = null
 
-    const [worldData, regionsData, lotsData] = await Promise.all([
+    const [worldData, regionsData, lotsData, traitsData] = await Promise.all([
       client.request<{ world: WorldSummary | null }>(queries.getWorld, { id: worldId.value }),
       client.request<{ regions: RegionSummary[] }>(queries.getRegions, { worldId: worldId.value }),
-      client.request<{ lots: LotSummary[] }>(queries.getLots, { regionId: regionId.value })
+      client.request<{ lots: LotSummary[] }>(queries.getLots, { regionId: regionId.value }),
+      client.request<{ traits: TraitOption[] }>(queries.getTraits)
     ])
+    availableTraits.value = traitsData.traits || []
 
     world.value = worldData.world
     region.value = regionsData.regions.find((entry) => entry.id === regionId.value) || null
@@ -262,10 +319,12 @@ async function loadData() {
       name: characterData.character.name,
       age: characterData.character.age,
       bio: characterData.character.bio || '',
+      traitIds: (characterData.character.traits || []).map((trait) => trait.id),
       workSchedule: (characterData.character.workSchedule || []).map((shift) => ({
         day: shift.day,
         start: shift.start,
         end: shift.end,
+        activity: shift.activity ?? null,
         locationLotId: shift.location.id
       }))
     }
@@ -285,6 +344,7 @@ async function saveCharacter() {
       day: shift.day,
       start: shift.start,
       end: shift.end,
+      activity: shift.activity ?? null,
       locationLotId: shift.locationLotId
     }))
 
@@ -308,6 +368,7 @@ async function saveCharacter() {
         bio: formData.value.bio,
         homeLotId,
         householdId: householdId.value,
+        traitIds: formData.value.traitIds,
         workSchedule: normalizedWorkSchedule
       })
     } else if (savedCharacterId) {
@@ -316,6 +377,7 @@ async function saveCharacter() {
         name: formData.value.name,
         age: formData.value.age,
         bio: formData.value.bio,
+        traitIds: formData.value.traitIds,
         workSchedule: normalizedWorkSchedule
       })
     }
@@ -324,10 +386,16 @@ async function saveCharacter() {
       const state = simulationStore.characterStates[savedCharacterId]
       if (state) {
         state.name = formData.value.name
+        state.traitIds = [...formData.value.traitIds]
+        state.traits = formData.value.traitIds.map(
+          (id) => availableTraits.value.find((trait) => trait.id === id)?.name ?? id
+        )
+        pinDisabledNeeds(state.needs, state.traitIds)
         state.workSchedule = normalizedWorkSchedule.map((shift) => ({
           day: shift.day,
           start: shift.start,
           end: shift.end,
+          activity: shift.activity,
           locationLotId: shift.locationLotId,
           locationLotName: lots.value.find((lot) => lot.id === shift.locationLotId)?.name ?? null
         }))

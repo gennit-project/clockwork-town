@@ -201,6 +201,8 @@ export interface CharacterState {
   location: CharacterLocation
   currentActivity?: CharacterActivity
   traits: string[]
+  /** Trait ids (parallel to `traits` display names); drive TRAIT_EFFECTS. */
+  traitIds: string[]
   memories?: Memory[]
   longTermMemories?: LongTermMemory[]
   relationships?: CharacterRelationship[]

@@ -577,7 +577,7 @@ export function createSimulationRuntime(
     const perCharacter: Record<string, number> = {}
     const perCharacterNeeds: Record<string, Needs> = {}
     for (const [characterId, state] of Object.entries(states)) {
-      perCharacter[characterId] = computeCharacterHappiness(state.needs)
+      perCharacter[characterId] = computeCharacterHappiness(state.needs, state.traitIds)
       perCharacterNeeds[characterId] = { ...state.needs }
     }
 

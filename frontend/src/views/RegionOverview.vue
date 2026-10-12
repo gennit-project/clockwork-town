@@ -211,6 +211,7 @@ import { useSimulationStore } from '../stores/simulation'
 import { useRouteParams } from '../composables/useRouteParams'
 import { useBreadcrumbs } from '../composables/useBreadcrumbs'
 import { computeCharacterHappiness } from '../stores/utils/happinessMetrics'
+import { toTraitSeed, type TraitSummary } from '../stores/utils/traitSeed'
 import type { InputLot, InputSpace, NeedName } from '../stores/types'
 
 const simulationStore = useSimulationStore()
@@ -270,7 +271,7 @@ function metricValue(characterId: string): number {
     return 0
   }
   if (fillMetric.value === 'happiness') {
-    return computeCharacterHappiness(state.needs)
+    return computeCharacterHappiness(state.needs, state.traitIds)
   }
   return state.needs[fillMetric.value] ?? 0
 }
@@ -297,6 +298,8 @@ interface CharacterSummary {
   name: string
   age: number
   bio?: string | null
+  /** Trait display names (the API's trait objects are flattened on load). */
+  traits?: string[]
   workSchedule?: Array<{
     day: string
     start: string
@@ -338,9 +341,11 @@ interface GetHouseholdsResult {
   households: HouseholdSummary[]
 }
 
+type RawRegionCharacter = Omit<CharacterSummary, 'traits'> & { traits?: TraitSummary[] }
+
 interface GetRegionResult {
   region?: {
-    characters?: CharacterSummary[]
+    characters?: RawRegionCharacter[]
     animals?: AnimalSummary[]
   } | null
 }
@@ -613,13 +618,16 @@ const loadData = async () => {
 
     try {
       const regionData = await client.request<GetRegionResult>(queries.getRegion, { id: regionId.value })
-      characters.value = regionData.region?.characters || []
+      const rawCharacters = regionData.region?.characters || []
+      characters.value = rawCharacters.map((c) => ({ ...c, traits: toTraitSeed(c.traits).traits }))
       animals.value = regionData.region?.animals || []
 
-      for (const character of characters.value) {
+      for (const character of rawCharacters) {
         const household = households.find((entry) => entry.characters.some((member) => member.id === character.id))
         simulationStore.initializeCharacter({
-          ...character,
+          id: character.id,
+          name: character.name,
+          ...toTraitSeed(character.traits),
           householdId: household?.id ?? null,
           homeLotId: household?.lotId ?? character.location?.id ?? null,
           homeLotName: household?.lotName ?? character.location?.name ?? null,

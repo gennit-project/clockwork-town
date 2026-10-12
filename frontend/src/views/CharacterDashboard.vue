@@ -73,7 +73,7 @@
 
       <!-- Needs -->
       <Panel title="Needs" :padded="false" class="mt-3 h-72">
-        <NeedsBarGauge :needs="NEED_NAMES" :values="state.needs" />
+        <NeedsBarGauge :needs="NEED_NAMES" :values="state.needs" :disabled="disabledNeedReasons" />
       </Panel>
 
       <!-- Weekly schedule -->
@@ -126,6 +126,7 @@ import { useSimulationStore } from '../stores/simulation'
 import { useTownDataLoader } from '../composables/useTownDataLoader'
 import { getCharacterStatusText } from '../composables/useCharacterStatus'
 import { computeCharacterHappiness, happinessStatus } from '../stores/utils/happinessMetrics'
+import { getDisabledNeedReasons } from '../stores/utils/traitEffects'
 import { client, queries } from '../graphql'
 import type { NeedName } from '../stores/types'
 
@@ -156,7 +157,8 @@ const displayName = computed(() => state.value?.name || 'Resident')
 const shortId = computed(() => (characterId.value || '').slice(0, 8))
 const traits = computed(() => state.value?.traits?.length ? state.value.traits : fetchedTraits.value)
 
-const happiness = computed(() => (state.value ? computeCharacterHappiness(state.value.needs) : 0))
+const disabledNeedReasons = computed(() => (state.value ? getDisabledNeedReasons(state.value) : {}))
+const happiness = computed(() => (state.value ? computeCharacterHappiness(state.value.needs, state.value.traitIds) : 0))
 const status = computed(() => happinessStatus(happiness.value))
 
 const statusLabel = computed(() => (status.value === 'critical' ? 'At risk' : status.value === 'warning' ? 'Degraded' : 'Active'))
@@ -232,12 +234,12 @@ async function loadCharacter() {
     await load(worldId.value, regionId.value)
   }
   try {
-    const data = await client.request<{ character?: { age?: number; traits?: string[] } | null }>(
+    const data = await client.request<{ character?: { age?: number; traits?: Array<{ id: string; name: string }> } | null }>(
       queries.getCharacter,
       { id: characterId.value }
     )
     age.value = data.character?.age ?? null
-    fetchedTraits.value = data.character?.traits ?? []
+    fetchedTraits.value = (data.character?.traits ?? []).map((t) => t.name)
   } catch {
     // header enrichment is best-effort
   }
