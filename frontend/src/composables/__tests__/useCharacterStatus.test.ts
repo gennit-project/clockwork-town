@@ -47,6 +47,7 @@ function createState(overrides: Partial<CharacterState> = {}): CharacterState {
     },
     traits: [],
     traitIds: [],
+    values: [],
     accessibleLotIds: [],
     workSchedule: [],
     currentTask: null,

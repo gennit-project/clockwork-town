@@ -122,9 +122,32 @@ greyed bar + tooltip; traits are editable and persist.
 
 ### 0.3 — Values system `[M–L]` — highest-leverage item in the epic
 
-**Status:** Not started. Backend `Value` type (id, name, description),
-`Character.values`, and `valueIds` exist (`src/resolvers/character.ts`). **No UI, no
-sim behavior.**
+**Status:** Implemented and verified live (initial value set only). Same story as traits: only
+create-time `valueIds` existed, with no catalog, resolver, query or rank. Shipped now: value catalog in
+`src/values.ts` (ensured at startup and in the seed), `Character.valueOrder` (ranked ids, migrated
+and backfilled) with `HAS_VALUE` edges mirroring membership, `values` query, rank-ordered
+`Character.values`, `valueIds` on `updateCharacter`, per-character `values` state
+(`ticksSinceFulfilled`) merged on reload, declarative `config/valueDefs.ts` (`VALUE_DEFS`,
+`VALUE_TUNING`) with pure `utils/valueEffects.ts`, a drain on fulfillment from neglected values
+(rank-weighted; folded into fulfillment, no new need axis), fulfillment reset in `applyActionEffects`,
+a planner utility nudge for actions that serve a neglected value (scaled down while basic or
+emotional needs are unsatisfied), a "value neglected" alert and a ticket when a value is neglected for
+its whole window, a Values panel on the dashboard (`ValuesPanel.vue`), and a ranked list in
+`CharacterEditor.vue` (up/down buttons). Initial values: take care of animals, read books, write
+books, be a good friend, have a happy family, have a good romantic relationship (switched off by
+asexual/aromantic), do a good job at work. The seed gives every resident two to three.
+
+**Decisions:** the fulfillment need stays in the needs gauge (it still drives happiness, gating and
+the planner); the Values panel sits beside it instead of replacing it.
+
+**Known gaps / follow-ups:** the rest of the canonical value list needs new activities (create art,
+play games, nature, religion, learn about science, ...); value windows and the drain/nudge sizes are
+first guesses, tune after watching a full simulated day; `lastFulfilled` is in-memory only and
+restarts fresh on reload; the nudge cannot pull a resident across town (travel cost ~2 outweighs
+it), so a value whose activity is far away goes neglected and files a ticket, which is intended;
+residents who keep proposing an invitation that gets rejected fall back to idle instead of trying
+the next candidate (pre-existing, see below); the "no values yet" prompt is untested visually;
+trait chips and value rows have no effect tooltips beyond the disabled-trait one.
 
 **What to build.** Values are a character's *ranked* sources of meaning, each mapped
 to fulfilling activities, each tracking "time since last fulfilled." Neglected values

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { SERVICE_DESK_THRESHOLDS, TICKS_PER_DAY } from '../../../config/serviceDesk'
+import { VALUE_DEFS, valueWindowTicks } from '../../config/valueDefs'
 import { INITIAL_NEEDS } from '../../config/needs'
 import type { CharacterState, HappinessSample, Needs } from '../../types'
 import {
@@ -8,11 +9,12 @@ import {
   evaluateFriendCount,
   evaluateHappinessTrend,
   evaluateHomeStay,
+  evaluateNeglectedValues,
   linearSlope
 } from '../alertEvaluators'
 import { createCharacterState } from '../characterState'
 import { createTrackers, updateTrackers } from '../serviceDeskTrackers'
-import { evaluateUnmetNeeds } from '../ticketEvaluators'
+import { evaluateNeglectedValueTickets, evaluateUnmetNeeds } from '../ticketEvaluators'
 import { reconcileTickets, transitionTicket } from '../ticketLifecycle'
 
 function makeState(id: string, over: Partial<CharacterState> = {}, needs: Partial<Needs> = {}): CharacterState {
@@ -157,5 +159,43 @@ describe('tickets', () => {
     tickets = transitionTicket(tickets, 't1', 'resolved', 3)
     tickets = transitionTicket(tickets, 't1', 'open' as never, 4)
     expect(tickets[0].status).toBe('resolved')
+  })
+})
+
+describe('neglected value rules', () => {
+  const READ = 'value-read-books'
+  const ROMANCE = 'value-romantic-relationship'
+  const windowTicks = (id: string) => valueWindowTicks(VALUE_DEFS[id])
+  const withValues = (id: string, values: CharacterState['values'], traitIds: string[] = []) =>
+    ({ [id]: makeState(id, { values, traitIds }) })
+  const v = (id: string, ticksSinceFulfilled: number) => ({ id, name: id, ticksSinceFulfilled })
+
+  it('alerts only once a value is neglected, with critical reserved for a fully neglected top value', () => {
+    expect(evaluateNeglectedValues(ctx(withValues('a', [v(READ, 1)])))).toHaveLength(0)
+
+    const partly = evaluateNeglectedValues(ctx(withValues('a', [v(READ, windowTicks(READ) * 0.8)])))
+    expect(partly.map((a) => a.severity)).toEqual(['warning'])
+
+    const fully = evaluateNeglectedValues(ctx(withValues('a', [v(READ, windowTicks(READ))])))
+    expect(fully.map((a) => a.severity)).toEqual(['critical'])
+
+    const secondRank = evaluateNeglectedValues(
+      ctx(withValues('a', [v('value-take-care-of-animals', 0), v(READ, windowTicks(READ))]))
+    )
+    expect(secondRank.map((a) => a.severity)).toEqual(['warning'])
+  })
+
+  it('ignores a neglected value that a trait switched off', () => {
+    const states = withValues('a', [v(ROMANCE, windowTicks(ROMANCE))], ['trait-aromantic'])
+    expect(evaluateNeglectedValues(ctx(states))).toHaveLength(0)
+    expect(evaluateNeglectedValueTickets({ tick: 0, states, trackers: createTrackers() })).toHaveLength(0)
+  })
+
+  it('files a ticket only when a value is neglected for its whole window', () => {
+    const run = (ticks: number) =>
+      evaluateNeglectedValueTickets({ tick: 0, states: withValues('a', [v(READ, ticks)]), trackers: createTrackers() })
+    expect(run(windowTicks(READ) - 1)).toHaveLength(0)
+    const [ticket] = run(windowTicks(READ))
+    expect(ticket.key).toBe(`value-neglect:a:${READ}`)
   })
 })

@@ -69,6 +69,69 @@
         </div>
 
         <div class="mb-6">
+          <label class="mb-1 block text-sm font-medium text-gf-text-weak">Values</label>
+          <p class="mb-2 text-xs text-gf-text-faint">
+            Ranked by importance, most important first. Neglecting a value drags mood down.
+          </p>
+
+          <div v-if="formData.valueIds.length === 0" class="mb-2 text-sm text-gf-text-faint">
+            No values yet.
+          </div>
+          <ol v-else class="mb-2 space-y-2">
+            <li
+              v-for="(valueId, index) in formData.valueIds"
+              :key="valueId"
+              class="flex items-center gap-3 rounded border border-gf-border bg-gf-surface-2 px-3 py-2"
+            >
+              <span class="w-5 text-center text-xs font-semibold text-gf-text-faint">{{ index + 1 }}</span>
+              <div class="min-w-0 flex-1">
+                <div class="text-sm text-gf-text">{{ valueName(valueId) }}</div>
+                <div class="text-xs text-gf-text-faint">{{ valueActivities(valueId) }}</div>
+              </div>
+              <button
+                type="button"
+                class="rounded border border-gf-border px-2 py-0.5 text-xs text-gf-text-weak hover:bg-gf-surface-3 disabled:opacity-30"
+                :disabled="index === 0"
+                :aria-label="`Move ${valueName(valueId)} up`"
+                @click="moveValue(index, -1)"
+              >
+                ↑
+              </button>
+              <button
+                type="button"
+                class="rounded border border-gf-border px-2 py-0.5 text-xs text-gf-text-weak hover:bg-gf-surface-3 disabled:opacity-30"
+                :disabled="index === formData.valueIds.length - 1"
+                :aria-label="`Move ${valueName(valueId)} down`"
+                @click="moveValue(index, 1)"
+              >
+                ↓
+              </button>
+              <button
+                type="button"
+                class="text-xs text-gf-red hover:opacity-80"
+                :aria-label="`Remove ${valueName(valueId)}`"
+                @click="removeValue(index)"
+              >
+                Remove
+              </button>
+            </li>
+          </ol>
+
+          <select
+            v-if="unusedValues.length > 0"
+            v-model="valueToAdd"
+            aria-label="Add a value"
+            class="rounded border border-gf-border bg-gf-bg px-2 py-1.5 text-sm text-gf-text focus:outline-none focus:border-gf-blue"
+            @change="addSelectedValue"
+          >
+            <option value="">+ Add a value…</option>
+            <option v-for="value in unusedValues" :key="value.id" :value="value.id">
+              {{ value.name }}
+            </option>
+          </select>
+        </div>
+
+        <div class="mb-6">
           <div class="mb-3 flex items-center justify-between">
             <label class="block text-sm font-medium text-gf-text-weak">Work Schedule</label>
             <button
@@ -163,6 +226,8 @@ import { useRouteParams } from '../composables/useRouteParams'
 import { createCharacterDetails, persistCharacterDetails } from '../stores/simulationPersistence'
 import { useSimulationStore } from '../stores/simulation'
 import { pinDisabledNeeds } from '../stores/utils/traitEffects'
+import { describeAction, getValueDef } from '../stores/utils/valueEffects'
+import { mergeValueSeed, toValueSeed } from '../stores/utils/valueSeed'
 
 interface WorldSummary {
   id: string
@@ -187,6 +252,7 @@ interface CharacterResult {
     age: number
     bio?: string | null
     traits?: Array<{ id: string; name: string }>
+    values?: Array<{ id: string; name: string }>
     workSchedule?: Array<{
       day: string
       start: string
@@ -201,6 +267,12 @@ interface CharacterResult {
 }
 
 interface TraitOption {
+  id: string
+  name: string
+  description: string
+}
+
+interface ValueOption {
   id: string
   name: string
   description: string
@@ -227,12 +299,16 @@ const householdLotId = ref<string | null>(null)
 const weekdayOptions = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
 const availableTraits = ref<TraitOption[]>([])
+const availableValues = ref<ValueOption[]>([])
+const valueToAdd = ref('')
 
 const formData = ref({
   name: '',
   age: 0,
   bio: '',
   traitIds: [] as string[],
+  /** Value ids in rank order, most important first. */
+  valueIds: [] as string[],
   workSchedule: [] as Array<{
     day: string
     start: string
@@ -270,6 +346,37 @@ function toggleTrait(traitId: string) {
   }
 }
 
+const unusedValues = computed(() =>
+  availableValues.value.filter((value) => !formData.value.valueIds.includes(value.id))
+)
+
+function valueName(valueId: string): string {
+  return availableValues.value.find((value) => value.id === valueId)?.name ?? valueId
+}
+
+function valueActivities(valueId: string): string {
+  const actions = getValueDef(valueId)?.actions
+  return actions ? `Fulfilled by: ${actions.map(describeAction).join(', ')}` : 'No activities mapped yet'
+}
+
+function addSelectedValue() {
+  if (valueToAdd.value && !formData.value.valueIds.includes(valueToAdd.value)) {
+    formData.value.valueIds.push(valueToAdd.value)
+  }
+  valueToAdd.value = ''
+}
+
+function moveValue(index: number, delta: -1 | 1) {
+  const ids = formData.value.valueIds
+  const target = index + delta
+  if (target < 0 || target >= ids.length) return
+  ;[ids[index], ids[target]] = [ids[target], ids[index]]
+}
+
+function removeValue(index: number) {
+  formData.value.valueIds.splice(index, 1)
+}
+
 function removeWorkShift(index: number) {
   formData.value.workSchedule.splice(index, 1)
 }
@@ -284,13 +391,15 @@ async function loadData() {
     loading.value = true
     error.value = null
 
-    const [worldData, regionsData, lotsData, traitsData] = await Promise.all([
+    const [worldData, regionsData, lotsData, traitsData, valuesData] = await Promise.all([
       client.request<{ world: WorldSummary | null }>(queries.getWorld, { id: worldId.value }),
       client.request<{ regions: RegionSummary[] }>(queries.getRegions, { worldId: worldId.value }),
       client.request<{ lots: LotSummary[] }>(queries.getLots, { regionId: regionId.value }),
-      client.request<{ traits: TraitOption[] }>(queries.getTraits)
+      client.request<{ traits: TraitOption[] }>(queries.getTraits),
+      client.request<{ values: ValueOption[] }>(queries.getValues)
     ])
     availableTraits.value = traitsData.traits || []
+    availableValues.value = valuesData.values || []
 
     world.value = worldData.world
     region.value = regionsData.regions.find((entry) => entry.id === regionId.value) || null
@@ -320,6 +429,7 @@ async function loadData() {
       age: characterData.character.age,
       bio: characterData.character.bio || '',
       traitIds: (characterData.character.traits || []).map((trait) => trait.id),
+      valueIds: (characterData.character.values || []).map((value) => value.id),
       workSchedule: (characterData.character.workSchedule || []).map((shift) => ({
         day: shift.day,
         start: shift.start,
@@ -369,6 +479,7 @@ async function saveCharacter() {
         homeLotId,
         householdId: householdId.value,
         traitIds: formData.value.traitIds,
+        valueIds: formData.value.valueIds,
         workSchedule: normalizedWorkSchedule
       })
     } else if (savedCharacterId) {
@@ -378,6 +489,7 @@ async function saveCharacter() {
         age: formData.value.age,
         bio: formData.value.bio,
         traitIds: formData.value.traitIds,
+        valueIds: formData.value.valueIds,
         workSchedule: normalizedWorkSchedule
       })
     }
@@ -391,6 +503,10 @@ async function saveCharacter() {
           (id) => availableTraits.value.find((trait) => trait.id === id)?.name ?? id
         )
         pinDisabledNeeds(state.needs, state.traitIds)
+        state.values = mergeValueSeed(
+          toValueSeed(formData.value.valueIds.map((id) => ({ id, name: valueName(id) }))).values,
+          state.values
+        )
         state.workSchedule = normalizedWorkSchedule.map((shift) => ({
           day: shift.day,
           start: shift.start,

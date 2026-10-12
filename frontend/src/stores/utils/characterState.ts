@@ -1,4 +1,4 @@
-import type { ActivityLogEntry, CharacterLocation, CharacterState, Intent, LongTermMemory, Memory } from '../types'
+import type { ActivityLogEntry, CharacterLocation, CharacterState, CharacterValueState, Intent, LongTermMemory, Memory } from '../types'
 import { INITIAL_COOLDOWNS, INITIAL_NEEDS } from '../config/needs'
 
 const MAX_SHORT_TERM_MEMORIES = 20
@@ -8,6 +8,7 @@ interface CharacterSeed {
   name: string
   traits?: string[]
   traitIds?: string[]
+  values?: CharacterValueState[]
   householdId?: string | null
   homeLotId?: string | null
   homeLotName?: string | null
@@ -23,6 +24,7 @@ export function createCharacterState(character: CharacterSeed): CharacterState {
     location: createEmptyLocation(),
     traits: character.traits || [],
     traitIds: character.traitIds || [],
+    values: character.values || [],
     queuedActions: [],
     incomingSocialInvitations: [],
     outgoingSocialInvitations: [],

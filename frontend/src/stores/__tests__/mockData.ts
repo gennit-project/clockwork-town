@@ -60,6 +60,7 @@ export const createMockCharacterState = (overrides: Partial<CharacterState> = {}
   },
   traits: [],
   traitIds: [],
+  values: [],
   queuedActions: [],
   incomingSocialInvitations: [],
   outgoingSocialInvitations: [],

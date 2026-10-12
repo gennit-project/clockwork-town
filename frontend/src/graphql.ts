@@ -74,6 +74,10 @@ export const queries = {
             id
             name
           }
+          values {
+            id
+            name
+          }
           workSchedule {
             day
             start
@@ -333,6 +337,16 @@ export const queries = {
     }
   `,
 
+  getValues: `
+    query GetValues {
+      values {
+        id
+        name
+        description
+      }
+    }
+  `,
+
   getCharacter: `
     query GetCharacter($id: ID!) {
       character(id: $id) {
@@ -341,6 +355,10 @@ export const queries = {
         age
         bio
         traits {
+          id
+          name
+        }
+        values {
           id
           name
         }

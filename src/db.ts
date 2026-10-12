@@ -127,6 +127,20 @@ export async function migrateDatabase(): Promise<{
   const [characterRow] = await updatedCharacters.getAll() as Array<{ count?: number | string }>;
   const backfilledWorkSchedule = Number(characterRow?.count ?? 0);
 
+  // Ranked values: ordered value ids, most important first.
+  try {
+    await conn.query("ALTER TABLE Character ADD valueOrder STRING[]");
+  } catch (error) {
+    if (!isDuplicatePropertyError(error, "valueOrder")) {
+      throw error;
+    }
+  }
+  await conn.query(`
+    MATCH (c:Character)
+    WHERE c.valueOrder IS NULL
+    SET c.valueOrder = []
+  `);
+
   for (const [propertyName, dataType] of [
     ["fromCharacterId", "STRING"],
     ["toCharacterId", "STRING"],

@@ -212,6 +212,7 @@ import { useRouteParams } from '../composables/useRouteParams'
 import { useBreadcrumbs } from '../composables/useBreadcrumbs'
 import { computeCharacterHappiness } from '../stores/utils/happinessMetrics'
 import { toTraitSeed, type TraitSummary } from '../stores/utils/traitSeed'
+import { toValueSeed, type ValueSummary } from '../stores/utils/valueSeed'
 import type { InputLot, InputSpace, NeedName } from '../stores/types'
 
 const simulationStore = useSimulationStore()
@@ -341,7 +342,7 @@ interface GetHouseholdsResult {
   households: HouseholdSummary[]
 }
 
-type RawRegionCharacter = Omit<CharacterSummary, 'traits'> & { traits?: TraitSummary[] }
+type RawRegionCharacter = Omit<CharacterSummary, 'traits'> & { traits?: TraitSummary[]; values?: ValueSummary[] }
 
 interface GetRegionResult {
   region?: {
@@ -628,6 +629,7 @@ const loadData = async () => {
           id: character.id,
           name: character.name,
           ...toTraitSeed(character.traits),
+          ...toValueSeed(character.values),
           householdId: household?.id ?? null,
           homeLotId: household?.lotId ?? character.location?.id ?? null,
           homeLotName: household?.lotName ?? character.location?.name ?? null,

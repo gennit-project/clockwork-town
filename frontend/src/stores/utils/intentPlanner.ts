@@ -13,6 +13,7 @@ import type {
 } from '../types'
 import { calculateUtility } from './actionUtility'
 import { isActionDisabled } from './traitEffects'
+import { valueUtilityBonus } from './valueEffects'
 import { findItemsWithAffordance } from './pathfinding'
 import { canAccessLot } from './accessControl'
 import { evaluateRelationshipAvailability } from './relationshipAvailability'
@@ -1102,6 +1103,10 @@ export function buildPlanCandidates({
   // Traits can switch a need off; drop actions that serve it, for the character
   // and for any social target who would have to take part.
   return candidates
+    .map((candidate) => {
+      const bonus = valueUtilityBonus(characterState, candidate.goal)
+      return bonus > 0 ? { ...candidate, utility: candidate.utility + bonus } : candidate
+    })
     .filter((candidate) => {
       if (isActionDisabled(candidate.goal, characterState.traitIds)) {
         return false

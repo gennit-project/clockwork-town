@@ -259,7 +259,7 @@ type Character {
   age: Int!
   bio: String
   traits: [Trait!]!
-  values: [Value!]!
+  values: [Value!]!   # in rank order, most important first
 
   # Family (can be derived from PARENT_OF edges; exposed directly for convenience)
   biologicalParents: [Character!]!
@@ -377,6 +377,7 @@ type Query {
   household(id: ID!): Household
 
   traits: [Trait!]!
+  values: [Value!]!
   character(id: ID!): Character
   characters(page: Page): CharacterConnection!
   charactersInLot(lotId: ID!): [Character!]!
@@ -466,6 +467,7 @@ input UpdateCharacterInput {
   bio: String
   workSchedule: [WorkShiftInput!]
   traitIds: [ID!]      # when provided, replaces the character's traits
+  valueIds: [ID!]      # when provided, replaces the character's values; order = rank (first is most important)
 }
 
 input WorkShiftInput {

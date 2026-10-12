@@ -81,6 +81,7 @@ export async function persistCharacterDetails(input: {
     locationLotId: string
   }>
   traitIds?: string[]
+  valueIds?: string[]
 }): Promise<void> {
   await client.request(mutations.updateCharacter, { input })
 }
@@ -100,12 +101,13 @@ export async function createCharacterDetails(input: {
     locationLotId: string
   }>
   traitIds?: string[]
+  valueIds?: string[]
 }): Promise<void> {
   await client.request(mutations.createCharacter, {
     input: {
       ...input,
       traitIds: input.traitIds ?? [],
-      valueIds: []
+      valueIds: input.valueIds ?? []
     }
   })
 }

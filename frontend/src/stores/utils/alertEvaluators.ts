@@ -6,6 +6,7 @@
 import { SERVICE_DESK_THRESHOLDS, TICKS_PER_DAY } from '../../config/serviceDesk'
 import type { Alert, CharacterState, HappinessSample, NeedName, ServiceDeskSeverity } from '../types'
 import type { ServiceDeskTrackers } from './serviceDeskTrackers'
+import { activeValues, isValueNeglected, valueSatisfaction } from './valueEffects'
 
 export interface AlertContext {
   tick: number
@@ -124,11 +125,33 @@ export const evaluateHappinessTrend: AlertEvaluator = ({ tick, states, history }
   return alerts
 }
 
+/** A value that has gone unfulfilled long enough to count as neglected. */
+export const evaluateNeglectedValues: AlertEvaluator = ({ states }) => {
+  const alerts: Alert[] = []
+  for (const [characterId, state] of Object.entries(states)) {
+    for (const { value, rank } of activeValues(state)) {
+      if (!isValueNeglected(value)) continue
+      const days = value.ticksSinceFulfilled / TICKS_PER_DAY
+      alerts.push({
+        id: `value-neglect:${characterId}:${value.id}`,
+        rule: 'value-neglect',
+        // The resident's top value, fully neglected, is the most serious case.
+        severity: rank === 1 && valueSatisfaction(value) === 0 ? 'critical' : 'warning',
+        characterId,
+        characterName: state.name,
+        message: `value neglected: "${value.name}" (${days.toFixed(1)} days)`
+      })
+    }
+  }
+  return alerts
+}
+
 export const ALERT_EVALUATORS: AlertEvaluator[] = [
   evaluateCriticalNeeds,
   evaluateHomeStay,
   evaluateFriendCount,
-  evaluateHappinessTrend
+  evaluateHappinessTrend,
+  evaluateNeglectedValues
 ]
 
 /** Run every rule and return alerts sorted most severe first. */

@@ -40,6 +40,7 @@ import {
   computeTownHappiness
 } from './happinessMetrics'
 import { applyPetInteraction, tickAnimals } from './animalRuntime'
+import { markValuesFulfilled } from './valueEffects'
 import {
   decayCharacterRelationships,
   recordRelationshipConversation,
@@ -286,6 +287,7 @@ export function createSimulationRuntime(
       : actionData
 
     const stateChange = applyActionToCharacterState(state, intent.action, effectiveActionData)
+    markValuesFulfilled(state, intent.action)
 
     if (stateChange.primaryNeedChange) {
       const { need, oldValue, newValue, effect } = stateChange.primaryNeedChange

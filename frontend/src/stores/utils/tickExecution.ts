@@ -17,6 +17,7 @@ import type {
 } from '../types'
 import { NEED_DECAY_RATES } from '../config/needs'
 import { effectiveDecayRate, isActionDisabled, pinDisabledNeeds } from './traitEffects'
+import { tickValues, valueNeglectDrain } from './valueEffects'
 import { selectBestIntent } from './decisionMaking'
 import { debugLog } from './simulationDebug'
 import { advanceSimulationDateTime } from './simulationCalendar'
@@ -479,6 +480,10 @@ export async function executeTick({
       state.needs[need] = Math.max(0, state.needs[need] - effectiveDecayRate(need, state.traitIds))
     }
     pinDisabledNeeds(state.needs, state.traitIds)
+
+    // Values age every tick; neglected ones drag fulfillment down
+    tickValues(state)
+    state.needs.fulfillment = Math.max(0, state.needs.fulfillment - valueNeglectDrain(state))
 
     // Decrement cooldowns
     for (const action in state.cooldowns) {

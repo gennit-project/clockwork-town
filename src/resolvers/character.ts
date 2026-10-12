@@ -2,6 +2,7 @@ import { batch, q } from "../kuzuHelpers";
 import { deserializeStoredWorkSchedule, serializeWorkSchedule } from "./workSchedule";
 import { syncMemoryRelationships } from "./relationship";
 import { setCharacterTraits } from "../traits";
+import { getCharacterValues, setCharacterValues } from "../values";
 
 export const CharacterResolvers = {
   Trait: {
@@ -10,6 +11,7 @@ export const CharacterResolvers = {
     emotionalNeedModifiers: () => []
   },
   Character: {
+    values: async (parent: { id: string }) => getCharacterValues(parent.id),
     traits: async (parent: { id: string }) => {
       return q(`
         MATCH (c:Character {id:$cid})-[:HAS_TRAIT]->(t:Trait)
@@ -87,6 +89,14 @@ export const CharacterResolvers = {
   },
 
   Query: {
+    values: async () => {
+      return q(`
+        MATCH (v:Value)
+        RETURN v.id AS id, v.name AS name, v.description AS description
+        ORDER BY v.name ASC
+      `);
+    },
+
     traits: async () => {
       return q(`
         MATCH (t:Trait)
@@ -159,12 +169,7 @@ export const CharacterResolvers = {
           }
         }
         if (valueIds?.length) {
-          for (const vid of valueIds) {
-            await q(`
-              MATCH (c:Character {id:$cid}), (v:Value {id:$vid})
-              CREATE (c)-[:HAS_VALUE]->(v)
-            `, { cid: id, vid });
-          }
+          await setCharacterValues(id, valueIds);
         }
         const now = new Date().toISOString();
         await q(`
@@ -189,8 +194,9 @@ export const CharacterResolvers = {
       bio?: string | null;
       workSchedule?: Array<{ day: string; start: string; end: string; locationLotId: string }>;
       traitIds?: string[];
+      valueIds?: string[];
     } }) => {
-      const { id, traitIds, ...updates } = input;
+      const { id, traitIds, valueIds, ...updates } = input;
       const setFields: string[] = [];
       const params: Record<string, unknown> = { id };
 
@@ -211,12 +217,16 @@ export const CharacterResolvers = {
         params.workSchedule = serializeWorkSchedule(updates.workSchedule);
       }
 
-      if (setFields.length === 0 && traitIds === undefined) {
+      if (setFields.length === 0 && traitIds === undefined && valueIds === undefined) {
         throw new Error('No character fields to update');
       }
 
       if (traitIds !== undefined) {
         await setCharacterTraits(id, traitIds);
+      }
+
+      if (valueIds !== undefined) {
+        await setCharacterValues(id, valueIds);
       }
 
       if (setFields.length === 0) {

@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { Ref } from 'vue'
 import type {
+  CharacterValueState,
   AnimalState,
   AutoTickSpeed,
   CharacterState,
@@ -32,12 +33,14 @@ import { createSimulationDateTime, formatSimulationDateTime } from './utils/simu
 import { INITIAL_ANIMAL_NEEDS } from './config/animalConfig'
 import { deriveAccessibleLotIds } from './utils/accessControl'
 import { pinDisabledNeeds } from './utils/traitEffects'
+import { mergeValueSeed } from './utils/valueSeed'
 
 interface CharacterSimulationSeed {
   id: string
   name: string
   traits?: string[]
   traitIds?: string[]
+  values?: CharacterValueState[]
   householdId?: string | null
   homeLotId?: string | null
   homeLotName?: string | null
@@ -129,6 +132,9 @@ export const useSimulationStore = defineStore('simulation', () => {
     state.traits = character.traits ?? state.traits ?? []
     state.traitIds = character.traitIds ?? state.traitIds ?? []
     pinDisabledNeeds(state.needs, state.traitIds)
+    if (character.values) {
+      state.values = mergeValueSeed(character.values, state.values)
+    }
     state.householdId = character.householdId ?? state.householdId ?? null
     state.homeLotId = character.homeLotId ?? state.homeLotId ?? null
     state.homeLotName = character.homeLotName ?? state.homeLotName ?? null

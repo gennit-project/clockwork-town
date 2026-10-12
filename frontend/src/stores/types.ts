@@ -203,6 +203,8 @@ export interface CharacterState {
   traits: string[]
   /** Trait ids (parallel to `traits` display names); drive TRAIT_EFFECTS. */
   traitIds: string[]
+  /** Ranked values, most important first. See config/valueDefs.ts. */
+  values: CharacterValueState[]
   memories?: Memory[]
   longTermMemories?: LongTermMemory[]
   relationships?: CharacterRelationship[]
@@ -215,6 +217,12 @@ export interface CharacterState {
   homeLotName?: string | null
   accessibleLotIds: string[]
   workSchedule: WorkShift[]
+}
+
+export interface CharacterValueState {
+  id: string
+  name: string
+  ticksSinceFulfilled: number
 }
 
 export interface Memory {

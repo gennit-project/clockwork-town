@@ -42,6 +42,7 @@ const { WorldResolvers } = await import("./resolvers/world");
 const { HouseholdResolvers } = await import("./resolvers/household");
 const { upsertCharacterRelationship } = await import("./resolvers/relationship");
 const { ensureTraitCatalog, setCharacterTraits } = await import("./traits");
+const { ensureValueCatalog, setCharacterValues } = await import("./values");
 
 const createWorld = WorldResolvers.Mutation.createWorld;
 const createRegion = WorldResolvers.Mutation.createRegion;
@@ -411,12 +412,49 @@ async function seedTraits() {
   }
 }
 
+// Ranked values (most important first), so the demo shows per-value bars and neglect.
+async function seedValues() {
+  await ensureValueCatalog();
+  const animals = "value-take-care-of-animals";
+  const read = "value-read-books";
+  const write = "value-write-books";
+  const friend = "value-be-a-good-friend";
+  const family = "value-happy-family";
+  const romance = "value-romantic-relationship";
+  const work = "value-good-job-at-work";
+  const assignments: Record<string, string[]> = {
+    // Desert Willow
+    "char-amina-lin": [work, family, romance],
+    "char-ravi-lin": [read, romance, work],
+    "char-priya-lin": [read, friend],
+    "char-tom-marsh": [work, family],
+    "char-sara-marsh": [friend, family],
+    "char-leo-marsh": [friend, family],
+    "char-grace-okafor": [work, friend],
+    "char-daniel-okafor": [read, write],
+    "char-manny-reyes": [animals, friend, family],
+    "char-elena-reyes": [read, family, friend],
+    "char-kim-nguyen": [friend, work],
+    "char-anh-nguyen": [write, friend],
+    // Pinehaven
+    "char-owen-frost": [work, family],
+    "char-nadia-frost": [read, work],
+    "char-sam-frost": [animals, read],
+    "char-june-hale": [animals, friend],
+    "char-riley-hale": [read, write]
+  };
+  for (const [characterId, valueIds] of Object.entries(assignments)) {
+    await setCharacterValues(characterId, valueIds);
+  }
+}
+
 async function seed() {
   await applyDDL();
 
   await seedDesertWillow();
   await seedPinehaven();
   await seedTraits();
+  await seedValues();
   await seedLibrary();
 
   // Flush to disk. Short-lived scripts need an explicit checkpoint + close.

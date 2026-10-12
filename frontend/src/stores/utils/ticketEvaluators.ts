@@ -6,6 +6,7 @@
 import { SERVICE_DESK_THRESHOLDS } from '../../config/serviceDesk'
 import type { CharacterState, NeedName, TicketCandidate } from '../types'
 import { lowNeedKey, type ServiceDeskTrackers } from './serviceDeskTrackers'
+import { activeValues, valueSatisfaction } from './valueEffects'
 
 export interface TicketContext {
   tick: number
@@ -36,7 +37,26 @@ export const evaluateUnmetNeeds: TicketEvaluator = ({ tick, states, trackers }) 
   return candidates
 }
 
-export const TICKET_EVALUATORS: TicketEvaluator[] = [evaluateUnmetNeeds]
+/** A value neglected for its whole window: the resident needs help meeting it. */
+export const evaluateNeglectedValueTickets: TicketEvaluator = ({ states }) => {
+  const candidates: TicketCandidate[] = []
+  for (const [characterId, state] of Object.entries(states)) {
+    for (const { value } of activeValues(state)) {
+      if (valueSatisfaction(value) > 0) continue
+      candidates.push({
+        key: `value-neglect:${characterId}:${value.id}`,
+        rule: 'value-neglect',
+        severity: 'warning',
+        characterId,
+        characterName: state.name,
+        title: `${state.name} hasn't been able to live their value: ${value.name}`
+      })
+    }
+  }
+  return candidates
+}
+
+export const TICKET_EVALUATORS: TicketEvaluator[] = [evaluateUnmetNeeds, evaluateNeglectedValueTickets]
 
 export function evaluateTicketCandidates(
   ctx: TicketContext,
