@@ -146,7 +146,7 @@ the planner); the Values panel sits beside it instead of replacing it.
 play games, nature, religion, learn about science, ...); value windows and the drain/nudge sizes are
 first guesses, tune after watching a full simulated day; `lastFulfilled` is in-memory only and
 restarts fresh on reload; the nudge cannot pull a resident across town (travel cost ~2 outweighs
-it), so a value whose activity is far away goes neglected and files a ticket, which is intended;
+it), so a value whose activity is far away goes neglected and files a ticket, which is intended (pets now live at their owner's home, so "take care of animals" is reachable for owners);
 the "no values yet" prompt is untested visually;
 trait chips and value rows have no effect tooltips beyond the disabled-trait one.
 

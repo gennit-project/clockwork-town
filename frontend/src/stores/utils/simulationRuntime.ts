@@ -43,6 +43,7 @@ import {
 import { applyPetInteraction, tickAnimals } from './animalRuntime'
 import { markValuesFulfilled } from './valueEffects'
 import { isNewDay, recordActionInTally, recordDailySummaries } from './dailySummary'
+import { evaluatePetEvents, updatePetTogetherness } from './petReunions'
 import {
   decayCharacterRelationships,
   recordRelationshipConversation,
@@ -215,6 +216,44 @@ export function createSimulationRuntime(
     })
     if (refs.events.value.length > EVENT_FEED_LIMIT) {
       refs.events.value.splice(0, refs.events.value.length - EVENT_FEED_LIMIT)
+    }
+  }
+
+  /** When an owner and their pet meet again after a long absence, run the pet event evaluators. */
+  async function recordPetReunions(): Promise<void> {
+    const nowIso = refs.simulationDateTime.value.iso
+
+    for (const animal of Object.values(refs.animalStates.value)) {
+      const ownerId = animal.ownerId
+      const owner = ownerId ? refs.characterStates.value[ownerId] : undefined
+      if (!ownerId || !owner) {
+        continue
+      }
+
+      const { reunited, minutesApart } = updatePetTogetherness({ animal, owner, nowIso })
+      if (!reunited || minutesApart === null) {
+        continue
+      }
+
+      for (const event of evaluatePetEvents({ owner, animal, minutesApart })) {
+        await dependencies.createStructuredCharacterLongTermMemory({
+          characterId: ownerId,
+          content: event.ownerMemory,
+          eventType: event.type,
+          locationLotId: owner.location.lotId ?? undefined,
+          locationLotName: owner.location.lotName ?? undefined,
+          locationSpaceId: owner.location.spaceId ?? undefined,
+          locationSpaceName: owner.location.spaceName ?? undefined,
+          createdAt: nowIso
+        })
+        if (event.affectionBoost > 0) {
+          animal.needs.affection = Math.min(1, animal.needs.affection + event.affectionBoost)
+          animal.currentAction = 'play'
+        }
+        if (event.notable && event.logMessage) {
+          recordNotableEvent({ type: event.type, message: event.logMessage, characterIds: [ownerId] })
+        }
+      }
     }
   }
 
@@ -601,6 +640,8 @@ export function createSimulationRuntime(
       animalStates: refs.animalStates.value,
       worldData: refs.worldData.value
     })
+
+    await recordPetReunions()
 
     recordHappinessSample()
   }

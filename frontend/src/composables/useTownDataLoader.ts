@@ -5,6 +5,7 @@ import { fetchCharacterDetails } from '../stores/simulationPersistence'
 import { refreshCharacterDetails } from '../stores/utils/characterDetails'
 import { toTraitSeed, type TraitSummary } from '../stores/utils/traitSeed'
 import { toValueSeed, type ValueSummary } from '../stores/utils/valueSeed'
+import { resolvePetOwnership } from '../stores/utils/petSeed'
 import type { InputLot, WorkShift } from '../stores/types'
 
 interface RegionCharacter {
@@ -27,6 +28,7 @@ interface RegionAnimal {
   id: string
   name: string
   traits?: string[]
+  ownerId?: string | null
 }
 
 interface HouseholdSummary {
@@ -84,7 +86,12 @@ export function useTownDataLoader() {
       const animals = regionData.region?.animals || []
 
       for (const animal of animals) {
-        simulationStore.initializeAnimal({ id: animal.id, name: animal.name, traits: animal.traits })
+        simulationStore.initializeAnimal({
+          id: animal.id,
+          name: animal.name,
+          traits: animal.traits,
+          ...resolvePetOwnership(animal.ownerId, households)
+        })
       }
 
       for (const character of characters) {

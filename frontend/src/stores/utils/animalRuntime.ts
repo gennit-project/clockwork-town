@@ -10,7 +10,8 @@ import {
   ANIMAL_NEED_DECAY,
   ANIMAL_NEED_NAMES,
   ANIMAL_NEED_THRESHOLD,
-  PET_AFFECTION_BOOST
+  PET_AFFECTION_BOOST,
+  PET_HOMEBODY
 } from '../config/animalConfig'
 
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v))
@@ -42,8 +43,11 @@ function chooseAnimalAction(animal: AnimalState): AnimalActionName {
   if (lowest.value < ANIMAL_NEED_THRESHOLD) {
     return ANIMAL_ACTION_FOR_NEED[lowest.name]
   }
-  // Content: roam now and then, otherwise rest.
-  return Math.random() < 0.5 ? 'wander' : 'idle'
+  // Content homebody: usually stays put. At home, rarely wanders out; away, heads back
+  // ('wander' while away means going home, see applyAnimalAction).
+  const away = animal.homeLotId !== null && animal.location.lotId !== animal.homeLotId
+  const chance = away ? PET_HOMEBODY.returnHomeChanceAway : PET_HOMEBODY.wanderChanceAtHome
+  return Math.random() < chance ? 'wander' : 'idle'
 }
 
 function moveAnimalToLot(animal: AnimalState, lotId: string | null | undefined, worldData: WorldData): void {
@@ -72,9 +76,14 @@ function applyAnimalAction(animal: AnimalState, action: AnimalActionName, worldD
   if (action === 'eat' || action === 'sleep' || action === 'groom') {
     moveAnimalToLot(animal, animal.homeLotId ?? animal.location.lotId, worldData)
   } else if (action === 'wander') {
-    const lots = animal.accessibleLotIds
-    if (lots.length > 0) {
-      moveAnimalToLot(animal, lots[Math.floor(Math.random() * lots.length)], worldData)
+    const away = animal.homeLotId !== null && animal.location.lotId !== animal.homeLotId
+    if (away) {
+      moveAnimalToLot(animal, animal.homeLotId, worldData)
+    } else {
+      const lots = animal.accessibleLotIds.filter((lotId) => lotId !== animal.homeLotId)
+      if (lots.length > 0) {
+        moveAnimalToLot(animal, lots[Math.floor(Math.random() * lots.length)], worldData)
+      }
     }
   }
   // 'relieve', 'play', 'idle' happen wherever the animal currently is.

@@ -40,6 +40,30 @@ export const ANIMAL_ACTION_EFFECT: Partial<Record<AnimalActionName, { need: Anim
   groom: { need: 'hygiene', amount: 0.3 }
 }
 
+/**
+ * Pets are homebodies: they stay at home most of the time, rarely wander out, and
+ * drift back home once they have. (Needs-driven actions like eating also take them home.)
+ */
+export const PET_HOMEBODY = {
+  /** Chance per tick that a content pet at home wanders to another lot. */
+  wanderChanceAtHome: 0.04,
+  /** Chance per tick that a content pet away from home heads back. */
+  returnHomeChanceAway: 0.35
+} as const
+
+/** Affection (0..1) a pet needs to greet its owner warmly rather than quietly. */
+export const PET_GREETING_MIN_AFFECTION = 0.3
+
+/**
+ * Pet traits that make a pet keep a reunion low-key (a glance, not a greeting). Pets also
+ * regulate their own affection need (a low need triggers play), so the need alone rarely
+ * signals reserve; traits do.
+ */
+export const PET_QUIET_TRAITS: readonly string[] = ['aloof']
+
+/** Affection a warm greeting restores for the pet. */
+export const PET_REUNION_AFFECTION_BOOST = 0.15
+
 /** Below this, a need is "pressing" and the animal acts on it. */
 export const ANIMAL_NEED_THRESHOLD = 0.55
 

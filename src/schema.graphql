@@ -306,7 +306,7 @@ type Animal {
   traits: [String!]!
   bio: String
 
-  ownerId: ID!
+  ownerId: ID          # null only for an animal with no OWNS_ANIMAL edge
   owner: Character!
   parents: [Animal!]!
   siblings: [Animal!]!

@@ -100,6 +100,7 @@ export const queries = {
           age
           traits
           bio
+          ownerId
         }
       }
     }

@@ -122,6 +122,12 @@ export interface AnimalState {
   homeLotId: string | null
   homeLotName: string | null
   accessibleLotIds: string[]
+  /** The character who owns this animal (OWNS_PET); drives reunions. */
+  ownerId?: string | null
+  /** When the owner and this animal were last on the same lot (sim ISO time). */
+  lastWithOwnerAt?: string | null
+  /** Whether they were together last tick, so a reunion fires once on re-meeting. */
+  withOwner?: boolean
 }
 
 export interface CharacterActivity {

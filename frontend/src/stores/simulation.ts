@@ -247,19 +247,36 @@ export const useSimulationStore = defineStore('simulation', () => {
    * Initialize an animal's runtime state. Lean parallel to initializeCharacter:
    * animals start at the region's first residential lot (or first lot) and roam.
    */
-  function initializeAnimal(animal: { id: string; name: string; traits?: string[] }): void {
-    if (animalStates.value[animal.id]) {
+  function initializeAnimal(animal: {
+    id: string
+    name: string
+    traits?: string[]
+    ownerId?: string | null
+    homeLotId?: string | null
+    homeLotName?: string | null
+  }): void {
+    const existing = animalStates.value[animal.id]
+    if (existing) {
+      // Reloading a region: refresh ownership/home without resetting needs or position.
+      existing.ownerId = animal.ownerId ?? existing.ownerId ?? null
       return
     }
 
     const lots = Object.values(worldData.value.lots)
-    const homeLot = lots.find((lot) => lot.lotType === 'RESIDENTIAL') ?? lots[0]
+    // A pet lives with its owner; with no known home, fall back to the first residential lot.
+    const homeLot =
+      (animal.homeLotId ? worldData.value.lots[animal.homeLotId] : undefined) ??
+      lots.find((lot) => lot.lotType === 'RESIDENTIAL') ??
+      lots[0]
     const firstSpaceId = homeLot?.spaceIds[0]
     const firstSpace = firstSpaceId ? worldData.value.spaces[firstSpaceId] : undefined
 
     animalStates.value[animal.id] = {
       name: animal.name,
       traits: animal.traits ?? [],
+      ownerId: animal.ownerId ?? null,
+      lastWithOwnerAt: null,
+      withOwner: false,
       needs: { ...INITIAL_ANIMAL_NEEDS },
       currentAction: 'idle',
       homeLotId: homeLot?.id ?? null,

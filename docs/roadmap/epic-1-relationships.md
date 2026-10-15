@@ -67,19 +67,25 @@ long-term entry visible in the memory timeline; short-term list resets.
 
 ### 1.2 — Reunion & ambient relationship events (R8) `[M]` — high delight
 
-**Status:** Human reunions implemented and verified live; pet reunions not started. Reunion
-memories already existed in `relationshipRuntime.ts`. Now reunions are the first of a generic list
-of relationship-event evaluators (`utils/relationshipEvents.ts`, `RELATIONSHIP_EVENT_EVALUATORS`):
-each evaluator turns a pair's last-seen/score data into an event (memory text for both sides, a
-score delta, a notable flag, a log message). A reunion after 6+ hours is a **hug** when the pair's
-average long-term score is at least 0.5, otherwise a quiet "saw them again" memory with no
-notification. Notable events go to the activity log and to a capped recent-events feed
+**Status:** Implemented and verified live (human reunions and pet reunions). Reunion memories for
+people already existed in `relationshipRuntime.ts`; reunions are now the first of a generic list of
+relationship-event evaluators (`utils/relationshipEvents.ts`). A reunion after 6+ hours is a **hug**
+when the pair's average long-term score is at least 0.5, otherwise a quiet "saw them again" memory
+with no notification. **Pet reunions** (`utils/petReunions.ts`, `PET_EVENT_EVALUATORS`): each pet has
+an owner (`OWNS_ANIMAL`), a home (its owner's household lot) and a last-together time; when owner and
+pet are on the same lot again after 6+ hours, the owner gets a `pet_reunion` memory and the pet,
+unless it has an `aloof` trait (`PET_QUIET_TRAITS`) or low affection, greets them (log entry, feed
+entry, affection boost, `play` animation). Species-agnostic: only the animal's state, never its
+name or kind, matters. Notable events go to the activity log and a capped recent-events feed
 (`events` in the simulation store) shown in a "Recent events" panel on the Alerts page (alerts are
-derived conditions, so one-off events need their own feed). **Pet reunions are the next piece:**
-they need an owner on each animal in the frontend and a per-pet last-seen time, then an
-owner-greeting evaluator. Tuning note: because the threshold is 6 hours, housemates hug every
-evening when someone returns from a 9-to-5 shift; raise the threshold for notable events if the
-feed gets noisy.
+derived conditions, so one-off events need their own feed). Pets are now **homebodies**
+(`PET_HOMEBODY` in `config/animalConfig.ts`): they stay home, rarely wander, and drift back; before,
+they teleported to a random lot most ticks, which made absences meaningless and made owners'
+pet-petting unreachable (an owner's "take care of animals" value now has a pet at home to pet).
+Known gaps: only the owner is greeted (housemates could be too); the greeting warmth rule is a first
+guess (the affection need self-corrects, since a low need triggers play, so traits do most of the
+work); because the threshold is 6 hours, housemates hug and pets greet every evening after a 9-to-5
+shift, so raise the threshold for notable events if the feed gets noisy.
 
 **What to build.** Generate events from relationship-event *evaluators* (not
 hardcoded strings):

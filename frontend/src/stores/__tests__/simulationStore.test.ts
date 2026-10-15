@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useSimulationStore } from '../simulation'
 import { createMockWorldData, mockConsole } from './mockData'
@@ -749,6 +749,121 @@ describe('simulation store integration', () => {
       expect(store.events).toHaveLength(1)
       store.resetSimulation()
       expect(store.events).toHaveLength(0)
+    })
+  })
+
+  describe('pet reunions', () => {
+    afterEach(() => vi.restoreAllMocks())
+
+    const petMemories = () =>
+      persistenceMocks.createStructuredCharacterLongTermMemory.mock.calls
+        .map(([input]) => input as { characterId: string; eventType?: string; content: string })
+        .filter((input) => input.eventType === 'pet_reunion')
+
+    function setupPet(affection = 0.7) {
+      vi.spyOn(Math, 'random').mockReturnValue(0.999) // a content pet idles where it is
+      const store = setupStore()
+      store.initializeAnimal({ id: 'pet-1', name: 'Marmalade', ownerId: 'char-1', homeLotId: 'lot-1' })
+      store.animalStates['pet-1'].needs.affection = affection
+      store.enqueueIntent('char-1', { action: 'idle', utility: 0 })
+      return store
+    }
+
+    const setClock = (store: ReturnType<typeof useSimulationStore>, iso: string) => {
+      store.simulationDateTime = { ...store.simulationDateTime, iso }
+    }
+
+    const moveOwner = (store: ReturnType<typeof useSimulationStore>, lot: 'home' | 'away') =>
+      lot === 'home'
+        ? store.updateCharacterLocation('char-1', 'region-1', 'lot-1', 'Test House', 'space-1', 'Living Room')
+        : store.updateCharacterLocation('char-1', 'region-1', 'lot-2', 'Community Center', 'space-3', 'Library')
+
+    async function awayFor(store: ReturnType<typeof useSimulationStore>, hours: number) {
+      setClock(store, '2026-04-06T08:00:00.000Z')
+      await store.executeTick() // together at home: starts the clock on togetherness
+      moveOwner(store, 'away')
+      setClock(store, `2026-04-06T${String(8 + hours).padStart(2, '0')}:00:00.000Z`)
+      await store.executeTick() // apart
+      moveOwner(store, 'home')
+      await store.executeTick() // back together
+    }
+
+    it('greets the owner after a long absence: memory, log, feed entry and affection', async () => {
+      const store = setupPet(0.7)
+      await awayFor(store, 9)
+
+      expect(petMemories()).toEqual([
+        expect.objectContaining({ characterId: 'char-1', content: 'Was greeted by Marmalade after 9 hours apart.' })
+      ])
+      expect(store.events).toHaveLength(1)
+      expect(store.events[0]).toMatchObject({
+        type: 'pet_reunion',
+        message: 'Marmalade greeted Alice after 9 hours apart.',
+        characterIds: ['char-1']
+      })
+      expect(store.activityLog.some((e) => e.action === 'pet_reunion')).toBe(true)
+      expect(store.animalStates['pet-1'].needs.affection).toBeGreaterThan(0.7)
+      expect(store.animalStates['pet-1'].currentAction).toBe('play')
+    })
+
+    it('control: a short trip out is not a reunion', async () => {
+      const store = setupPet(0.7)
+      await awayFor(store, 2)
+      expect(petMemories()).toHaveLength(0)
+      expect(store.events).toHaveLength(0)
+    })
+
+    it('control: an owner who never leaves is never reunited', async () => {
+      const store = setupPet(0.7)
+      for (let hour = 8; hour < 20; hour += 3) {
+        setClock(store, `2026-04-06T${String(hour).padStart(2, '0')}:00:00.000Z`)
+        await store.executeTick()
+      }
+      expect(petMemories()).toHaveLength(0)
+    })
+
+    it('an aloof pet only leaves the owner a quiet memory, with no notification', async () => {
+      const store = setupPet(0.7)
+      store.animalStates['pet-1'].traits = ['aloof']
+      await awayFor(store, 9)
+
+      const memories = petMemories()
+      expect(memories).toHaveLength(1)
+      expect(memories[0].content).toBe('Saw Marmalade again after 9 hours apart.')
+      expect(store.events).toHaveLength(0)
+      expect(store.activityLog.some((e) => e.action === 'pet_reunion')).toBe(false)
+    })
+
+    it('only the owner is greeted, not other residents sharing the lot', async () => {
+      const store = setupPet(0.7)
+      setupSecondCharacter(store, 'lot-1', 'Test House', 'space-1', 'Living Room')
+      await awayFor(store, 9)
+      expect(petMemories().map((m) => m.characterId)).toEqual(['char-1'])
+    })
+  })
+
+  describe('pet loading', () => {
+    it('makes a pet live at its owner\'s home lot, not the first residential lot', () => {
+      const store = setupStore()
+      store.initializeAnimal({ id: 'pet-1', name: 'Diego', ownerId: 'char-1', homeLotId: 'lot-2' })
+      expect(store.animalStates['pet-1']).toMatchObject({ ownerId: 'char-1', homeLotId: 'lot-2' })
+      expect(store.animalStates['pet-1'].location.lotId).toBe('lot-2')
+    })
+
+    it('falls back to the first residential lot when the owner has no known home', () => {
+      const store = setupStore()
+      store.initializeAnimal({ id: 'pet-1', name: 'Diego' })
+      expect(store.animalStates['pet-1'].homeLotId).toBe('lot-1')
+    })
+
+    it('reloading keeps needs and position but picks up the owner', () => {
+      const store = setupStore()
+      store.initializeAnimal({ id: 'pet-1', name: 'Diego' })
+      store.animalStates['pet-1'].needs.food = 0.2
+      store.initializeAnimal({ id: 'pet-1', name: 'Diego', ownerId: 'char-1', homeLotId: 'lot-2' })
+      expect(store.animalStates['pet-1'].ownerId).toBe('char-1')
+      expect(store.animalStates['pet-1'].needs.food).toBe(0.2)
+      expect(store.animalStates['pet-1'].homeLotId).toBe('lot-1')
     })
   })
 

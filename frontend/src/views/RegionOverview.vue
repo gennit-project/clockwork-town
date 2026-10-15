@@ -213,6 +213,7 @@ import { useBreadcrumbs } from '../composables/useBreadcrumbs'
 import { computeCharacterHappiness } from '../stores/utils/happinessMetrics'
 import { toTraitSeed, type TraitSummary } from '../stores/utils/traitSeed'
 import { toValueSeed, type ValueSummary } from '../stores/utils/valueSeed'
+import { resolvePetOwnership } from '../stores/utils/petSeed'
 import type { InputLot, InputSpace, NeedName } from '../stores/types'
 
 const simulationStore = useSimulationStore()
@@ -317,6 +318,7 @@ interface AnimalSummary {
   age: number
   traits?: string[]
   bio?: string | null
+  ownerId?: string | null
 }
 
 interface GetWorldResult {
@@ -645,7 +647,12 @@ const loadData = async () => {
       }
 
       for (const animal of animals.value) {
-        simulationStore.initializeAnimal({ id: animal.id, name: animal.name, traits: animal.traits })
+        simulationStore.initializeAnimal({
+          id: animal.id,
+          name: animal.name,
+          traits: animal.traits,
+          ...resolvePetOwnership(animal.ownerId, households)
+        })
       }
     } catch (e: unknown) {
       console.error('Error loading characters and animals:', e)

@@ -163,7 +163,9 @@ export const WorldResolvers = {
       // Get animals in the region (via lots and ANIMAL_AT edges)
       const animals = await q(`
         MATCH (r:Region {id:$id})-[:HAS_LOT]->(l:Lot)<-[:ANIMAL_AT]-(a:Animal)
-        RETURN DISTINCT a.id AS id, a.name AS name, a.age AS age, a.traits AS traits, a.bio AS bio
+        OPTIONAL MATCH (a)<-[:OWNS_ANIMAL]-(owner:Character)
+        RETURN DISTINCT a.id AS id, a.name AS name, a.age AS age, a.traits AS traits, a.bio AS bio,
+               owner.id AS ownerId
       `, { id });
 
       return { ...region, characters, animals };
@@ -1203,7 +1205,7 @@ export const WorldResolvers = {
       const animals = await q(`
         MATCH (w:World {id:$worldId})-[:HAS_REGION]->(:Region)-[:HAS_LOT]->(:Lot)<-[:HOME]-(:Household)<-[:IN_HOUSEHOLD]-(a:Animal)
         OPTIONAL MATCH (a)-[:IN_HOUSEHOLD]->(h:Household)
-        OPTIONAL MATCH (a)<-[:OWNS_PET]-(owner:Character)
+        OPTIONAL MATCH (a)<-[:OWNS_ANIMAL]-(owner:Character)
         RETURN a.id AS id, a.name AS name, a.age AS age, a.traits AS traits, a.bio AS bio,
                h.id AS householdId, owner.id AS ownerId
       `, { worldId });
@@ -1442,7 +1444,7 @@ export const WorldResolvers = {
           if (newOwnerId) {
             await q(`
               MATCH (a:Animal {id:$animalId}), (c:Character {id:$ownerId})
-              CREATE (c)-[:OWNS_PET]->(a)
+              CREATE (c)-[:OWNS_ANIMAL]->(a)
             `, { animalId: newAnimalId, ownerId: newOwnerId });
           }
         }
