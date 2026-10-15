@@ -66,18 +66,20 @@
         />
       </div>
 
-      <!-- Happiness over time -->
+      <!-- Happiness over time, stacked by need tier -->
       <Panel title="Happiness / time" :status="status" :padded="false" class="mt-3 h-72">
-        <CharacterHappinessChart :history="happinessHistory" :names="seriesNames" />
+        <CharacterHappinessStackChart
+          :history="happinessHistory"
+          :character-id="characterId || ''"
+          :trait-ids="state.traitIds"
+          :has-values="hasValues"
+        />
       </Panel>
 
-      <!-- Needs -->
-      <Panel title="Needs" :padded="false" class="mt-3 h-72">
-        <NeedsBarGauge :needs="NEED_NAMES" :values="state.needs" :disabled="disabledNeedReasons" />
+      <!-- Needs by tier, with values nested under fulfillment -->
+      <Panel title="Needs" class="mt-3">
+        <NeedsByTier :state="state" :edit-link="editLink" />
       </Panel>
-
-      <!-- Values -->
-      <ValuesPanel :state="state" :edit-link="editLink" />
 
       <!-- Weekly schedule -->
       <Panel v-if="(state.workSchedule || []).length > 0" title="Schedule" class="mt-3">
@@ -119,18 +121,16 @@ import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import Panel from '../components/Panel.vue'
 import StatTile from '../components/StatTile.vue'
-import CharacterHappinessChart from '../components/charts/CharacterHappinessChart.vue'
-import NeedsBarGauge from '../components/charts/NeedsBarGauge.vue'
+import CharacterHappinessStackChart from '../components/charts/CharacterHappinessStackChart.vue'
+import NeedsByTier from '../components/NeedsByTier.vue'
 import ResidentRelationships from '../components/ResidentRelationships.vue'
 import MemoryTimeline from '../components/MemoryTimeline.vue'
 import NeedTrendHeatmap from '../components/charts/NeedTrendHeatmap.vue'
 import WeeklySchedule from '../components/WeeklySchedule.vue'
-import ValuesPanel from '../components/ValuesPanel.vue'
 import { useSimulationStore } from '../stores/simulation'
 import { useTownDataLoader } from '../composables/useTownDataLoader'
 import { getCharacterStatusText } from '../composables/useCharacterStatus'
 import { computeCharacterHappiness, happinessStatus } from '../stores/utils/happinessMetrics'
-import { getDisabledNeedReasons } from '../stores/utils/traitEffects'
 import { client, queries } from '../graphql'
 import type { NeedName } from '../stores/types'
 
@@ -161,7 +161,8 @@ const displayName = computed(() => state.value?.name || 'Resident')
 const shortId = computed(() => (characterId.value || '').slice(0, 8))
 const traits = computed(() => state.value?.traits?.length ? state.value.traits : fetchedTraits.value)
 
-const disabledNeedReasons = computed(() => (state.value ? getDisabledNeedReasons(state.value) : {}))
+// The fulfillment layer of the happiness chart only means something if they have values.
+const hasValues = computed(() => (state.value?.values?.length ?? 0) > 0)
 const happiness = computed(() => (state.value ? computeCharacterHappiness(state.value.needs, state.value.traitIds) : 0))
 const status = computed(() => happinessStatus(happiness.value))
 
@@ -205,7 +206,6 @@ const lowestNeed = computed(() => {
   return lowest.value === Infinity ? { name: 'food' as NeedName, value: 0 } : lowest
 })
 
-const seriesNames = computed(() => (characterId.value ? { [characterId.value]: displayName.value } : {}))
 
 const locationText = computed(() => {
   const loc = state.value?.location

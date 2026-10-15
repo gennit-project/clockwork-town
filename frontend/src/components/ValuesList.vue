@@ -1,5 +1,5 @@
 <template>
-  <Panel title="Values" :status="panelStatus" class="mt-3">
+  <div>
     <template v-if="rows.length === 0">
       <p class="text-sm text-gf-text-weak">
         No values yet. Values are what this resident finds meaningful; neglecting them drags mood down.
@@ -39,12 +39,11 @@
         </div>
       </li>
     </ul>
-  </Panel>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import Panel from './Panel.vue'
 import {
   describeTicksAgo,
   getValueDef,
@@ -54,7 +53,6 @@ import {
 } from '../stores/utils/valueEffects'
 import { getDisabledNeedReasons } from '../stores/utils/traitEffects'
 import type { CharacterState } from '../stores/types'
-import type { HealthStatus } from '../stores/utils/happinessMetrics'
 
 const props = defineProps<{
   state: Pick<CharacterState, 'values' | 'traitIds' | 'traits'>
@@ -89,11 +87,5 @@ const rows = computed(() => {
       disabledReason: disabled && def?.requiresNeed ? reasons[def.requiresNeed] : undefined
     }
   })
-})
-
-const panelStatus = computed<HealthStatus | null>(() => {
-  if (rows.value.length === 0) return null
-  if (rows.value.some((row) => row.neglected && row.rank === 1)) return 'critical'
-  return rows.value.some((row) => row.neglected) ? 'warning' : 'healthy'
 })
 </script>
