@@ -28,7 +28,7 @@ export const useServiceDeskStore = defineStore('serviceDesk', () => {
       history: sim.happinessHistory,
       trackers
     })
-    const candidates = evaluateTicketCandidates({ tick, states: sim.characterStates, trackers })
+    const candidates = evaluateTicketCandidates({ tick, states: sim.characterStates, trackers, dramaIntensity: sim.dramaIntensity })
     tickets.value = reconcileTickets(tickets.value, candidates, tick, () => `ticket-${++ticketSeq}`)
   }
 

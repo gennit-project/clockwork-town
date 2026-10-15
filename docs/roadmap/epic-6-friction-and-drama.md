@@ -95,23 +95,12 @@ first adopters. Details, deferrals and what remains: [completed/epic-6-1-cause-r
 Still open from it: persisting causes on memories (needs a DB column; do with 6.3), and
 the "no antisocial act without a cause" invariant (lands with the first antisocial act).
 
-### 6.2 — Dispositions and pressure `[M]`
+### 6.2 — Dispositions and pressure `[M]` — DONE
 
-**Status:** Not started.
-
-**What to build.** The inputs that make an act possible.
-- **Dispositions** as traits in the catalog, behavior declared in the trait effects map
-  (like decay multipliers today): *loses temper easily*, *jealous*, *petty*, *gossip*,
-  *arrogant*, *conflict-averse* (raises thresholds), *forgiving*. Authorable in the
-  editor.
-- **Pressure** per resident: an irritation (and jealousy, etc.) meter that builds from
-  triggers and decays with rest: unmet basic needs, unresolved grievances, being
-  disapproved of, crowding, interruptions, a rival's presence. Every contribution is
-  recorded, so the cause view can list it.
-- Thresholds depend on the disposition, and on the drama intensity setting (6.7).
-
-**Done when.** A hot-tempered, hungry resident with a grievance has visibly higher
-irritation than a calm one, and the contributions are listed in the cause view.
+Built: disposition traits, irritation and jealousy meters with a ledger of contributions,
+a minimal drama-intensity setting, a Pressure panel and `pressure` tickets. Details and
+known gaps: [completed/epic-6-2-pressure.md](completed/epic-6-2-pressure.md). The full drama
+intensity work (difficulty presets, per-resident overrides) remains in 6.7.
 
 ### 6.3 — Antisocial acts and the escalation ladder `[L]`
 

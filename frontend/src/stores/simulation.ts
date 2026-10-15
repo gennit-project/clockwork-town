@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { Ref } from 'vue'
+import type { DramaIntensity } from './config/pressure'
+import { loadDramaIntensity, saveDramaIntensity } from './utils/dramaSetting'
 import type {
   CharacterValueState,
   StanceValue,
@@ -70,6 +72,13 @@ export const useSimulationStore = defineStore('simulation', () => {
 
   // Notable happenings (reunions, ...) for the Alerts page's recent-events feed
   const events: Ref<SimulationEvent[]> = ref([])
+
+  // How readily pressure counts as drama. Persisted per browser; Off must always be available.
+  const dramaIntensity: Ref<DramaIntensity> = ref(loadDramaIntensity())
+  function setDramaIntensity(value: DramaIntensity): void {
+    dramaIntensity.value = value
+    saveDramaIntensity(value)
+  }
 
   // The world the in-memory simulation is currently scoped to (worlds are isolated)
   const activeWorldId: Ref<string | null> = ref(null)
@@ -201,7 +210,8 @@ export const useSimulationStore = defineStore('simulation', () => {
       autoTickSpeed,
       happinessHistory,
       animalStates,
-      events
+      events,
+      dramaIntensity
     },
     {
       recordShortTermMemory,
@@ -315,6 +325,8 @@ export const useSimulationStore = defineStore('simulation', () => {
     activityLog,
     happinessHistory,
     events,
+    dramaIntensity,
+    setDramaIntensity,
     activeWorldId,
     characterStates,
     animalStates,

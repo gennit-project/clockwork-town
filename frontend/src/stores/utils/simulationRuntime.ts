@@ -48,6 +48,8 @@ import { evaluatePetEvents, updatePetTogetherness } from './petReunions'
 import { describeActionTarget, isGroupFunAction, joinNames, requiresInvitation } from './groupSocial'
 import { canVentTo, comfortFromEating, ventGrievances } from './venting'
 import { applyWitnessMood } from './witnessMood'
+import { addPressure, relievePressure, tickPressure } from './pressure'
+import { PRESSURE, type DramaIntensity } from '../config/pressure'
 import { buildDisapprovalCause } from './causes'
 import { addGrievance, detectWitnessReactions, startReactionCooldown } from './witnessReactions'
 import {
@@ -77,6 +79,8 @@ export interface SimulationRuntimeRefs {
   animalStates: Ref<Record<string, AnimalState>>
   /** Capped feed of notable happenings (reunions, ...), newest last. */
   events: Ref<SimulationEvent[]>
+  /** How readily pressure counts as drama; scales thresholds (see config/pressure.ts). */
+  dramaIntensity?: Ref<DramaIntensity>
 }
 
 export interface SimulationRuntimeDependencies {
@@ -245,6 +249,7 @@ export function createSimulationRuntime(
       const listener = states[listenerId]
       const vented = ventGrievances(venter, listenerId)
       if (vented.length === 0) continue
+      relievePressure(venter, 'irritation', PRESSURE.ventRelief)
 
       const about = joinNames([...new Set(vented.map((g) => g.aboutName))])
       const relationshipId = venter.relationships?.find((rel) => rel.toCharacterId === listenerId)?.id
@@ -311,6 +316,7 @@ export function createSimulationRuntime(
           tick: refs.currentTick.value
         })
         addGrievance(witness, { id: reaction.actorId, name: actor.name }, reaction.topic, cause)
+        addPressure(actor, 'irritation', 'disapproved', PRESSURE.disapprovedImpulse)
         recordNotableEvent({
           type: 'disapproval',
           message: `${witness.name} disapproved of ${actor.name} ${reaction.topic.phrase}.`,
@@ -455,6 +461,7 @@ export function createSimulationRuntime(
     recordActionInTally(state, intent, state.location.lotName)
     if (intent.action === 'eat') {
       comfortFromEating(state)
+      if ((state.grievances ?? []).length > 0) relievePressure(state, 'irritation', PRESSURE.comfortEatRelief)
     }
 
     if (stateChange.primaryNeedChange) {
@@ -792,6 +799,7 @@ export function createSimulationRuntime(
     await recordPetReunions()
     await recordWitnessReactions()
     applyWitnessMood(refs.characterStates.value)
+    tickPressure(refs.characterStates.value)
 
     recordHappinessSample()
   }

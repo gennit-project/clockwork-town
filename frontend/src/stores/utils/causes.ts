@@ -145,3 +145,28 @@ export function formatCause(cause: Cause): string[] {
     )
   ]
 }
+
+export interface PressureCauseInput {
+  residentName: string
+  meter: string
+  value: number
+  threshold: number
+  /** Infinite when drama intensity is Off. */
+  intensityLabel: string
+  traitNames: string[]
+  contributions: Array<{ label: string; amount: number }>
+}
+
+export function buildPressureCause(input: PressureCauseInput): Cause {
+  const factors: CauseFactor[] = [
+    { label: input.meter, value: fixed(input.value), ...(Number.isFinite(input.threshold) ? { threshold: Number(fixed(input.threshold)) } : {}) },
+    ...input.contributions.map((c) => ({ label: c.label, value: fixed(c.amount * 100 / Math.max(input.value, 0.0001)) + '% of the total' })),
+    { label: 'Drama intensity', value: input.intensityLabel }
+  ]
+  if (input.traitNames.length > 0) factors.push({ label: 'Dispositions', value: input.traitNames.join(', ') })
+  return {
+    kind: 'pressure',
+    summary: `${input.residentName}'s ${input.meter} is ${fixed(input.value)} against a threshold of ${fixed(input.threshold)}`,
+    factors
+  }
+}

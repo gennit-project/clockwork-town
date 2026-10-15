@@ -91,6 +91,11 @@
         <NeedsByTier :state="state" :edit-link="editLink" />
       </Panel>
 
+      <!-- Irritation / jealousy, and what is building them -->
+      <Panel v-if="showPressure" title="Pressure" class="mt-3">
+        <PressureMeters :state="state" :intensity="simulationStore.dramaIntensity" />
+      </Panel>
+
       <!-- What they're holding against people -->
       <Panel v-if="(state.grievances?.length ?? 0) > 0" title="On their mind" class="mt-3">
         <OnTheirMind :grievances="state.grievances ?? []" :resident-link="residentLink" />
@@ -145,6 +150,8 @@ import MemoryTimeline from '../components/MemoryTimeline.vue'
 import NeedTrendHeatmap from '../components/charts/NeedTrendHeatmap.vue'
 import WeeklySchedule from '../components/WeeklySchedule.vue'
 import { useSimulationStore } from '../stores/simulation'
+import PressureMeters from '../components/PressureMeters.vue'
+import { meterEnabled, pressureValue } from '../stores/utils/pressure'
 import { useTownDataLoader } from '../composables/useTownDataLoader'
 import { getCharacterStatusText } from '../composables/useCharacterStatus'
 import { computeCharacterHappiness, happinessStatus } from '../stores/utils/happinessMetrics'
@@ -174,6 +181,9 @@ const characterId = computed(() => normalize(route.params.characterId))
 
 const state = computed(() => (characterId.value ? characterStates.value[characterId.value] : undefined))
 
+const showPressure = computed(
+  () => !!state.value && (pressureValue(state.value, 'irritation') > 0.02 || meterEnabled(state.value.traitIds, 'jealousy'))
+)
 const displayName = computed(() => state.value?.name || 'Resident')
 const shortId = computed(() => (characterId.value || '').slice(0, 8))
 const traits = computed(() => state.value?.traits?.length ? state.value.traits : fetchedTraits.value)

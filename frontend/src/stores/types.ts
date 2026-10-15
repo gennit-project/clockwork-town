@@ -220,6 +220,8 @@ export interface CharacterState {
   dayTally?: DayTally
   /** What they approve or disapprove of, by topic id; anything not listed is neutral. */
   stances?: Record<string, StanceValue>
+  /** Irritation / jealousy meters with the ledger of what makes them up (see utils/pressure.ts). */
+  pressure?: Partial<Record<'irritation' | 'jealousy', MeterState>>
   /** Things they currently hold against people (see utils/witnessReactions.ts). */
   grievances?: Grievance[]
   /** Ticks left before they react again to `${actorId}:${topicId}`. */
@@ -241,6 +243,12 @@ export interface CharacterState {
 export type StanceValue = 'approves' | 'disapproves'
 
 /** Something a witness holds against someone, until it fades or (later) they vent about it. */
+/** A pressure meter: its value and what currently makes it up (trigger -> amount; sums to value). */
+export interface MeterState {
+  value: number
+  ledger: Record<string, number>
+}
+
 export interface Grievance {
   id: string
   aboutCharacterId: string
@@ -483,7 +491,7 @@ export interface PlanCandidate {
 // ============================================
 
 /** What kind of decision a Cause explains. Extended by later Epic 6 items (antisocial acts, rejections). */
-export type CauseKind = 'declined_invitation' | 'idle' | 'disapproval'
+export type CauseKind = 'declined_invitation' | 'idle' | 'disapproval' | 'pressure'
 
 /** One real number behind a decision, captured when the decision was made. */
 export interface CauseFactor {

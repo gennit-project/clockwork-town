@@ -1,6 +1,19 @@
 <template>
   <div class="p-4">
-    <h1 class="mb-3 text-lg font-semibold text-gf-text">Alerts</h1>
+    <div class="mb-3 flex items-center justify-between">
+      <h1 class="text-lg font-semibold text-gf-text">Alerts</h1>
+      <label class="flex items-center gap-2 text-xs text-gf-text-weak">
+        Drama intensity
+        <select
+          :value="sim.dramaIntensity"
+          class="rounded border border-gf-border bg-gf-surface px-2 py-1 text-gf-text"
+          data-testid="drama-intensity"
+          @change="sim.setDramaIntensity(($event.target as HTMLSelectElement).value as DramaIntensity)"
+        >
+          <option v-for="level in DRAMA_INTENSITIES" :key="level" :value="level">{{ level }}</option>
+        </select>
+      </label>
+    </div>
     <Panel title="Active alerts" :status="worst">
       <p v-if="alerts.length === 0" class="py-12 text-center text-sm text-gf-text-faint">
         All clear. Start the simulation to see alerts as conditions change.
@@ -38,6 +51,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { DRAMA_INTENSITIES, type DramaIntensity } from '../stores/config/pressure'
 import Panel from '../components/Panel.vue'
 import WhyCause from '../components/WhyCause.vue'
 import { useResidentLink } from '../composables/useResidentLink'

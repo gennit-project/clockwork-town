@@ -1043,6 +1043,25 @@ describe('simulation store integration', () => {
       expect(store.characterStates['char-1'].grievances ?? []).toEqual([])
     })
 
+    it('being disapproved of adds irritation to the napper, listed as its cause; a witness without an opinion adds none', async () => {
+      const store = setupHousemates({ 'daytime-napping': 'disapproves' })
+      setClock(store, 14)
+      enqueueSleepIntent(store)
+      await store.executeTick()
+      const ledger = store.characterStates['char-1'].pressure?.irritation?.ledger
+      expect(Object.keys(ledger ?? {})).toEqual(['disapproved'])
+      expect(store.characterStates['char-1'].pressure?.irritation?.value).toBeGreaterThan(0.02)
+      // The witness is not the one disapproved of: what they feel comes from the grievance, not from this.
+      expect(Object.keys(store.characterStates['char-2'].pressure?.irritation?.ledger ?? {})).toEqual(['grievances'])
+
+      const calm = setupHousemates({})
+      calm.characterStates['char-1'].pressure = undefined // the pinia store is shared with the run above
+      setClock(calm, 14)
+      enqueueSleepIntent(calm)
+      await calm.executeTick()
+      expect(calm.characterStates['char-1'].pressure?.irritation?.ledger ?? {}).not.toHaveProperty('disapproved')
+    })
+
     it('control: no opinion means no reaction', async () => {
       const store = setupHousemates({})
       setClock(store, 14)
@@ -1262,6 +1281,24 @@ describe('simulation store integration', () => {
       // Other actions don't.
       store.applyActionEffects({ characterId: 'char-1', intent: { goal: 'read', strategy: 'test', action: 'read', utility: 1, travelCost: 0 } as never })
       expect(store.characterStates['char-1'].grievances?.[0].ticksRemaining).toBe(Math.floor(600 * 0.85))
+    })
+
+    it('a comfort meal and talking it over both take irritation down; other actions do not', async () => {
+      const comfort = setupChat(0.6)
+      comfort.characterStates['char-1'].grievances = upsetAboutCy()
+      comfort.characterStates['char-1'].pressure = { irritation: { value: 0.5, ledger: { grievances: 0.5 } } }
+      comfort.applyActionEffects({ characterId: 'char-1', intent: { goal: 'read', strategy: 'test', action: 'read', utility: 1, travelCost: 0 } as never })
+      expect(comfort.characterStates['char-1'].pressure?.irritation?.value).toBe(0.5)
+      comfort.applyActionEffects({ characterId: 'char-1', intent: { goal: 'eat', strategy: 'test', action: 'eat', utility: 1, travelCost: 0 } as never })
+      expect(comfort.characterStates['char-1'].pressure?.irritation?.value).toBeCloseTo(0.42)
+
+      const vent = setupChat(0.6)
+      vent.characterStates['char-1'].grievances = upsetAboutCy()
+      vent.characterStates['char-1'].pressure = { irritation: { value: 0.5, ledger: { grievances: 0.5 } } }
+      vent.enqueueIntent('char-1', chatWithBob())
+      await vent.executeTick()
+      // Talked over (-0.15), then a tick of drain; the grievance is now vented so it adds nothing.
+      expect(vent.characterStates['char-1'].pressure?.irritation?.value).toBeLessThan(0.36)
     })
 
     describe('mood traits over a tick', () => {

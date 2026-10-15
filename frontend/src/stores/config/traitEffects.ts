@@ -7,6 +7,7 @@
  */
 
 import type { NeedName } from '../types'
+import type { PressureMeter } from './pressure'
 
 export interface TraitEffect {
   /** Multiplies the per-tick decay of a need (below 1 = slower, above 1 = faster). */
@@ -18,6 +19,17 @@ export interface TraitEffect {
    * 'schadenfreude' (gains from unhappy ones). See utils/witnessMood.ts.
    */
   witnessMood?: 'joy' | 'schadenfreude'
+  /** How this disposition shapes pressure (see utils/pressure.ts). Multipliers combine across traits. */
+  pressure?: {
+    /** Multiplies how fast a meter builds. */
+    gain?: Partial<Record<PressureMeter, number>>
+    /** Multiplies the threshold at which a meter counts as over the line (below 1 = snaps sooner). */
+    threshold?: Partial<Record<PressureMeter, number>>
+    /** Multiplies what each grievance adds to irritation. */
+    grievanceGain?: number
+    /** Turns on a meter that is otherwise absent. */
+    enables?: PressureMeter[]
+  }
 }
 
 export const TRAIT_EFFECTS: Record<string, TraitEffect> = {
@@ -29,5 +41,13 @@ export const TRAIT_EFFECTS: Record<string, TraitEffect> = {
   'trait-asexual': { disablesNeeds: ['romance'] },
   'trait-aromantic': { disablesNeeds: ['romance'] },
   'trait-good-hearted': { witnessMood: 'joy' },
-  'trait-bitter': { witnessMood: 'schadenfreude' }
+  'trait-bitter': { witnessMood: 'schadenfreude' },
+  'trait-loses-temper-easily': { pressure: { gain: { irritation: 1.5 }, threshold: { irritation: 0.8 } } },
+  'trait-conflict-averse': { pressure: { gain: { irritation: 0.8 }, threshold: { irritation: 1.25 } } },
+  'trait-forgiving': { pressure: { grievanceGain: 0.5 } },
+  'trait-petty': { pressure: { grievanceGain: 1.5 } },
+  'trait-jealous': { pressure: { enables: ['jealousy'], threshold: { jealousy: 0.8 } } },
+  // Gossip and arrogance have no pressure effect yet: they get acts in Epic 6.3.
+  'trait-gossip': {},
+  'trait-arrogant': {}
 }

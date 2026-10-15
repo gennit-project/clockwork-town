@@ -402,13 +402,14 @@ async function seedTraits() {
   await ensureTraitCatalog();
   const assignments: Record<string, string[]> = {
     "char-amina-lin": ["trait-needs-little-sleep"],
-    "char-elena-reyes": ["trait-needs-lots-of-sleep"],
-    "char-leo-marsh": ["trait-big-appetite"],
+    "char-elena-reyes": ["trait-needs-lots-of-sleep", "trait-petty"],
+    "char-leo-marsh": ["trait-big-appetite", "trait-jealous"],
     "char-priya-lin": ["trait-small-appetite"],
     "char-kim-nguyen": ["trait-asexual"],
     "char-june-hale": ["trait-aromantic"],
     "char-sara-marsh": ["trait-good-hearted"],
-    "char-tom-marsh": ["trait-bitter"]
+    "char-tom-marsh": ["trait-bitter", "trait-loses-temper-easily"],
+    "char-ravi-lin": ["trait-conflict-averse", "trait-forgiving"]
   };
   for (const [characterId, traitIds] of Object.entries(assignments)) {
     await setCharacterTraits(characterId, traitIds);

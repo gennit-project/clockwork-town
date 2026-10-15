@@ -7,11 +7,17 @@ import { SERVICE_DESK_THRESHOLDS } from '../../config/serviceDesk'
 import type { CharacterState, NeedName, TicketCandidate } from '../types'
 import { lowNeedKey, type ServiceDeskTrackers } from './serviceDeskTrackers'
 import { activeValues, valueSatisfaction } from './valueEffects'
+import { DEFAULT_DRAMA_INTENSITY, PRESSURE_METERS, type DramaIntensity } from '../config/pressure'
+import { TRAIT_EFFECTS } from '../config/traitEffects'
+import { buildPressureCause } from './causes'
+import { meterEnabled, readPressure } from './pressure'
 
 export interface TicketContext {
   tick: number
   states: Record<string, CharacterState>
   trackers: ServiceDeskTrackers
+  /** Drama intensity; scales pressure thresholds (default: normal). */
+  dramaIntensity?: DramaIntensity
 }
 
 export type TicketEvaluator = (ctx: TicketContext) => TicketCandidate[]
@@ -75,10 +81,43 @@ export const evaluateGrievanceTickets: TicketEvaluator = ({ states }) => {
   return candidates
 }
 
+/** Someone's irritation (or jealousy) is over their line. Never fires at drama intensity Off. */
+export const evaluatePressureTickets: TicketEvaluator = ({ states, dramaIntensity = DEFAULT_DRAMA_INTENSITY }) => {
+  const candidates: TicketCandidate[] = []
+  for (const [characterId, state] of Object.entries(states)) {
+    for (const meter of PRESSURE_METERS) {
+      if (!meterEnabled(state.traitIds, meter)) continue
+      const reading = readPressure(state, meter, dramaIntensity)
+      if (!reading.over) continue
+      const dispositionNames = (state.traitIds ?? [])
+        .map((id, i) => (TRAIT_EFFECTS[id]?.pressure ? state.traits[i] ?? id : null))
+        .filter((name): name is string => !!name)
+      candidates.push({
+        key: `pressure:${characterId}:${meter}`,
+        rule: 'pressure',
+        severity: 'warning',
+        characterId,
+        characterName: state.name,
+        title: `${state.name}'s ${meter} is over the line`,
+        cause: buildPressureCause({
+          residentName: state.name,
+          meter,
+          value: reading.value,
+          threshold: reading.threshold,
+          intensityLabel: dramaIntensity,
+          traitNames: dispositionNames,
+          contributions: reading.contributions
+        })
+      })
+    }
+  }
+  return candidates
+}
 export const TICKET_EVALUATORS: TicketEvaluator[] = [
   evaluateUnmetNeeds,
   evaluateNeglectedValueTickets,
-  evaluateGrievanceTickets
+  evaluateGrievanceTickets,
+  evaluatePressureTickets
 ]
 
 export function evaluateTicketCandidates(

@@ -9,6 +9,7 @@ the parent folder is meant to describe finished work.
 | Epic 0: alerts/tickets, behavioral traits, ranked values, need gating | [epic-0-foundation.md](epic-0-foundation.md) |
 | Epic 1.1–1.4: daily summaries, reunions, approval/disapproval, group situations | [epic-1-relationships-done.md](epic-1-relationships-done.md) |
 | Epic 6.1: cause records and the "why" view | [epic-6-1-cause-records.md](epic-6-1-cause-records.md) |
+| Epic 6.2: dispositions and pressure meters | [epic-6-2-pressure.md](epic-6-2-pressure.md) |
 
 ## What is built (verified against the code at the time of writing)
 
