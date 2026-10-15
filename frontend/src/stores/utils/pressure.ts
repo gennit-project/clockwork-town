@@ -114,7 +114,12 @@ export function pressureGains(
   const grievanceGain = dispositionOf(state.traitIds).grievanceGain
   const grievanceAmount = (state.grievances ?? [])
     .filter((g) => !g.vented)
-    .reduce((sum, g) => sum + PRESSURE.grievanceGain * Math.min(g.times, PRESSURE.grievanceRepeatCap), 0)
+    .reduce(
+      (sum, g) =>
+        sum +
+        PRESSURE.grievanceGain * Math.min(g.times, PRESSURE.grievanceRepeatCap) * (g.directed ? 1 : PRESSURE.undirectedGrievanceWeight),
+      0
+    )
   if (grievanceAmount > 0) gains.push({ meter: 'irritation', trigger: 'grievances', amount: grievanceAmount * grievanceGain })
 
   const crowd = others.length + 1 - PRESSURE.crowdAbove
@@ -150,7 +155,7 @@ export function tickPressure(states: Record<string, CharacterState>): void {
       addPressure(state, gain.meter, gain.trigger, gain.amount)
     }
     const drain = PRESSURE.baseDecay + (state.currentAction === 'sleep' ? PRESSURE.sleepDecay : 0)
-    for (const meter of PRESSURE_METERS) relievePressure(state, meter, drain)
+    for (const meter of PRESSURE_METERS) relievePressure(state, meter, drain + pressureValue(state, meter) * PRESSURE.proportionalDecay)
   }
 }
 

@@ -11,6 +11,17 @@ import { debugLog } from '../utils/simulationDebug'
  * a few chats and a few fulfilling activities per day. See ACTION_EFFECTS for
  * how much each action restores.
  */
+/**
+ * A scheduled shift (work, school) normally outranks the planner, but a basic need this low
+ * pre-empts it: the resident steps out to eat or use the toilet and goes back afterwards. Without
+ * this a resident on a long shift, in a place with no toilet or kitchen, simply runs a need to zero.
+ * Sleep is not on the list (a sleep shift is how that need is met).
+ */
+export const SCHEDULE_BREAK = {
+  criticalBelow: 0.08,
+  needs: ['food', 'bladder', 'hygiene', 'health']
+} as const
+
 export const NEED_DECAY_RATES: NeedDecayRates = {
   food: 0.004,
   sleep: 0.003,
@@ -18,7 +29,7 @@ export const NEED_DECAY_RATES: NeedDecayRates = {
   hygiene: 0.0025,
   health: 0.001,
   friends: 0.0035,
-  family: 0.0015,
+  family: 0.001,
   romance: 0.0015,
   fulfillment: 0.0025
 }

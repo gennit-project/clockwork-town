@@ -73,7 +73,8 @@ export function addGrievance(
   witness: Pick<CharacterState, 'grievances'>,
   about: { id: string; name: string },
   topic: ApprovalTopic,
-  cause?: Cause
+  cause?: Cause,
+  directed = false
 ): Grievance {
   const grievances = [...(witness.grievances ?? [])]
   const existing = grievances.find((g) => g.aboutCharacterId === about.id && g.topicId === topic.id)
@@ -83,6 +84,7 @@ export function addGrievance(
     // Doing it again reopens the wound, even if they'd talked it over.
     existing.vented = false
     if (cause) existing.cause = cause
+    if (directed) existing.directed = true
     witness.grievances = grievances
     return existing
   }
@@ -95,7 +97,8 @@ export function addGrievance(
     summary: topic.phrase,
     ticksRemaining: WITNESS_TUNING.grievanceDurationTicks,
     times: 1,
-    ...(cause ? { cause } : {})
+    ...(cause ? { cause } : {}),
+    ...(directed ? { directed } : {})
   }
   grievances.push(grievance)
   grievances.sort((a, b) => b.ticksRemaining - a.ticksRemaining)

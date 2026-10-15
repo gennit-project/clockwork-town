@@ -1051,8 +1051,8 @@ describe('simulation store integration', () => {
       const ledger = store.characterStates['char-1'].pressure?.irritation?.ledger
       expect(Object.keys(ledger ?? {})).toEqual(['disapproved'])
       expect(store.characterStates['char-1'].pressure?.irritation?.value).toBeGreaterThan(0)
-      // The witness is not the one disapproved of: what they feel comes from the grievance, not from this.
-      expect(Object.keys(store.characterStates['char-2'].pressure?.irritation?.ledger ?? {})).toEqual(['grievances'])
+      // The witness is not the one disapproved of.
+      expect(store.characterStates['char-2'].pressure?.irritation?.ledger ?? {}).not.toHaveProperty('disapproved')
 
       const calm = setupHousemates({})
       calm.characterStates['char-1'].pressure = {} // the pinia store is shared with the run above
@@ -1144,6 +1144,42 @@ describe('simulation store integration', () => {
       store.characterStates['char-2'].grievances![0].ticksRemaining = 1
       await store.executeTick()
       expect(store.characterStates['char-2'].grievances).toEqual([])
+    })
+  })
+
+  describe('family time', () => {
+    function setupPair(label: string, sameHousehold: boolean) {
+      const store = setupStore()
+      setupSecondCharacter(store, 'lot-1', 'Test House', 'space-1', 'Living Room')
+      const alice = store.characterStates['char-1']
+      const bob = store.characterStates['char-2']
+      alice.householdId = sameHousehold ? 'h1' : 'h-a'
+      bob.householdId = sameHousehold ? 'h1' : 'h-b'
+      alice.relationships = [{ ...createRelationshipSeed({ fromCharacterId: 'char-1', toCharacterId: 'char-2', lastSeenAt: null, shortTermScore: 0.5, longTermScore: 0.5 }), labels: [label] }]
+      alice.needs.family = 0.2
+      bob.needs.family = 0.2
+      return store
+    }
+    const chat = { goal: 'chat_friend', strategy: 'test', action: 'chat_friend', utility: 1, travelCost: 0, socialTargetId: 'char-2', socialTargetName: 'Bob' } as never
+
+    it('a chat with family tops up the family need; a chat with a friend does not', () => {
+      const family = setupPair('mother', false)
+      family.applyActionEffects({ characterId: 'char-1', intent: chat })
+      expect(family.characterStates['char-1'].needs.family).toBeCloseTo(0.2 + 0.12)
+
+      const friend = setupPair('friend', false)
+      friend.applyActionEffects({ characterId: 'char-1', intent: chat })
+      expect(friend.characterStates['char-1'].needs.family).toBeCloseTo(0.2)
+    })
+
+    it('awake housemates on the same lot gain family time just by being there; apart they do not', async () => {
+      const together = setupPair('friend', true)
+      await together.executeTick()
+      expect(together.characterStates['char-1'].needs.family).toBeGreaterThan(0.2 - 0.001)
+
+      const apart = setupPair('friend', false)
+      await apart.executeTick()
+      expect(apart.characterStates['char-1'].needs.family).toBeLessThan(0.2)
     })
   })
 

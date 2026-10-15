@@ -1,3 +1,4 @@
+import { SCHEDULE_BREAK } from '../config/needs'
 import type { CharacterState, Intent, SimulationDateTime, WorldData, WorkShift } from '../types'
 
 function toMinutes(value: string): number {
@@ -146,6 +147,11 @@ export function buildScheduleIntent({
 }): Intent | null {
   const shift = getActiveShift({ characterState, simulationDateTime })
   if (!shift) {
+    return null
+  }
+
+  // A critical basic need pre-empts the schedule: let the planner deal with it.
+  if (SCHEDULE_BREAK.needs.some((need) => (characterState.needs[need] ?? 1) < SCHEDULE_BREAK.criticalBelow)) {
     return null
   }
 

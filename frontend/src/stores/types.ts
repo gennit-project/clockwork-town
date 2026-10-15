@@ -274,6 +274,8 @@ export interface Grievance {
   vented?: boolean
   /** Why the witness holds this: the act, their stance and when. */
   cause?: Cause
+  /** True when the act was done to them (the target), not merely witnessed: it weighs more on their irritation. */
+  directed?: boolean
 }
 
 export interface CharacterValueState {

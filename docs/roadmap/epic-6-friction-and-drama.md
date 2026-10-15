@@ -222,35 +222,10 @@ setting, Off produces none, and a cap is never exceeded.
 
 ---
 
-### 6.8 — Walk-away test and tuning pass `[M]` — next up
+### 6.8 — Walk-away test and tuning pass `[M]` — DONE
 
-**Why.** Everything in Epic 6 so far uses first-guess numbers, and the project's core
-principle is that an unattended town stays healthy (see the README's design principles).
-Tuning should therefore be measured against *health first, drama second*.
-
-**What to build.**
-- A **headless "town week" harness** that runs the real sim for N days with no manual
-  intervention, from the seeded town's shape and variants (everyone with a disposition, no
-  dispositions, one crowded lot). Reports per resident, per day and per cause: time in
-  critical need, stuck residents (idle for a long stretch with an unmet need), pressure over
-  the line, acts by rung, tickets, grievances, and spirals (an act followed by the actor still
-  over the line; one person hitting the daily cap).
-- The **walk-away test** (primary target): after several sim weeks with zero intervention,
-  nobody stays critical or stuck, no cascade spreads from one bad day, and relationships do not
-  spiral into permanent damage. Kept as a bounded regression test (plus `npm run tune:drama`
-  for the long report), so later features that add failure modes are caught.
-- **Drama targets, second:** acts are rare enough to read as events (a few per town-day at
-  most, mostly snaps; belittling uncommon; arguments rare), Low shows nearly none, High is
-  clearly busier, Relentless is chaotic but capped, Off is exactly zero, and every act traces to
-  at least two triggers.
-- **Then adjust** the numbers in `config/pressure.ts` and `config/antisocial.ts` (build and
-  decay rates, disapproval impulse, rung margins and relief, cooldown and cap, crowding), and
-  record before and after.
-- If measurement shows a structural flaw (a resident can get stranded, the pressure ledger
-  oscillates), stop and report rather than redesign inside this item.
-
-**Done when.** The walk-away test passes in the default mode on the seeded town and its
-variants, drama targets hold, and the tuning notes are written up.
+Built: a headless town-week harness, the walk-away test, and a tuning pass that found and fixed
+real baseline problems. See [completed/epic-6-8-walk-away-and-tuning.md](completed/epic-6-8-walk-away-and-tuning.md).
 
 ## Scope limits (non-negotiable)
 

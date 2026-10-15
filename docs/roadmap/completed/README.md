@@ -11,6 +11,7 @@ the parent folder is meant to describe finished work.
 | Epic 6.1: cause records and the "why" view | [epic-6-1-cause-records.md](epic-6-1-cause-records.md) |
 | Epic 6.2: dispositions and pressure meters | [epic-6-2-pressure.md](epic-6-2-pressure.md) |
 | Epic 6.3 (first half): snap, belittle, argue | [epic-6-3-antisocial-acts.md](epic-6-3-antisocial-acts.md) |
+| Epic 6.8: walk-away test and tuning pass | [epic-6-8-walk-away-and-tuning.md](epic-6-8-walk-away-and-tuning.md) |
 
 ## What is built (verified against the code at the time of writing)
 

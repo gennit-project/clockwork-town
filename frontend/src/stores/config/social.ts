@@ -37,6 +37,28 @@ export const GROUP_FUN = {
 } as const
 
 /**
+ * How fast relationships fade when people do not see each other. Short-term feeling is a mood and
+ * fades quickly; the long-term bond used to fade 0.002 a tick (over half a point a day), so every
+ * friendship and marriage in an unattended town dissolved within days. It now takes weeks, and bonds
+ * with family, partners and housemates fade a quarter as fast.
+ */
+export const RELATIONSHIP_DECAY = {
+  shortTermPerTick: 0.01,
+  longTermPerTick: 0.0002,
+  /** Multiplier on long-term decay for family, partners and housemates. */
+  bondedMultiplier: 0.25
+} as const
+
+/** Social time with family tops up the family need (see utils/familyTime.ts). */
+export const FAMILY_TIME = {
+  /** Family need gained from one chat or shared activity that includes a family member. */
+  boost: 0.12,
+  /** Family need gained each tick for each tick spent awake on the same lot as a family member (living together counts). */
+  presencePerTick: 0.002,
+  actions: ['chat_friend', 'view_movie', 'view_art']
+} as const
+
+/**
  * Being upset: a resident holding grievances wants to talk to a friend about it (and may comfort-eat).
  * Venting to a friend who isn't the offender shortens the grievance; it never removes it outright.
  */

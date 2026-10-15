@@ -35,7 +35,7 @@ export const ANTISOCIAL = {
   /** At least this old to count as an adult. */
   adultAge: 18,
   /** Ticks before the same resident can act out again. */
-  cooldownTicks: 6,
+  cooldownTicks: 12,
   /** Most acts one resident performs in a sim day. */
   dailyCap: 3
 } as const

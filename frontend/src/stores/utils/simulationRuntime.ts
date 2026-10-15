@@ -49,6 +49,7 @@ import { describeActionTarget, isGroupFunAction, joinNames, requiresInvitation }
 import { canVentTo, comfortFromEating, ventGrievances } from './venting'
 import { applyWitnessMood } from './witnessMood'
 import { addPressure, relievePressure, tickPressure } from './pressure'
+import { applyFamilyPresence, familyTimeBoost } from './familyTime'
 import { DEFAULT_DRAMA_INTENSITY, PRESSURE, type DramaIntensity } from '../config/pressure'
 import { getApprovalTopic } from '../config/approvalTopics'
 import { applyAntisocialActEffects, decideAntisocialActs, tickAntisocial } from './antisocial'
@@ -413,7 +414,7 @@ export function createSimulationRuntime(
             createStructuredCharacterLongTermMemory: dependencies.createStructuredCharacterLongTermMemory
           }
         })
-        addGrievance(victim, { id: otherId, name: other.name }, topic, cause)
+        addGrievance(victim, { id: otherId, name: other.name }, topic, cause, true)
       }
     }
     return causes
@@ -562,6 +563,10 @@ export function createSimulationRuntime(
     if (intent.action === 'eat') {
       comfortFromEating(state)
       if ((state.grievances ?? []).length > 0) relievePressure(state, 'irritation', PRESSURE.comfortEatRelief)
+    }
+    const familyBoost = familyTimeBoost(state, intent, refs.characterStates.value)
+    if (familyBoost > 0) {
+      state.needs.family = Math.min(1, state.needs.family + familyBoost)
     }
 
     if (stateChange.primaryNeedChange) {
@@ -874,6 +879,7 @@ export function createSimulationRuntime(
       decayRelationships: async ({ characterState }) => {
         await decayCharacterRelationships({
           characterState,
+          otherStates: refs.characterStates.value,
           dependencies: {
             persistCharacterRelationship: dependencies.persistCharacterRelationship,
             createStructuredCharacterLongTermMemory: dependencies.createStructuredCharacterLongTermMemory
@@ -901,6 +907,7 @@ export function createSimulationRuntime(
     await recordWitnessReactions(actCauses)
     restoreAfterActs()
     applyWitnessMood(refs.characterStates.value)
+    applyFamilyPresence(refs.characterStates.value)
     tickPressure(refs.characterStates.value)
 
     recordHappinessSample()

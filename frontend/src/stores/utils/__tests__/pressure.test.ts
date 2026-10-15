@@ -92,8 +92,8 @@ describe('triggers (each alone, with a no-trigger control)', () => {
   })
 
   it('grievances build it; talked-over ones do not', () => {
-    const upset = resident({ grievances: [grievance()] })
-    const vented = resident({ grievances: [grievance({ vented: true })] })
+    const upset = resident({ grievances: [grievance({ directed: true, times: 2 })] })
+    const vented = resident({ grievances: [grievance({ directed: true, times: 2, vented: true })] })
     run(upset, 10)
     run(vented, 10)
     expect(pressureValue(upset, 'irritation')).toBeGreaterThan(0.02)
@@ -101,7 +101,7 @@ describe('triggers (each alone, with a no-trigger control)', () => {
   })
 
   it('petty counts grievances for more, forgiving for less', () => {
-    const make = (traitIds: string[]) => resident({ traitIds, grievances: [grievance()] })
+    const make = (traitIds: string[]) => resident({ traitIds, grievances: [grievance({ directed: true, times: 3 })] })
     const [petty, plain, forgiving] = [make(['trait-petty']), make([]), make(['trait-forgiving'])]
     ;[petty, plain, forgiving].forEach((s) => run(s, 10))
     expect(pressureValue(petty, 'irritation')).toBeGreaterThan(pressureValue(plain, 'irritation'))
@@ -240,5 +240,25 @@ describe('pressure tickets and drama intensity', () => {
     expect(evaluatePressureTickets(ctx(overTheLine(), 'off'))).toHaveLength(0)
     expect(evaluatePressureTickets(ctx(overTheLine(), 'relentless'))).toHaveLength(1)
     expect(evaluatePressureTickets(ctx(overTheLine(), 'low'))).toHaveLength(1)
+  })
+})
+
+describe('tuning properties', () => {
+  it('a steady trigger levels off instead of climbing without limit', () => {
+    const me = resident({ grievances: [grievance({ directed: true, times: 1 })] })
+    run(me, 600)
+    const settled = pressureValue(me, 'irritation')
+    run(me, 600)
+    expect(pressureValue(me, 'irritation')).toBeCloseTo(settled, 2)
+    expect(settled).toBeGreaterThan(0)
+    expect(settled).toBeLessThan(thresholdFor([], 'irritation', 'normal'))
+  })
+
+  it('a grievance done to them weighs more than one they merely witnessed', () => {
+    const done = resident({ grievances: [grievance({ directed: true })] })
+    const seen = resident({ grievances: [grievance()] })
+    run(done, 30)
+    run(seen, 30)
+    expect(pressureValue(done, 'irritation')).toBeGreaterThan(pressureValue(seen, 'irritation') * 2)
   })
 })

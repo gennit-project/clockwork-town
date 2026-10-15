@@ -24,6 +24,8 @@ export const PRESSURE = {
   baseThreshold: 0.7,
   /** Meter drain per tick, always. */
   baseDecay: 0.004,
+  /** Extra drain per tick as a fraction of the current value, so a steady trigger levels off instead of climbing without limit. */
+  proportionalDecay: 0.025,
   /** Extra drain per tick while asleep. */
   sleepDecay: 0.02,
   /** One-off relief amounts. */
@@ -33,12 +35,14 @@ export const PRESSURE = {
   needShortfallBelow: 0.3,
   needShortfallGain: 0.02,
   /** Per unvented grievance, per tick, scaled by how often it was repeated (capped at `grievanceRepeatCap`). */
-  grievanceGain: 0.008,
+  grievanceGain: 0.016,
   grievanceRepeatCap: 3,
+  /** Weight of a grievance about something that was not done to them (a bystander's disapproval). */
+  undirectedGrievanceWeight: 0.4,
   /** Added once to the person being disapproved of, at the moment of the reaction. */
   disapprovedImpulse: 0.03,
   /** More than this many residents on one lot is a crowd; each extra adds this much per tick. */
-  crowdAbove: 4,
+  crowdAbove: 6,
   crowdGain: 0.003,
   /** Jealousy: a close tie (long-term score at least this) busy with someone else on the same lot. */
   rivalCloseTieMin: 0.6,

@@ -20,7 +20,9 @@
     "test": "TZ=UTC vitest",
     "test:ui": "TZ=UTC vitest --ui",
     "test:coverage": "TZ=UTC vitest --coverage",
-    "check:backup": "node scripts/check-backup-roundtrip.mjs"
+    "check:backup": "node scripts/check-backup-roundtrip.mjs",
+    "snapshot:town": "tsx scripts/snapshot-town.ts",
+    "tune:drama": "cd frontend && TUNE_DRAMA=1 vitest run src/stores/__tests__/townWeek.report.test.ts"
   },
   "dependencies": {
     "@graphql-tools/schema": "^10.0.25",

@@ -2,13 +2,13 @@ import type { ActionName, Cause, CharacterRelationship, CharacterState, Intent }
 import { hasBloodFamilyLabel } from './family'
 import { evaluateRelationshipEvents } from './relationshipEvents'
 import { joinNames } from './groupSocial'
+import { RELATIONSHIP_DECAY } from '../config/social'
+import { isFamilyOf } from './familyTime'
 
 const LUNCH_START_HOUR = 11
 const LUNCH_END_HOUR = 14
 const MIN_RELATIONSHIP_SCORE = 0
 const MAX_RELATIONSHIP_SCORE = 1
-const SHORT_TERM_DECAY_PER_TICK = 0.01
-const LONG_TERM_DECAY_PER_TICK = 0.002
 const MILESTONE_LABELS = ['best friend', 'attracted to', 'casual relationship'] as const
 const ROMANTIC_EVENT_TYPES = new Set(['date', 'text_romance', 'call_romance', 'invite_over'])
 const SHARED_EXPERIENCE_EVENT_TYPES = new Set([
@@ -198,7 +198,8 @@ function clampRelationshipScore(score: number): number {
 }
 
 function roundRelationshipScore(score: number): number {
-  return Math.round(score * 1000) / 1000
+  // Fine enough that a single tick of slow long-term decay (a bonded pair loses 0.00005) is not rounded away.
+  return Math.round(score * 100000) / 100000
 }
 
 function getRelationshipEventDelta(eventType: string): { shortTerm: number; longTerm: number } {
@@ -490,9 +491,12 @@ async function createPairedRelationshipMemories({
 
 export async function decayCharacterRelationships({
   characterState,
+  otherStates,
   dependencies
 }: {
   characterState: CharacterState
+  /** Everyone else, so housemates can be recognized (their bonds fade more slowly). */
+  otherStates?: Record<string, CharacterState>
   dependencies: RelationshipRuntimeDependencies
 }): Promise<void> {
   const relationships = characterState.relationships || []
@@ -500,8 +504,10 @@ export async function decayCharacterRelationships({
   for (const relationship of relationships) {
     const decayedRelationship = buildUpdatedRelationship({
       relationship,
-      shortTermScore: relationship.shortTermScore - SHORT_TERM_DECAY_PER_TICK,
-      longTermScore: relationship.longTermScore - LONG_TERM_DECAY_PER_TICK
+      shortTermScore: relationship.shortTermScore - RELATIONSHIP_DECAY.shortTermPerTick,
+      longTermScore:
+        relationship.longTermScore -
+        RELATIONSHIP_DECAY.longTermPerTick * (isFamilyOf(characterState, relationship.toCharacterId, otherStates?.[relationship.toCharacterId]) ? RELATIONSHIP_DECAY.bondedMultiplier : 1)
     })
 
     const scoreChanged = decayedRelationship.shortTermScore !== relationship.shortTermScore

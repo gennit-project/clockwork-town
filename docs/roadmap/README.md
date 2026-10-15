@@ -31,7 +31,9 @@ Dev commands:
 ```bash
 npm run dev          # backend (tsx watch) — see port note below
 npm run dev:frontend # vite dev server (5173)
-npx vitest run       # frontend test suite
+npx vitest run       # frontend test suite (includes the walk-away test, about 40 s)
+npm run tune:drama   # long town-week report: TUNE_DAYS, TUNE_INTENSITY, TUNE_VARIANT, TUNE_LOG
+npm run snapshot:town # refresh the town fixture from a running seeded backend
 npm run ddl          # apply Kùzu DDL
 ```
 
@@ -89,7 +91,7 @@ Design tokens (Grafana-dark) are in `frontend/src/style.css` (`gf-bg`, `gf-surfa
    assumption silently: when finances and groceries arrive (Epic 3.1), the walk-away guarantee
    (below) must still hold in the default mode.
 5. **The walk-away guarantee is tested.** A bounded headless test runs the town for weeks with
-   no intervention and fails if anyone stays critical or stuck (Epic 6.8). Any new way to fail
+   no intervention and fails if anyone stays critical or stuck (Epic 6.8, built: `townWeek.test.ts`). Any new way to fail
    (money, illness, death, childcare, any new action) must keep it green in the default mode.
 
 ## The ordering, and why
@@ -108,8 +110,7 @@ Two corrections to the original (pre-this-folder) numbering:
 | 4 | Town as a living system (job slots, NPCs, illness, death & grief, childcare, essential facilities) | [epic-4-living-town.md](epic-4-living-town.md) |
 | 5 | Content & shipping (build-and-staff flow, default town, tutorial, difficulty) | [epic-5-content-shipping.md](epic-5-content-shipping.md) |
 | 6 | Friction & drama (autonomous antisocial behavior with an auditable cause, rejection, repair) | [epic-6-friction-and-drama.md](epic-6-friction-and-drama.md) |
-| 6.8 | Walk-away test and tuning pass (next up; guards the principles above) | [epic-6-friction-and-drama.md](epic-6-friction-and-drama.md) |
-| ✓ | Completed work (Epic 0, Epic 1.1–1.4, Epic 6.1–6.2, 6.3 first half) | [completed/](completed/README.md) |
+| ✓ | Completed work (Epic 0, Epic 1.1–1.4, Epic 6.1–6.2, 6.3 first half, 6.8) | [completed/](completed/README.md) |
 | — | Parked / long-term / cut | [parked-long-term.md](parked-long-term.md) |
 
 Epics 1–2 are specified in full. Epics 3–5 capture everything known today; expect to
