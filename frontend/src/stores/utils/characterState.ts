@@ -1,4 +1,4 @@
-import type { ActivityLogEntry, CharacterLocation, CharacterState, CharacterValueState, Intent, LongTermMemory, Memory } from '../types'
+import type { ActivityLogEntry, Cause, CharacterLocation, CharacterState, CharacterValueState, Intent, LongTermMemory, Memory } from '../types'
 import { INITIAL_COOLDOWNS, INITIAL_NEEDS } from '../config/needs'
 
 const MAX_SHORT_TERM_MEMORIES = 20
@@ -139,13 +139,15 @@ export function createActivityLogEntry(
   tick: number,
   characterId: string,
   action: string,
-  details: string
+  details: string,
+  cause?: Cause
 ): ActivityLogEntry {
   return {
     tick,
     timestamp: new Date().toISOString(),
     characterId,
     action,
-    details
+    details,
+    ...(cause ? { cause } : {})
   }
 }

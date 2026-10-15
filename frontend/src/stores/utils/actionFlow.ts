@@ -1,8 +1,8 @@
-import type { CharacterState, Intent } from '../types'
+import type { Cause, CharacterState, Intent } from '../types'
 
 export interface ActionFlowDependencies {
   clearItemOccupancy: (characterId: string) => void
-  logActivity: (characterId: string, action: string, details: string) => void
+  logActivity: (characterId: string, action: string, details: string, cause?: Cause) => void
   moveCharacterToLot: (characterId: string, lotId: string) => Promise<void>
   updateCharacterLocation: (
     characterId: string,
@@ -21,12 +21,13 @@ export interface ActionFlowDependencies {
 export function handleIdleIntent(
   characterId: string,
   state: CharacterState,
-  dependencies: Pick<ActionFlowDependencies, 'clearItemOccupancy' | 'logActivity'>
+  dependencies: Pick<ActionFlowDependencies, 'clearItemOccupancy' | 'logActivity'>,
+  cause?: Cause
 ): void {
   state.currentAction = 'idle'
   state.currentTask = null
   dependencies.clearItemOccupancy(characterId)
-  dependencies.logActivity(characterId, 'idle', 'No satisfying actions available')
+  dependencies.logActivity(characterId, 'idle', 'No satisfying actions available', ...(cause ? [cause] : []))
 }
 
 export function handleUnavailableIntent(

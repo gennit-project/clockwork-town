@@ -24,9 +24,12 @@
         Nothing notable yet. Reunions and other moments show up here as they happen.
       </p>
       <ul v-else class="divide-y divide-gf-border">
-        <li v-for="event in recentEvents" :key="`${event.tick}-${event.message}`" class="flex items-center gap-3 px-3 py-2 text-sm">
+        <li v-for="event in recentEvents" :key="`${event.tick}-${event.message}`" class="flex items-start gap-3 px-3 py-2 text-sm">
           <span class="w-20 shrink-0 text-xs text-gf-text-faint">{{ timeSince(event.iso, nowIso) }}</span>
-          <span class="min-w-0 text-gf-text-weak">{{ event.message }}</span>
+          <div class="min-w-0">
+            <span class="text-gf-text-weak">{{ event.message }}</span>
+            <WhyCause v-if="event.cause" :cause="event.cause" />
+          </div>
         </li>
       </ul>
     </Panel>
@@ -36,6 +39,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import Panel from '../components/Panel.vue'
+import WhyCause from '../components/WhyCause.vue'
 import { useResidentLink } from '../composables/useResidentLink'
 import { useServiceDeskStore } from '../stores/serviceDesk'
 import { useSimulationStore } from '../stores/simulation'

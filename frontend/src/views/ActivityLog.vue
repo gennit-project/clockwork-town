@@ -85,6 +85,7 @@
             <div v-if="log.details" class="text-gf-text-weak mt-1">
               {{ log.details }}
             </div>
+            <WhyCause v-if="log.cause" :cause="log.cause" class="mt-1" />
           </div>
         </div>
       </div>
@@ -95,6 +96,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
+import WhyCause from '../components/WhyCause.vue'
 import { client, queries } from '../graphql'
 import { useSimulationStore } from '../stores/simulation'
 import { useRouteParams } from '../composables/useRouteParams'

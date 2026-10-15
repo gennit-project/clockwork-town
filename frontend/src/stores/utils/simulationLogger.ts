@@ -1,8 +1,8 @@
 import type { Ref } from 'vue'
-import type { ActivityLogEntry } from '../types'
+import type { ActivityLogEntry, Cause } from '../types'
 import { createActivityLogEntry } from './characterState'
 
-const MAX_LOG_ENTRIES = 100
+const MAX_LOG_ENTRIES = 300
 
 export interface SimulationLoggerRefs {
   currentTick: Ref<number>
@@ -10,8 +10,8 @@ export interface SimulationLoggerRefs {
 }
 
 export function createSimulationLogger(refs: SimulationLoggerRefs) {
-  function addActivityEntry(characterId: string, action: string, details: string): void {
-    const logEntry = createActivityLogEntry(refs.currentTick.value, characterId, action, details)
+  function addActivityEntry(characterId: string, action: string, details: string, cause?: Cause): void {
+    const logEntry = createActivityLogEntry(refs.currentTick.value, characterId, action, details, cause)
 
     refs.activityLog.value.push(logEntry)
     if (refs.activityLog.value.length > MAX_LOG_ENTRIES) {
@@ -19,8 +19,8 @@ export function createSimulationLogger(refs: SimulationLoggerRefs) {
     }
   }
 
-  function logActivity(characterId: string, action: string, details: string): void {
-    addActivityEntry(characterId, action, details)
+  function logActivity(characterId: string, action: string, details: string, cause?: Cause): void {
+    addActivityEntry(characterId, action, details, cause)
     console.log(`[Tick ${refs.currentTick.value}] Character ${characterId}: ${action} - ${details}`)
   }
 

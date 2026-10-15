@@ -33,6 +33,7 @@
             <div class="text-xs text-gf-text-faint">
               {{ t.status }}{{ t.autoResolved ? ' (condition cleared)' : '' }} · opened tick {{ t.openedTick }}
             </div>
+            <WhyCause v-if="t.cause" :cause="t.cause" />
           </div>
           <button v-if="t.status === 'open'" class="rounded border border-gf-border px-2 py-0.5 text-xs hover:bg-gf-surface-2" @click="desk.acknowledge(t.id)">
             Acknowledge
@@ -49,6 +50,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import Panel from '../components/Panel.vue'
+import WhyCause from '../components/WhyCause.vue'
 import { useResidentLink } from '../composables/useResidentLink'
 import { useServiceDeskStore } from '../stores/serviceDesk'
 import { compareSeverity } from '../stores/utils/alertEvaluators'

@@ -11,6 +11,7 @@ import type {
   SimulationDateTime
 } from '../types'
 import { buildPlanCandidates, planCandidateToIntent } from './intentPlanner'
+import { buildIdleCause } from './causes'
 import { debugLog } from './simulationDebug'
 import { buildScheduleIntent } from './workSchedule'
 
@@ -88,7 +89,8 @@ export function selectBestIntent({
     debugLog(`  ⚠️  No valid actions available - returning idle`)
     return {
       action: 'idle',
-      utility: 0
+      utility: 0,
+      cause: buildIdleCause({ characterName: characterState.name, candidateCount: 0 })
     }
   }
 

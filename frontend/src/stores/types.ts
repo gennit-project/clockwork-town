@@ -179,6 +179,7 @@ export interface SocialInvitation {
   createdAtTick: number
   status: SocialInvitationStatus
   reason?: string
+  cause?: Cause
 }
 
 export interface ActiveTask {
@@ -253,6 +254,8 @@ export interface Grievance {
   times: number
   /** True once they've talked it over with a friend; it still fades, sooner, but no longer drives them to vent. */
   vented?: boolean
+  /** Why the witness holds this: the act, their stance and when. */
+  cause?: Cause
 }
 
 export interface CharacterValueState {
@@ -278,6 +281,7 @@ export interface SimulationEvent {
   type: string
   message: string
   characterIds: string[]
+  cause?: Cause
 }
 
 export interface Memory {
@@ -439,6 +443,8 @@ export interface Intent {
   proposedRelationshipLabel?: RelationshipProposalLabel
   hostedFollowUp?: TaskStep
   steps?: TaskStep[]
+  /** Why this decision was made; set on idle intents so the log can explain them. */
+  cause?: Cause
 }
 
 export interface TaskStep {
@@ -476,12 +482,30 @@ export interface PlanCandidate {
 // ACTIVITY LOG TYPES
 // ============================================
 
+/** What kind of decision a Cause explains. Extended by later Epic 6 items (antisocial acts, rejections). */
+export type CauseKind = 'declined_invitation' | 'idle' | 'disapproval'
+
+/** One real number behind a decision, captured when the decision was made. */
+export interface CauseFactor {
+  label: string
+  value: string | number
+  threshold?: number
+}
+
+/** An auditable "why": built at decision time from the actual inputs, never reconstructed afterwards. */
+export interface Cause {
+  kind: CauseKind
+  summary: string
+  factors: CauseFactor[]
+}
+
 export interface ActivityLogEntry {
   tick: number
   timestamp: string
   characterId: string
   action: string
   details: string
+  cause?: Cause
 }
 
 // ============================================
@@ -548,6 +572,7 @@ export interface Ticket {
   updatedTick: number
   /** True when the sim closed it because the underlying condition cleared. */
   autoResolved?: boolean
+  cause?: Cause
 }
 
 export type TicketCandidate = Omit<Ticket, 'id' | 'status' | 'openedTick' | 'updatedTick' | 'autoResolved'>

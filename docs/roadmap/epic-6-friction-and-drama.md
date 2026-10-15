@@ -89,7 +89,18 @@ His irritation crosses his threshold and he snaps at Sara. Everyone present disa
 
 ### 6.1 — Cause records and the "why" view `[M]` — do this first
 
-**Status:** Not started.
+**Status:** Built (first adopters). `utils/causes.ts` holds the pure builders and the
+plain-language formatter; `WhyCause.vue` shows a one-line reason inline with the factors on
+click, in Activity Log rows, Tickets, Recent events and the grievance list. Causes are built
+at decision time from the real numbers, never reconstructed.
+- **Adopted:** declined invitations (typed: prefers_other with the need and both utilities,
+  trait_disabled, unreachable, unavailable, cannot_coordinate), idle (no candidates, or idle
+  after being turned down, listing who and why), and disapproval (grievance, ticket and feed
+  entry carry the witnessed act, stance and tick). Existing `details` strings are unchanged.
+- **Deferred:** memories do not persist causes yet (needs a DB schema change; do it with 6.3);
+  the `antisocial` invariant lands with the first antisocial act (6.3). The invitation/idle
+  invariant is covered by a need-grid sweep in `causes.test.ts`. Activity log cap raised
+  100 -> 300 so a cause stays visible long enough to read.
 
 **What to build.** The audit trail, before any antisocial behavior exists, so nothing is
 ever built without it.

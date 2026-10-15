@@ -67,7 +67,8 @@ export const evaluateGrievanceTickets: TicketEvaluator = ({ states }) => {
         severity: 'warning',
         characterId,
         characterName: state.name,
-        title: `${state.name} disapproves of ${grievance.aboutName} ${grievance.summary}`
+        title: `${state.name} disapproves of ${grievance.aboutName} ${grievance.summary}`,
+        ...(grievance.cause ? { cause: grievance.cause } : {})
       })
     }
   }

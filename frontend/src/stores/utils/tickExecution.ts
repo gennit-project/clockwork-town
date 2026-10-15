@@ -11,6 +11,7 @@ import type {
   ItemOccupancy,
   Intent,
   ActivityLogEntry,
+  Cause,
   SimulationDateTime,
   SocialInvitation
 } from '../types'
@@ -24,6 +25,8 @@ import { selectBestIntent } from './decisionMaking'
 import { debugLog } from './simulationDebug'
 import { advanceSimulationDateTime } from './simulationCalendar'
 import { createActivityLogEntry } from './characterState'
+import { buildDeclineCause, buildIdleCause } from './causes'
+import type { DeclineCauseInput, DeclineReason } from './causes'
 import { calculateUtility } from './actionUtility'
 import { evaluateRelationshipAvailability } from './relationshipAvailability'
 
@@ -154,15 +157,17 @@ function appendActivityLogEntry({
   currentTick,
   characterId,
   action,
-  details
+  details,
+  cause
 }: {
   activityLog: Ref<ActivityLogEntry[]>
   currentTick: number
   characterId: string
   action: string
   details: string
+  cause?: Cause
 }): void {
-  activityLog.value.push(createActivityLogEntry(currentTick, characterId, action, details))
+  activityLog.value.push(createActivityLogEntry(currentTick, characterId, action, details, cause))
 }
 
 function updateSocialInvitationStatus({
@@ -170,15 +175,17 @@ function updateSocialInvitationStatus({
   initiatorState,
   participantState,
   status,
-  reason
+  reason,
+  cause
 }: {
   invitation: SocialInvitation
   initiatorState: CharacterState
   participantState: CharacterState
   status: SocialInvitation['status']
   reason?: string
+  cause?: Cause
 }): void {
-  const nextInvitation = { ...invitation, status, reason }
+  const nextInvitation = { ...invitation, status, reason, cause }
 
   initiatorState.outgoingSocialInvitations = initiatorState.outgoingSocialInvitations.map((entry) =>
     entry.id === invitation.id ? nextInvitation : entry
@@ -251,9 +258,17 @@ function evaluateInvitationAcceptance({
   itemOccupancy: ItemOccupancy
   simulationDateTime?: SimulationDateTime
   reservedCharacterIds: Set<string>
-}): { accepted: boolean; reason?: string } {
+}): { accepted: boolean; reason?: string; cause?: Cause } {
+  const decline = (reason: DeclineReason, extra: Partial<DeclineCauseInput> = {}) => ({
+    accepted: false as const,
+    cause: buildDeclineCause({ reason, declinerName: participantState.name, action: intent.action, ...extra })
+  })
+
   if (isActionDisabled(intent.action, participantState.traitIds)) {
-    return { accepted: false, reason: `${participantState.name} isn't interested in ${intent.action}` }
+    return {
+      ...decline('trait_disabled'),
+      reason: `${participantState.name} isn't interested in ${intent.action}`
+    }
   }
 
   const invitationUtility = calculateInvitationUtility({
@@ -262,7 +277,7 @@ function evaluateInvitationAcceptance({
     worldData
   })
   if (invitationUtility === null) {
-    return { accepted: false, reason: 'Could not reach the meeting place' }
+    return { ...decline('unreachable'), reason: 'Could not reach the meeting place' }
   }
 
   if (intent.action === 'invite_over') {
@@ -271,7 +286,10 @@ function evaluateInvitationAcceptance({
       targetState: participantState
     })
     if (!availability.canInviteOver) {
-      return { accepted: false, reason: availability.summary }
+      return {
+        ...decline('unavailable', { availabilitySummary: availability.summary }),
+        reason: availability.summary
+      }
     }
 
     return { accepted: true }
@@ -283,7 +301,10 @@ function evaluateInvitationAcceptance({
       targetState: participantState
     })
     if (!availability.canCall) {
-      return { accepted: false, reason: availability.summary }
+      return {
+        ...decline('unavailable', { availabilitySummary: availability.summary }),
+        reason: availability.summary
+      }
     }
 
     return { accepted: true }
@@ -301,7 +322,12 @@ function evaluateInvitationAcceptance({
 
   if (competingIntent.utility > invitationUtility && competingIntent.action !== intent.action) {
     return {
-      accepted: false,
+      ...decline('prefers_other', {
+        competingAction: competingIntent.action,
+        competingUtility: competingIntent.utility,
+        invitationUtility,
+        declinerNeeds: participantState.needs
+      }),
       reason: `${participantState.name} preferred ${competingIntent.action}`
     }
   }
@@ -441,14 +467,16 @@ function inviteParticipant({
       initiatorState: state,
       participantState,
       status: 'rejected',
-      reason: invitationDecision.reason
+      reason: invitationDecision.reason,
+      cause: invitationDecision.cause
     })
     appendActivityLogEntry({
       activityLog,
       currentTick,
       characterId: intent.socialTargetId,
       action: 'reject_invite',
-      details: invitationDecision.reason || `${participantState.name} rejected ${intent.action}`
+      details: invitationDecision.reason || `${participantState.name} rejected ${intent.action}`,
+      cause: invitationDecision.cause
     })
     return false
   }
@@ -466,7 +494,12 @@ function inviteParticipant({
       initiatorState: state,
       participantState,
       status: 'rejected',
-      reason: 'Could not coordinate arrival'
+      reason: 'Could not coordinate arrival',
+      cause: buildDeclineCause({
+        reason: 'cannot_coordinate',
+        declinerName: participantState.name,
+        action: intent.action
+      })
     })
     return false
   }
@@ -619,6 +652,7 @@ export async function executeTick({
     let intent: Intent
     let socialParticipationAssigned: boolean
     let attempts = 0
+    const declines: { name: string; action: string; reason: string }[] = []
     do {
       intent = selectBestIntent({
         characterId,
@@ -651,6 +685,14 @@ export async function executeTick({
       if (!rejectedInvitation) {
         break
       }
+      const declined = state.outgoingSocialInvitations.find(
+        (entry) => entry.status === 'rejected' && entry.toCharacterId === intent.socialTargetId && entry.createdAtTick === currentTick.value
+      )
+      declines.push({
+        name: intent.socialTargetName ?? (intent.socialTargetId as string),
+        action: intent.action,
+        reason: declined?.cause?.summary ?? declined?.reason ?? 'declined'
+      })
       backOffInvitation(state, intent.action, intent.socialTargetId as string)
       attempts++
     } while (attempts < MAX_INVITE_ATTEMPTS_PER_TICK)
@@ -661,6 +703,15 @@ export async function executeTick({
       intents[characterId] = {
         action: 'idle',
         utility: 0
+      }
+    }
+    if (intents[characterId].action === 'idle' && declines.length > 0) {
+      intents[characterId] = {
+        ...intents[characterId],
+        cause: buildIdleCause({
+          characterName: state.name,
+          declines
+        })
       }
     }
 

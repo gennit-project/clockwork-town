@@ -10,6 +10,7 @@
           <span class="text-gf-text-weak"> · {{ grievance.summary }}</span>
         </p>
         <p v-if="grievance.times > 1" class="text-xs text-gf-text-faint">seen {{ grievance.times }} times</p>
+        <WhyCause v-if="grievance.cause" :cause="grievance.cause" />
       </div>
       <span class="shrink-0 text-xs text-gf-text-faint">fades in {{ describeTicksRemaining(grievance.ticksRemaining) }}</span>
     </li>
@@ -18,6 +19,7 @@
 
 <script setup lang="ts">
 import { describeTicksRemaining } from '../stores/utils/valueEffects'
+import WhyCause from './WhyCause.vue'
 import type { Grievance } from '../stores/types'
 
 const props = defineProps<{

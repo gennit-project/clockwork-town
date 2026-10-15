@@ -11,6 +11,7 @@ import type {
   ItemOccupancy,
   Needs,
   SimulationDateTime,
+  Cause,
   SimulationEvent,
   WorldData
 } from '../types'
@@ -47,6 +48,7 @@ import { evaluatePetEvents, updatePetTogetherness } from './petReunions'
 import { describeActionTarget, isGroupFunAction, joinNames, requiresInvitation } from './groupSocial'
 import { canVentTo, comfortFromEating, ventGrievances } from './venting'
 import { applyWitnessMood } from './witnessMood'
+import { buildDisapprovalCause } from './causes'
 import { addGrievance, detectWitnessReactions, startReactionCooldown } from './witnessReactions'
 import {
   decayCharacterRelationships,
@@ -213,8 +215,8 @@ export function createSimulationRuntime(
   }
 
   /** Put a notable event in the log stream and the capped recent-events feed. */
-  function recordNotableEvent(event: { type: string; message: string; characterIds: string[] }): void {
-    logActivity(event.characterIds[0], event.type, event.message)
+  function recordNotableEvent(event: { type: string; message: string; characterIds: string[]; cause?: Cause }): void {
+    logActivity(event.characterIds[0], event.type, event.message, event.cause)
     refs.events.value.push({
       tick: refs.currentTick.value,
       iso: refs.simulationDateTime.value.iso,
@@ -300,11 +302,20 @@ export function createSimulationRuntime(
       })
 
       if (reaction.stance === 'disapproves') {
-        addGrievance(witness, { id: reaction.actorId, name: actor.name }, reaction.topic)
+        const cause = buildDisapprovalCause({
+          witnessName: witness.name,
+          actorName: actor.name,
+          actSummary: reaction.topic.phrase,
+          topicId: reaction.topic.id,
+          stance: reaction.stance,
+          tick: refs.currentTick.value
+        })
+        addGrievance(witness, { id: reaction.actorId, name: actor.name }, reaction.topic, cause)
         recordNotableEvent({
           type: 'disapproval',
           message: `${witness.name} disapproved of ${actor.name} ${reaction.topic.phrase}.`,
-          characterIds: [reaction.witnessId, reaction.actorId]
+          characterIds: [reaction.witnessId, reaction.actorId],
+          cause
         })
       }
     }
@@ -670,7 +681,7 @@ export function createSimulationRuntime(
     logger.logCharacterActionStart(characterId)
 
     if (intent.action === 'idle') {
-      handleIdleIntent(characterId, state, { clearItemOccupancy, logActivity })
+      handleIdleIntent(characterId, state, { clearItemOccupancy, logActivity }, intent.cause)
       logger.logIdle(characterId)
       return
     }
