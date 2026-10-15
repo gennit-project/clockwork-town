@@ -19,7 +19,8 @@
     "migrate": "tsx src/db.ts --migrate",
     "test": "TZ=UTC vitest",
     "test:ui": "TZ=UTC vitest --ui",
-    "test:coverage": "TZ=UTC vitest --coverage"
+    "test:coverage": "TZ=UTC vitest --coverage",
+    "check:backup": "node scripts/check-backup-roundtrip.mjs"
   },
   "dependencies": {
     "@graphql-tools/schema": "^10.0.25",

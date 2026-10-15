@@ -2,6 +2,9 @@ import { batch, q } from "../kuzuHelpers";
 import { decodeAffordances, encodeAffordances } from "./itemAffordances";
 import { resolveItemAffordances } from "./itemAffordanceInference";
 import { getDefaultItemComfort } from "./itemComfort";
+import { deserializeStoredWorkSchedule, serializeWorkSchedule } from "./workSchedule";
+import { setCharacterTraits } from "../traits";
+import { setCharacterValues } from "../values";
 
 // Helper functions to safely encode/decode template data with special characters
 const encodeTemplateData = (data: any): string => {
@@ -1185,30 +1188,71 @@ export const WorldResolvers = {
                s.id AS spaceId
       `, { worldId });
 
-      // 6. Get all households
+      // 6. Get all households (a household is linked to its lot with HOUSEHOLD_AT)
       const households = await q(`
-        MATCH (w:World {id:$worldId})-[:HAS_REGION]->(r:Region)-[:HAS_LOT]->(l:Lot)<-[:HOME]-(h:Household)
+        MATCH (w:World {id:$worldId})-[:HAS_REGION]->(r:Region)-[:HAS_LOT]->(l:Lot)<-[:HOUSEHOLD_AT]-(h:Household)
         RETURN h.id AS id, h.name AS name, l.id AS lotId, r.id AS regionId
       `, { worldId });
 
       // 7. Get all characters with their household relationships
-      const characters = await q(`
-        MATCH (w:World {id:$worldId})-[:HAS_REGION]->(:Region)-[:HAS_LOT]->(:Lot)<-[:HOME]-(:Household)<-[:IN_HOUSEHOLD]-(c:Character)
-        OPTIONAL MATCH (c)-[:IN_HOUSEHOLD]->(h:Household)
+      const characterRows = await q(`
+        MATCH (w:World {id:$worldId})-[:HAS_REGION]->(:Region)-[:HAS_LOT]->(:Lot)<-[:HOUSEHOLD_AT]-(h:Household)<-[:IN_HOUSEHOLD]-(c:Character)
         OPTIONAL MATCH (c)-[:HOME]->(home:Lot)
-        OPTIONAL MATCH (c)-[:AT]->(location:Lot)
+        OPTIONAL MATCH (c)-[located:AT]->(location:Lot)
         RETURN c.id AS id, c.name AS name, c.age AS age, c.bio AS bio,
-               h.id AS householdId, home.id AS homeLotId, location.id AS locationId
+               c.workSchedule AS workSchedule, c.valueOrder AS valueOrder,
+               h.id AS householdId, home.id AS homeLotId, location.id AS locationId,
+               located.at AS locatedAt
       `, { worldId });
 
-      // 8. Get all animals
-      const animals = await q(`
-        MATCH (w:World {id:$worldId})-[:HAS_REGION]->(:Region)-[:HAS_LOT]->(:Lot)<-[:HOME]-(:Household)<-[:IN_HOUSEHOLD]-(a:Animal)
-        OPTIONAL MATCH (a)-[:IN_HOUSEHOLD]->(h:Household)
-        OPTIONAL MATCH (a)<-[:OWNS_ANIMAL]-(owner:Character)
-        RETURN a.id AS id, a.name AS name, a.age AS age, a.traits AS traits, a.bio AS bio,
-               h.id AS householdId, owner.id AS ownerId
+      const traitRows = await q<{ characterId: string; traitId: string }>(`
+        MATCH (w:World {id:$worldId})-[:HAS_REGION]->(:Region)-[:HAS_LOT]->(:Lot)<-[:HOUSEHOLD_AT]-(:Household)<-[:IN_HOUSEHOLD]-(c:Character)-[:HAS_TRAIT]->(t:Trait)
+        RETURN c.id AS characterId, t.id AS traitId
       `, { worldId });
+      const valueRows = await q<{ characterId: string; valueId: string }>(`
+        MATCH (w:World {id:$worldId})-[:HAS_REGION]->(:Region)-[:HAS_LOT]->(:Lot)<-[:HOUSEHOLD_AT]-(:Household)<-[:IN_HOUSEHOLD]-(c:Character)-[:HAS_VALUE]->(v:Value)
+        RETURN c.id AS characterId, v.id AS valueId
+      `, { worldId });
+
+      // A character can have several AT edges (moves don't always remove the old one), which
+      // makes the query return one row per edge; keep the most recent location per character.
+      const latestRowByCharacter = new Map<string, any>();
+      for (const row of characterRows) {
+        const kept = latestRowByCharacter.get(row.id);
+        if (!kept || String(row.locatedAt ?? '') > String(kept.locatedAt ?? '')) {
+          latestRowByCharacter.set(row.id, row);
+        }
+      }
+
+      const characters = [...latestRowByCharacter.values()].map(({ valueOrder, locatedAt: _locatedAt, ...character }: any) => {
+        const memberValueIds = valueRows.filter((row) => row.characterId === character.id).map((row) => row.valueId);
+        const rank = new Map<string, number>((valueOrder ?? []).map((id: string, index: number) => [id, index]));
+        return {
+          ...character,
+          traitIds: traitRows.filter((row) => row.characterId === character.id).map((row) => row.traitId),
+          // Values in rank order, most important first
+          valueIds: memberValueIds.sort((x, y) => (rank.get(x) ?? Infinity) - (rank.get(y) ?? Infinity))
+        };
+      });
+
+      // 8. Get all animals (linked to the household with ANIMAL_IN_HOUSEHOLD, owned via OWNS_ANIMAL)
+      const animalRows = await q(`
+        MATCH (w:World {id:$worldId})-[:HAS_REGION]->(:Region)-[:HAS_LOT]->(:Lot)<-[:HOUSEHOLD_AT]-(h:Household)<-[:ANIMAL_IN_HOUSEHOLD]-(a:Animal)
+        OPTIONAL MATCH (a)<-[:OWNS_ANIMAL]-(owner:Character)
+        OPTIONAL MATCH (a)-[:ANIMAL_HOME]->(home:Lot)
+        OPTIONAL MATCH (a)-[located:ANIMAL_AT]->(location:Lot)
+        RETURN a.id AS id, a.name AS name, a.age AS age, a.traits AS traits, a.bio AS bio,
+               h.id AS householdId, owner.id AS ownerId, home.id AS homeLotId, location.id AS locationId,
+               located.at AS locatedAt
+      `, { worldId });
+      const latestAnimalRow = new Map<string, any>();
+      for (const row of animalRows) {
+        const kept = latestAnimalRow.get(row.id);
+        if (!kept || String(row.locatedAt ?? '') > String(kept.locatedAt ?? '')) {
+          latestAnimalRow.set(row.id, row);
+        }
+      }
+      const animals = [...latestAnimalRow.values()].map(({ locatedAt: _locatedAt, ...animal }: any) => animal);
 
       // 9. Assemble the export data
       const exportData = {
@@ -1223,7 +1267,7 @@ export const WorldResolvers = {
         exportedAt: new Date().toISOString()
       };
 
-      console.log(`✅ Exported world ${worldId}: ${regions.length} regions, ${lots.length} lots, ${characters.length} characters`);
+      console.log(`✅ Exported world ${worldId}: ${regions.length} regions, ${lots.length} lots, ${households.length} households, ${characters.length} characters, ${animals.length} animals`);
       return exportData;
     },
 
@@ -1371,12 +1415,14 @@ export const WorldResolvers = {
 
           await q(`
             MATCH (h:Household {id:$householdId}), (l:Lot {id:$lotId})
-            CREATE (h)-[:HOME]->(l)
+            CREATE (h)-[:HOUSEHOLD_AT]->(l)
           `, { householdId: newHouseholdId, lotId: newLotId });
         }
         console.log(`  ✓ Created ${importData.households.length} households`);
 
         // 7. Create characters
+        const knownTraitIds = new Set((await q<{ id: string }>(`MATCH (t:Trait) RETURN t.id AS id`)).map((r) => r.id));
+        const knownValueIds = new Set((await q<{ id: string }>(`MATCH (v:Value) RETURN v.id AS id`)).map((r) => r.id));
         for (const char of importData.characters) {
           const newCharId = crypto.randomUUID();
           idMap.set(char.id, newCharId);
@@ -1384,12 +1430,24 @@ export const WorldResolvers = {
           const newHomeLotId = idMap.get(char.homeLotId);
           const newLocationId = idMap.get(char.locationId);
 
-          await q(`CREATE (:Character {id:$id, name:$name, age:$age, bio:$bio})`, {
+          // Schedules point at lots by id, so remap them to the restored lots
+          const restoredSchedule = deserializeStoredWorkSchedule(char.workSchedule ?? []).flatMap((shift) => {
+            const lotId = idMap.get(shift.locationLotId);
+            return lotId ? [{ ...shift, locationLotId: lotId }] : [];
+          });
+
+          await q(`CREATE (:Character {id:$id, name:$name, age:$age, bio:$bio, workSchedule:$workSchedule})`, {
             id: newCharId,
             name: char.name,
             age: char.age,
-            bio: char.bio || ''
+            bio: char.bio || '',
+            workSchedule: serializeWorkSchedule(restoredSchedule)
           });
+
+          // Traits and values come from the global catalogs, so their ids carry over unchanged
+          // (anything no longer in the catalog is skipped rather than failing the restore).
+          await setCharacterTraits(newCharId, (char.traitIds ?? []).filter((id: string) => knownTraitIds.has(id)));
+          await setCharacterValues(newCharId, (char.valueIds ?? []).filter((id: string) => knownValueIds.has(id)));
 
           // Link to household
           if (newHouseholdId) {
@@ -1417,12 +1475,16 @@ export const WorldResolvers = {
         }
         console.log(`  ✓ Created ${importData.characters.length} characters`);
 
-        // 8. Create animals
+        // 8. Create animals (same links as createHousehold: household, home lot, current lot, owner)
         for (const animal of importData.animals) {
           const newAnimalId = crypto.randomUUID();
           idMap.set(animal.id, newAnimalId);
           const newHouseholdId = idMap.get(animal.householdId);
           const newOwnerId = idMap.get(animal.ownerId);
+          // Older backups don't record a home or location: fall back to the household's lot.
+          const householdLotId = importData.households.find((h: any) => h.id === animal.householdId)?.lotId;
+          const newHomeLotId = idMap.get(animal.homeLotId ?? householdLotId);
+          const newLocationLotId = idMap.get(animal.locationId ?? animal.homeLotId ?? householdLotId);
 
           await q(`CREATE (:Animal {id:$id, name:$name, age:$age, traits:$traits, bio:$bio})`, {
             id: newAnimalId,
@@ -1432,15 +1494,27 @@ export const WorldResolvers = {
             bio: animal.bio || ''
           });
 
-          // Link to household
           if (newHouseholdId) {
             await q(`
               MATCH (a:Animal {id:$animalId}), (h:Household {id:$householdId})
-              CREATE (a)-[:IN_HOUSEHOLD]->(h)
+              CREATE (a)-[:ANIMAL_IN_HOUSEHOLD]->(h)
             `, { animalId: newAnimalId, householdId: newHouseholdId });
           }
 
-          // Link to owner
+          if (newHomeLotId) {
+            await q(`
+              MATCH (a:Animal {id:$animalId}), (l:Lot {id:$lotId})
+              CREATE (a)-[:ANIMAL_HOME]->(l)
+            `, { animalId: newAnimalId, lotId: newHomeLotId });
+          }
+
+          if (newLocationLotId) {
+            await q(`
+              MATCH (a:Animal {id:$animalId}), (l:Lot {id:$lotId})
+              CREATE (a)-[:ANIMAL_AT {at: $at}]->(l)
+            `, { animalId: newAnimalId, lotId: newLocationLotId, at: new Date().toISOString() });
+          }
+
           if (newOwnerId) {
             await q(`
               MATCH (a:Animal {id:$animalId}), (c:Character {id:$ownerId})
