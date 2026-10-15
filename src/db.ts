@@ -155,6 +155,15 @@ export async function migrateDatabase(): Promise<{
     SET c.stances = []
   `);
 
+  // Why a memory was formed: a JSON-encoded Cause (see frontend/src/stores/types.ts), or null.
+  try {
+    await conn.query("ALTER TABLE Memory ADD cause STRING");
+  } catch (error) {
+    if (!isDuplicatePropertyError(error, "cause")) {
+      throw error;
+    }
+  }
+
   for (const [propertyName, dataType] of [
     ["fromCharacterId", "STRING"],
     ["toCharacterId", "STRING"],

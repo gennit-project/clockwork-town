@@ -1,5 +1,5 @@
 import { client, mutations, queries } from '../graphql'
-import type { CharacterRelationship, LongTermMemory } from './types'
+import type { Cause, CharacterRelationship, LongTermMemory } from './types'
 
 interface FetchCharacterDetailsResult {
   character?: {
@@ -129,8 +129,10 @@ export async function createStructuredCharacterLongTermMemory(input: {
   locationSpaceId?: string
   locationSpaceName?: string
   createdAt?: string
+  cause?: Cause
 }): Promise<void> {
-  await client.request(mutations.createCharacterLongTermMemory, input)
+  const { cause, ...rest } = input
+  await client.request(mutations.createCharacterLongTermMemory, { ...rest, cause: cause ? JSON.stringify(cause) : undefined })
 }
 
 export async function updateCharacterLongTermMemory(memoryId: string, content: string): Promise<void> {

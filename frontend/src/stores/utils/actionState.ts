@@ -59,7 +59,7 @@ export function applyActionToCharacterState(
 
   let cooldownTicksApplied: number | null = null
   if (action !== 'idle' && action in state.cooldowns) {
-    state.cooldowns[action] = actionEffect.cooldownTicks
+    state.cooldowns[action as keyof typeof state.cooldowns] = actionEffect.cooldownTicks
     cooldownTicksApplied = actionEffect.cooldownTicks
   }
 

@@ -64,7 +64,7 @@ Design tokens (Grafana-dark) are in `frontend/src/style.css` (`gf-bg`, `gf-surfa
 
 **Partial:** death (only `isDeceasedTarget` + a "Deceased" badge); world/lot build UI (list-based via `LotsAndHouseholds.vue` / `LotTemplateEdit.vue`, no map, no roads); relationship memory filtering (eventType only, no family-tree relation filters).
 
-**Absent:** richer ticket generators (grief), ticket persistence, the full trait and value lists, relationship milestones, antisocial behavior and rejection (Epic 6.3 onward), finances, cooking rota, chores, weather/climate config, job slots, NPCs, illness, death triggers/warnings/grief, childcare/foster, difficulty levels, tutorial.
+**Absent:** richer ticket generators (grief), ticket persistence, the full trait and value lists, relationship milestones, antisocial behavior and rejection (Epic 6.3b onward), finances, cooking rota, chores, weather/climate config, job slots, NPCs, illness, death triggers/warnings/grief, childcare/foster, difficulty levels, tutorial.
 
 ## The ordering, and why
 
@@ -82,7 +82,7 @@ Two corrections to the original (pre-this-folder) numbering:
 | 4 | Town as a living system (job slots, NPCs, illness, death & grief, childcare) | [epic-4-living-town.md](epic-4-living-town.md) |
 | 5 | Content & shipping (build-and-staff flow, default town, tutorial, difficulty) | [epic-5-content-shipping.md](epic-5-content-shipping.md) |
 | 6 | Friction & drama (autonomous antisocial behavior with an auditable cause, rejection, repair) | [epic-6-friction-and-drama.md](epic-6-friction-and-drama.md) |
-| ✓ | Completed work (Epic 0, Epic 1.1–1.4, Epic 6.1–6.2) | [completed/](completed/README.md) |
+| ✓ | Completed work (Epic 0, Epic 1.1–1.4, Epic 6.1–6.2, 6.3 first half) | [completed/](completed/README.md) |
 | — | Parked / long-term / cut | [parked-long-term.md](parked-long-term.md) |
 
 Epics 1–2 are specified in full. Epics 3–5 capture everything known today; expect to

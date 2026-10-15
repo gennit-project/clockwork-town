@@ -22,6 +22,8 @@ export interface ApprovalTopic {
   /** What the actor is doing, finishing "<witness> disapproved of <actor> ...": "napping in the daytime". */
   phrase: string
   matches: (act: WitnessedAct) => boolean
+  /** What a resident feels when they have no stance of their own on this topic (default: neutral). */
+  defaultStance?: 'approves' | 'disapproves'
 }
 
 /** Waking hours, in which sleeping outside the scheduled sleep block counts as a daytime nap. */
@@ -71,6 +73,28 @@ export const APPROVAL_TOPICS: ApprovalTopic[] = [
     label: 'Caring for animals',
     phrase: 'spending time with an animal',
     matches: ({ action }) => action === 'pet_animal'
+  },
+  // Antisocial acts (Epic 6.3). Nearly everyone disapproves unless they say otherwise.
+  {
+    id: 'rudeness',
+    label: 'Rudeness',
+    phrase: 'snapping at someone',
+    matches: ({ action }) => action === 'snap',
+    defaultStance: 'disapproves'
+  },
+  {
+    id: 'belittling',
+    label: 'Belittling people',
+    phrase: 'belittling someone',
+    matches: ({ action }) => action === 'belittle',
+    defaultStance: 'disapproves'
+  },
+  {
+    id: 'arguing',
+    label: 'Public arguments',
+    phrase: 'arguing in public',
+    matches: ({ action }) => action === 'argue',
+    defaultStance: 'disapproves'
   }
 ]
 

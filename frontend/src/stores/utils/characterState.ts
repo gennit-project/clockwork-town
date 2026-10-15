@@ -110,6 +110,7 @@ export function appendStructuredLongTermMemory({
     locationSpaceId?: string
     locationSpaceName?: string
     createdAt?: string
+    cause?: Cause
   }
 }): CharacterState {
   const memory: LongTermMemory = {
@@ -121,7 +122,8 @@ export function appendStructuredLongTermMemory({
     locationLotName: input.locationLotName ?? null,
     locationSpaceId: input.locationSpaceId ?? null,
     locationSpaceName: input.locationSpaceName ?? null,
-    relationshipIds: input.relationshipIds ?? []
+    relationshipIds: input.relationshipIds ?? [],
+    ...(input.cause ? { cause: input.cause } : {})
   }
 
   if (!state.longTermMemories) {

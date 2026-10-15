@@ -148,6 +148,8 @@ type Memory {
   locationSpaceId: ID
   locationSpaceName: String
   relationshipIds: [ID!]!
+  """JSON-encoded Cause explaining why this memory was formed, when known."""
+  cause: String
   relationships: [Relationship!]!
 }
 
@@ -618,6 +620,7 @@ type Mutation {
     locationSpaceId: ID
     locationSpaceName: String
     createdAt: DateTime
+    cause: String
   ): Memory!
   updateCharacterLongTermMemory(
     memoryId: ID!

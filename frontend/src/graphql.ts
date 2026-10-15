@@ -391,6 +391,7 @@ export const queries = {
           locationSpaceId
           locationSpaceName
           relationshipIds
+          cause
         }
         relationships {
           id
@@ -768,7 +769,8 @@ export const mutations = {
       $locationLotName: String,
       $locationSpaceId: ID,
       $locationSpaceName: String,
-      $createdAt: DateTime
+      $createdAt: DateTime,
+      $cause: String
     ) {
       createCharacterLongTermMemory(
         characterId: $characterId,
@@ -779,7 +781,8 @@ export const mutations = {
         locationLotName: $locationLotName,
         locationSpaceId: $locationSpaceId,
         locationSpaceName: $locationSpaceName,
-        createdAt: $createdAt
+        createdAt: $createdAt,
+        cause: $cause
       ) {
         id
         content
@@ -790,6 +793,7 @@ export const mutations = {
         locationSpaceId
         locationSpaceName
         relationshipIds
+        cause
       }
     }
   `,

@@ -112,6 +112,7 @@ export function useTownDataLoader() {
         simulationStore.initializeCharacter({
           id: character.id,
           name: character.name,
+          age: character.age,
           ...toTraitSeed(character.traits),
           ...toValueSeed(character.values),
           ...toStanceSeed(character.stances),

@@ -26,6 +26,9 @@ export type ActionName =
   | 'volunteer'
   | 'pet_animal'
   | 'work'
+  | 'snap'
+  | 'belittle'
+  | 'argue'
   | 'idle'
 
 export type NeedName =
@@ -145,6 +148,8 @@ export interface LongTermMemory {
   locationSpaceId?: string | null
   locationSpaceName?: string | null
   relationshipIds?: string[]
+  /** Why this memory was formed, when known (stored as JSON on the server). */
+  cause?: Cause
 }
 
 export interface CharacterRelationship {
@@ -212,6 +217,8 @@ export interface CharacterState {
   traits: string[]
   /** Trait ids (parallel to `traits` display names); drive TRAIT_EFFECTS. */
   traitIds: string[]
+  /** Age in years, when known. Unknown ages are treated as possibly a child (see utils/antisocial.ts). */
+  age?: number
   /** Ranked values, most important first. See config/valueDefs.ts. */
   values: CharacterValueState[]
   /** Ticks left before this character re-issues a rejected invitation (`action:targetId`). */
@@ -226,6 +233,8 @@ export interface CharacterState {
   grievances?: Grievance[]
   /** Ticks left before they react again to `${actorId}:${topicId}`. */
   witnessCooldowns?: Record<string, number>
+  /** Bookkeeping for antisocial acts: ticks until they can act again, and how many today (see utils/antisocial.ts). */
+  antisocial?: { cooldown: number; day: string; count: number }
   memories?: Memory[]
   longTermMemories?: LongTermMemory[]
   relationships?: CharacterRelationship[]
@@ -240,15 +249,16 @@ export interface CharacterState {
   workSchedule: WorkShift[]
 }
 
-export type StanceValue = 'approves' | 'disapproves'
+/** `neutral` is an explicit "no opinion", which matters for topics that have a default stance. */
+export type StanceValue = 'approves' | 'disapproves' | 'neutral'
 
-/** Something a witness holds against someone, until it fades or (later) they vent about it. */
 /** A pressure meter: its value and what currently makes it up (trigger -> amount; sums to value). */
 export interface MeterState {
   value: number
   ledger: Record<string, number>
 }
 
+/** Something a witness holds against someone, until it fades or (later) they vent about it. */
 export interface Grievance {
   id: string
   aboutCharacterId: string
@@ -309,6 +319,8 @@ export interface ActionEffect {
   primaryEffect: number
   secondaryEffects: Partial<Record<NeedName, number>>
   cooldownTicks: number
+  /** Social friction chosen by pressure, not by the planner. Every such act must carry a cause. */
+  antisocial?: boolean
 }
 
 export type ActionEffects = Record<ActionName, ActionEffect>
@@ -491,7 +503,7 @@ export interface PlanCandidate {
 // ============================================
 
 /** What kind of decision a Cause explains. Extended by later Epic 6 items (antisocial acts, rejections). */
-export type CauseKind = 'declined_invitation' | 'idle' | 'disapproval' | 'pressure'
+export type CauseKind = 'declined_invitation' | 'idle' | 'disapproval' | 'pressure' | 'antisocial_act'
 
 /** One real number behind a decision, captured when the decision was made. */
 export interface CauseFactor {

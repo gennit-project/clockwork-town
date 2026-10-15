@@ -192,7 +192,7 @@ const traits = computed(() => state.value?.traits?.length ? state.value.traits :
 const opinionChips = computed(() =>
   APPROVAL_TOPICS.flatMap((topic) => {
     const stance = state.value?.stances?.[topic.id]
-    return stance ? [{ id: topic.id, label: topic.label, stance }] : []
+    return stance && stance !== 'neutral' ? [{ id: topic.id, label: topic.label, stance }] : []
   })
 )
 const hasValues = computed(() => (state.value?.values?.length ?? 0) > 0)

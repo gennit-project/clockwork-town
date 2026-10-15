@@ -1,4 +1,4 @@
-import type { ActionName, CharacterRelationship, CharacterState, Intent } from '../types'
+import type { ActionName, Cause, CharacterRelationship, CharacterState, Intent } from '../types'
 import { hasBloodFamilyLabel } from './family'
 import { evaluateRelationshipEvents } from './relationshipEvents'
 import { joinNames } from './groupSocial'
@@ -61,6 +61,7 @@ export interface RelationshipRuntimeDependencies {
     locationSpaceId?: string
     locationSpaceName?: string
     createdAt?: string
+    cause?: Cause
   }) => Promise<void>
   /** Called for events worth telling the player about (see relationshipEvents.ts). */
   onNotableEvent?: (event: { type: string; message: string; characterIds: string[] }) => void
@@ -413,6 +414,7 @@ async function createLinkedRelationshipMemory({
   timestamp,
   eventType,
   location,
+  cause,
   dependencies
 }: {
   characterId: string
@@ -421,6 +423,7 @@ async function createLinkedRelationshipMemory({
   timestamp: string
   eventType: string
   location: RelationshipLocation
+  cause?: Cause
   dependencies: RelationshipRuntimeDependencies
 }): Promise<void> {
   await dependencies.createStructuredCharacterLongTermMemory({
@@ -432,7 +435,8 @@ async function createLinkedRelationshipMemory({
     locationLotName: location.lotName ?? undefined,
     locationSpaceId: location.spaceId ?? undefined,
     locationSpaceName: location.spaceName ?? undefined,
-    createdAt: timestamp
+    createdAt: timestamp,
+    ...(cause ? { cause } : {})
   })
 }
 
@@ -854,6 +858,7 @@ export async function recordWitnessReaction({
   stance,
   phrase,
   timestamp,
+  cause,
   dependencies
 }: {
   witnessId: string
@@ -864,6 +869,8 @@ export async function recordWitnessReaction({
   /** What the actor was doing: "napping in the daytime". */
   phrase: string
   timestamp: string
+  /** Why they reacted, kept on the memory. */
+  cause?: Cause
   dependencies: RelationshipRuntimeDependencies
 }): Promise<void> {
   const location = {
@@ -913,6 +920,7 @@ export async function recordWitnessReaction({
     timestamp,
     eventType: disapproves ? 'disapproval' : 'approval',
     location,
+    cause,
     dependencies
   })
 

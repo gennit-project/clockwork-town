@@ -49,7 +49,9 @@ import { describeActionTarget, isGroupFunAction, joinNames, requiresInvitation }
 import { canVentTo, comfortFromEating, ventGrievances } from './venting'
 import { applyWitnessMood } from './witnessMood'
 import { addPressure, relievePressure, tickPressure } from './pressure'
-import { PRESSURE, type DramaIntensity } from '../config/pressure'
+import { DEFAULT_DRAMA_INTENSITY, PRESSURE, type DramaIntensity } from '../config/pressure'
+import { getApprovalTopic } from '../config/approvalTopics'
+import { applyAntisocialActEffects, decideAntisocialActs, tickAntisocial } from './antisocial'
 import { buildDisapprovalCause } from './causes'
 import { addGrievance, detectWitnessReactions, startReactionCooldown } from './witnessReactions'
 import {
@@ -113,6 +115,7 @@ export interface SimulationRuntimeDependencies {
     locationSpaceId?: string
     locationSpaceName?: string
     createdAt?: string
+    cause?: Cause
   }) => Promise<void>
 }
 
@@ -280,7 +283,7 @@ export function createSimulationRuntime(
   }
 
   /** Residents react to what they see others doing: approval changes feelings, disapproval also leaves a grievance. */
-  async function recordWitnessReactions(): Promise<void> {
+  async function recordWitnessReactions(actCauses: Record<string, Cause> = {}): Promise<void> {
     const states = refs.characterStates.value
     const timestamp = refs.simulationDateTime.value.iso
 
@@ -292,6 +295,18 @@ export function createSimulationRuntime(
       }
 
       startReactionCooldown(witness, reaction.actorId, reaction.topic.id)
+      const disapprovalCause =
+        reaction.stance === 'disapproves'
+          ? buildDisapprovalCause({
+              witnessName: witness.name,
+              actorName: actor.name,
+              actSummary: reaction.topic.phrase,
+              topicId: reaction.topic.id,
+              stance: reaction.stance,
+              tick: refs.currentTick.value,
+              underlying: actCauses[reaction.actorId]
+            })
+          : undefined
       await recordWitnessReaction({
         witnessId: reaction.witnessId,
         actorId: reaction.actorId,
@@ -300,6 +315,7 @@ export function createSimulationRuntime(
         stance: reaction.stance,
         phrase: reaction.topic.phrase,
         timestamp,
+        cause: disapprovalCause,
         dependencies: {
           persistCharacterRelationship: dependencies.persistCharacterRelationship,
           createStructuredCharacterLongTermMemory: dependencies.createStructuredCharacterLongTermMemory
@@ -307,14 +323,7 @@ export function createSimulationRuntime(
       })
 
       if (reaction.stance === 'disapproves') {
-        const cause = buildDisapprovalCause({
-          witnessName: witness.name,
-          actorName: actor.name,
-          actSummary: reaction.topic.phrase,
-          topicId: reaction.topic.id,
-          stance: reaction.stance,
-          tick: refs.currentTick.value
-        })
+        const cause = disapprovalCause as Cause
         addGrievance(witness, { id: reaction.actorId, name: actor.name }, reaction.topic, cause)
         addPressure(actor, 'irritation', 'disapproved', PRESSURE.disapprovedImpulse)
         recordNotableEvent({
@@ -325,6 +334,97 @@ export function createSimulationRuntime(
         })
       }
     }
+  }
+
+  // Residents whose current action was set to an antisocial act just for this tick's witnesses.
+  let actingResidents: Array<{ id: string; previous: CharacterState['currentAction'] }> = []
+
+  /**
+   * Residents over their limit act out (see utils/antisocial.ts). The act is logged with its cause,
+   * the target is hurt whether or not they have an opinion about rudeness, and the actor's current
+   * action is set to the act so bystanders react to it through the ordinary approval system.
+   * Returns each actor's cause so those reactions can carry the whole story.
+   */
+  async function recordAntisocialActs(): Promise<Record<string, Cause>> {
+    actingResidents = []
+    const states = refs.characterStates.value
+    const intensity = refs.dramaIntensity?.value ?? DEFAULT_DRAMA_INTENSITY
+    const dayKey = refs.simulationDateTime.value.iso.slice(0, 10)
+    const timestamp = refs.simulationDateTime.value.iso
+    tickAntisocial(states)
+
+    const causes: Record<string, Cause> = {}
+    for (const act of decideAntisocialActs({ states, intensity, dayKey })) {
+      const actor = states[act.actorId]
+      const target = states[act.targetId]
+      applyAntisocialActEffects(states, act, dayKey)
+      causes[act.actorId] = act.cause
+      if (act.rung.twoWay) causes[act.targetId] = act.cause
+
+      actingResidents.push({ id: act.actorId, previous: actor.currentAction })
+      actor.currentAction = act.rung.action
+      if (act.rung.twoWay) {
+        actingResidents.push({ id: act.targetId, previous: target.currentAction })
+        target.currentAction = act.rung.action
+      }
+
+      logActivity(act.actorId, act.rung.action, `${actor.name} ${act.rung.verb} ${target.name}`, act.cause)
+      refs.events.value.push({
+        tick: refs.currentTick.value,
+        iso: timestamp,
+        type: 'antisocial',
+        message: `${actor.name} ${act.rung.verb} ${target.name}.`,
+        characterIds: [act.actorId, act.targetId],
+        cause: act.cause
+      })
+      if (refs.events.value.length > EVENT_FEED_LIMIT) {
+        refs.events.value.splice(0, refs.events.value.length - EVENT_FEED_LIMIT)
+      }
+
+      // The target (and, in an argument, the actor) are hurt regardless of their stance on rudeness.
+      const topic = getApprovalTopic(act.rung.topicId)
+      const hurt: Array<[string, string]> = [[act.targetId, act.actorId]]
+      if (act.rung.twoWay) hurt.push([act.actorId, act.targetId])
+      for (const [victimId, otherId] of hurt) {
+        const victim = states[victimId]
+        const other = states[otherId]
+        if (!topic) continue
+        startReactionCooldown(victim, otherId, topic.id)
+        const cause = buildDisapprovalCause({
+          witnessName: victim.name,
+          actorName: other.name,
+          actSummary: topic.phrase,
+          topicId: topic.id,
+          stance: 'disapproves',
+          tick: refs.currentTick.value,
+          underlying: act.cause
+        })
+        await recordWitnessReaction({
+          witnessId: victimId,
+          actorId: otherId,
+          witnessState: victim,
+          actorState: other,
+          stance: 'disapproves',
+          phrase: topic.phrase,
+          timestamp,
+          cause,
+          dependencies: {
+            persistCharacterRelationship: dependencies.persistCharacterRelationship,
+            createStructuredCharacterLongTermMemory: dependencies.createStructuredCharacterLongTermMemory
+          }
+        })
+        addGrievance(victim, { id: otherId, name: other.name }, topic, cause)
+      }
+    }
+    return causes
+  }
+
+  function restoreAfterActs(): void {
+    for (const { id, previous } of actingResidents) {
+      const state = refs.characterStates.value[id]
+      if (state) state.currentAction = previous
+    }
+    actingResidents = []
   }
 
   /** When an owner and their pet meet again after a long absence, run the pet event evaluators. */
@@ -797,7 +897,9 @@ export function createSimulationRuntime(
     })
 
     await recordPetReunions()
-    await recordWitnessReactions()
+    const actCauses = await recordAntisocialActs()
+    await recordWitnessReactions(actCauses)
+    restoreAfterActs()
     applyWitnessMood(refs.characterStates.value)
     tickPressure(refs.characterStates.value)
 

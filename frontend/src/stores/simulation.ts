@@ -4,6 +4,7 @@ import type { Ref } from 'vue'
 import type { DramaIntensity } from './config/pressure'
 import { loadDramaIntensity, saveDramaIntensity } from './utils/dramaSetting'
 import type {
+  Cause,
   CharacterValueState,
   StanceValue,
   SimulationEvent,
@@ -50,6 +51,7 @@ interface CharacterSimulationSeed {
   homeLotId?: string | null
   homeLotName?: string | null
   workSchedule?: WorkShift[]
+  age?: number
 }
 
 export const useSimulationStore = defineStore('simulation', () => {
@@ -153,6 +155,7 @@ export const useSimulationStore = defineStore('simulation', () => {
     if (character.stances) {
       state.stances = character.stances
     }
+    if (character.age !== undefined) state.age = character.age
     state.householdId = character.householdId ?? state.householdId ?? null
     state.homeLotId = character.homeLotId ?? state.homeLotId ?? null
     state.homeLotName = character.homeLotName ?? state.homeLotName ?? null
@@ -182,6 +185,7 @@ export const useSimulationStore = defineStore('simulation', () => {
     locationSpaceId?: string
     locationSpaceName?: string
     createdAt?: string
+    cause?: Cause
   }): Promise<void> {
     await createStructuredCharacterLongTermMemory(input)
 

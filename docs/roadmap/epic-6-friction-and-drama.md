@@ -92,8 +92,8 @@ His irritation crosses his threshold and he snaps at Sara. Everyone present disa
 Built: `utils/causes.ts`, `WhyCause.vue`, and `cause` on activity-log entries, tickets,
 events, grievances and invitations; declined invitations, idle and disapproval are the
 first adopters. Details, deferrals and what remains: [completed/epic-6-1-cause-records.md](completed/epic-6-1-cause-records.md).
-Still open from it: persisting causes on memories (needs a DB column; do with 6.3), and
-the "no antisocial act without a cause" invariant (lands with the first antisocial act).
+Its two follow-ups are done in 6.3 (causes on memories; the "no antisocial act without a
+cause" invariant).
 
 ### 6.2 — Dispositions and pressure `[M]` — DONE
 
@@ -102,26 +102,21 @@ a minimal drama-intensity setting, a Pressure panel and `pressure` tickets. Deta
 known gaps: [completed/epic-6-2-pressure.md](completed/epic-6-2-pressure.md). The full drama
 intensity work (difficulty presets, per-resident overrides) remains in 6.7.
 
-### 6.3 — Antisocial acts and the escalation ladder `[L]`
+### 6.3 — Antisocial acts and the escalation ladder `[L]` — first half DONE, second half open
 
-**Status:** Not started.
+Built: *snap*, *belittle* and *public argument*, driven by pressure, with causes on every step, the
+room disapproving by default, and causes now stored on memories. See
+[completed/epic-6-3-antisocial-acts.md](completed/epic-6-3-antisocial-acts.md).
 
-**What to build.** The behavior itself: new actions with an `antisocial` flag, each needing
-a cause and an opportunity (someone to direct it at).
-- A ladder, from mild to serious: *snap at someone* (rude outburst), *belittle*,
-  *gossip* (spread a rumor about a third party), *sulk / freeze someone out*,
-  *public argument* (two-way), *jealous scene*, *estrangement* (cut off contact).
-  Each rung needs higher pressure, and each leaves the actor less pressured afterwards
-  (venting a temper does relieve it), so it escalates only if the cause persists.
-- Each act becomes an **approval topic** ("rudeness", "arguing", "gossiping"), so
-  everyone who witnesses it disapproves through the Epic 1.3 system, with no new
-  reaction code.
-- The target gets a grievance, a feelings drop and a memory, with the cause attached.
-- Text-only, deliberately non-graphic: these are *social* conflicts.
-
-**Done when.** A hot-tempered resident whose pressure crosses their threshold lashes out
-at someone present, the room disapproves, a ticket opens, and the cause view explains
-every step. A calm resident in the same situation does not.
+**Still to build (6.3b).** More rungs of the ladder, each with the same shape (a margin over the
+limit, a deterministic target, a cause, an approval topic, relief for the actor):
+- *Gossip* (spread a rumor about a third party): needs a rumour model, a third party who is not
+  there, and a consequence for the subject when they hear it.
+- *Sulk / freeze someone out* and *estrangement* (cut off contact): ongoing states rather than
+  one-off acts; build alongside 6.5 (repair, the *estranged* label).
+- *Jealous scene*: consumes the jealousy meter from 6.2, directed at the rival or the partner.
+**Done when** each exists, is flagged `antisocial`, carries a cause, and appears in the invariant
+sweep.
 
 ### 6.4 — Taking sides and bystanders `[M]`
 

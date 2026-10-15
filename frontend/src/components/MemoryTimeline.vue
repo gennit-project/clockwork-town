@@ -41,6 +41,7 @@
             <span class="shrink-0 text-[10px] text-gf-text-faint">{{ m.ago }}</span>
           </div>
           <p class="mt-1 text-sm text-gf-text">{{ m.content }}</p>
+          <WhyCause v-if="m.cause" :cause="m.cause" class="mt-0.5" />
           <div class="mt-0.5 flex flex-wrap gap-x-3 text-[10px] text-gf-text-faint">
             <span v-if="m.locationLotName">📍 {{ m.locationLotName }}</span>
             <button
@@ -61,6 +62,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import type { CharacterRelationship, LongTermMemory } from '../stores/types'
+import WhyCause from './WhyCause.vue'
 import { timeSince } from '../stores/utils/relativeTime'
 
 const props = defineProps<{

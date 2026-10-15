@@ -1050,12 +1050,12 @@ describe('simulation store integration', () => {
       await store.executeTick()
       const ledger = store.characterStates['char-1'].pressure?.irritation?.ledger
       expect(Object.keys(ledger ?? {})).toEqual(['disapproved'])
-      expect(store.characterStates['char-1'].pressure?.irritation?.value).toBeGreaterThan(0.02)
+      expect(store.characterStates['char-1'].pressure?.irritation?.value).toBeGreaterThan(0)
       // The witness is not the one disapproved of: what they feel comes from the grievance, not from this.
       expect(Object.keys(store.characterStates['char-2'].pressure?.irritation?.ledger ?? {})).toEqual(['grievances'])
 
       const calm = setupHousemates({})
-      calm.characterStates['char-1'].pressure = undefined // the pinia store is shared with the run above
+      calm.characterStates['char-1'].pressure = {} // the pinia store is shared with the run above
       setClock(calm, 14)
       enqueueSleepIntent(calm)
       await calm.executeTick()
@@ -1144,6 +1144,137 @@ describe('simulation store integration', () => {
       store.characterStates['char-2'].grievances![0].ticksRemaining = 1
       await store.executeTick()
       expect(store.characterStates['char-2'].grievances).toEqual([])
+    })
+  })
+
+  describe('antisocial acts', () => {
+    const memoriesOfType = (eventType: string) =>
+      persistenceMocks.createStructuredCharacterLongTermMemory.mock.calls
+        .map(([input]) => input as { characterId: string; eventType?: string; content: string; cause?: { kind: string; summary: string; factors: Array<{ label: string }> } })
+        .filter((input) => input.eventType === eventType)
+
+    // Alice (char-1) is over her limit; Bob (char-2) and Cy (char-3, a bystander) are in the room.
+    function setupRoom(opts: { aliceIrritation: number; aliceTraits?: string[]; aliceAge?: number }) {
+      const store = setupStore()
+      setupSecondCharacter(store, 'lot-1', 'Test House', 'space-1', 'Living Room')
+      store.initializeCharacter({ id: 'char-3', name: 'Cy' })
+      store.updateCharacterLocation('char-3', 'region-1', 'lot-1', 'Test House', 'space-1', 'Living Room')
+      for (const id of ['char-1', 'char-2', 'char-3']) {
+        store.enqueueIntent(id, { action: 'idle', utility: 0 })
+        const state = store.characterStates[id]
+        state.age = id === 'char-1' ? opts.aliceAge ?? 40 : 40
+        state.pressure = {}
+        state.antisocial = undefined
+        state.grievances = []
+        state.stances = {}
+        state.witnessCooldowns = {}
+        state.memories = []
+        state.longTermMemories = []
+      }
+      store.activityLog = []
+      store.events = []
+      store.setDramaIntensity('normal')
+      const alice = store.characterStates['char-1']
+      alice.traitIds = opts.aliceTraits ?? ['trait-loses-temper-easily']
+      alice.traits = alice.traitIds
+      alice.pressure = { irritation: { value: opts.aliceIrritation, ledger: { grievances: opts.aliceIrritation } } }
+      // Alice holds a grievance against Bob, so he is the one she takes it out on.
+      alice.grievances = [
+        { id: 'char-2:t', aboutCharacterId: 'char-2', aboutName: 'Bob', topicId: 'daytime-napping', summary: 'napping in the daytime', ticksRemaining: 500, times: 2 }
+      ]
+      return store
+    }
+
+    it('a hot-tempered resident over her limit snaps at the person she holds a grievance against, and every step has a cause', async () => {
+      const store = setupRoom({ aliceIrritation: 0.62 })
+      const aliceBefore = store.characterStates['char-1'].pressure!.irritation!.value
+      await store.executeTick()
+
+      const snap = store.activityLog.find((e) => e.action === 'snap')
+      expect(snap?.details).toBe('Alice snapped at Bob')
+      expect(snap?.cause?.kind).toBe('antisocial_act')
+      expect(snap?.cause?.factors.some((f) => f.label === 'Why this person' && String(f.value).includes('Bob'))).toBe(true)
+      expect(store.events.find((e) => e.type === 'antisocial')?.cause).toEqual(snap?.cause)
+
+      // She feels better, he is rattled and holds it against her, with the cause on the grievance and the memory.
+      expect(store.characterStates['char-1'].pressure!.irritation!.value).toBeLessThan(aliceBefore)
+      expect(store.characterStates['char-2'].pressure?.irritation?.ledger).toHaveProperty('insulted')
+      const grievance = store.characterStates['char-2'].grievances?.find((g) => g.topicId === 'rudeness')
+      expect(grievance).toMatchObject({ aboutCharacterId: 'char-1', summary: 'snapping at someone' })
+      expect(grievance?.cause?.factors.some((f) => f.label === 'Why they did it')).toBe(true)
+      const bobsMemory = memoriesOfType('disapproval').find((m) => m.characterId === 'char-2')
+      expect(bobsMemory?.content).toBe('Disapproved of Alice snapping at someone.')
+      expect(bobsMemory?.cause?.factors.length).toBeGreaterThan(0)
+      // Her status goes back to normal after the act.
+      expect(store.characterStates['char-1'].currentAction).not.toBe('snap')
+    })
+
+    it('the room disapproves by default, with no new reaction code, and the bystander remembers why', async () => {
+      const store = setupRoom({ aliceIrritation: 0.62 })
+      await store.executeTick()
+      const cy = memoriesOfType('disapproval').find((m) => m.characterId === 'char-3')
+      expect(cy?.content).toBe('Disapproved of Alice snapping at someone.')
+      expect(cy?.cause?.factors.some((f) => f.label === 'Why they did it')).toBe(true)
+      expect(store.characterStates['char-3'].grievances?.[0]).toMatchObject({ aboutCharacterId: 'char-1', topicId: 'rudeness' })
+      // The first act's grievance tickets exist for the evaluators: the cause rides on the grievance.
+      expect(store.characterStates['char-3'].grievances?.[0].cause?.kind).toBe('disapproval')
+    })
+
+    it('a bystander who says they approve of rudeness does not react, but the target is still hurt', async () => {
+      const store = setupRoom({ aliceIrritation: 0.62 })
+      store.characterStates['char-3'].stances = { rudeness: 'approves' }
+      store.characterStates['char-2'].stances = { rudeness: 'approves' }
+      await store.executeTick()
+      expect(memoriesOfType('disapproval').filter((m) => m.characterId === 'char-3')).toHaveLength(0)
+      expect(store.characterStates['char-2'].grievances?.some((g) => g.topicId === 'rudeness')).toBe(true)
+    })
+
+    it('controls: a calm resident at the same pressure, below the line, drama Off, and a lone resident all do nothing', async () => {
+      const calm = setupRoom({ aliceIrritation: 0.62, aliceTraits: ['trait-conflict-averse'] })
+      await calm.executeTick()
+      expect(calm.activityLog.some((e) => e.action === 'snap')).toBe(false)
+
+      const below = setupRoom({ aliceIrritation: 0.5 })
+      await below.executeTick()
+      expect(below.activityLog.some((e) => ['snap', 'belittle', 'argue'].includes(e.action))).toBe(false)
+
+      const off = setupRoom({ aliceIrritation: 0.95 })
+      off.setDramaIntensity('off')
+      await off.executeTick()
+      expect(off.activityLog.some((e) => ['snap', 'belittle', 'argue'].includes(e.action))).toBe(false)
+      off.setDramaIntensity('normal')
+
+      const alone = setupRoom({ aliceIrritation: 0.95 })
+      alone.updateCharacterLocation('char-2', 'region-1', 'lot-2', 'Community Center', 'space-3', 'Library')
+      alone.updateCharacterLocation('char-3', 'region-1', 'lot-2', 'Community Center', 'space-3', 'Library')
+      await alone.executeTick()
+      expect(alone.activityLog.some((e) => ['snap', 'belittle', 'argue'].includes(e.action))).toBe(false)
+    })
+
+    it('far over the line it escalates to an argument: both are drawn in and both hold it against the other', async () => {
+      const store = setupRoom({ aliceIrritation: 0.95 })
+      await store.executeTick()
+      expect(store.activityLog.some((e) => e.action === 'argue')).toBe(true)
+      expect(store.characterStates['char-2'].grievances?.some((g) => g.aboutCharacterId === 'char-1' && g.topicId === 'arguing')).toBe(true)
+      expect(store.characterStates['char-1'].grievances?.some((g) => g.aboutCharacterId === 'char-2' && g.topicId === 'arguing')).toBe(true)
+      expect(store.characterStates['char-1'].currentAction).not.toBe('argue')
+      expect(store.characterStates['char-2'].currentAction).not.toBe('argue')
+    })
+
+    it('a child never belittles or argues, however upset, and never at an adult', async () => {
+      const kid = setupRoom({ aliceIrritation: 0.95, aliceAge: 9 })
+      await kid.executeTick()
+      expect(kid.activityLog.some((e) => ['belittle', 'argue'].includes(e.action))).toBe(false)
+      // Bob and Cy are adults: a child has no one of her own age to snap at.
+      expect(kid.activityLog.some((e) => e.action === 'snap')).toBe(false)
+    })
+
+    it('every antisocial activity-log entry carries a cause with factors', async () => {
+      const store = setupRoom({ aliceIrritation: 0.95 })
+      for (let i = 0; i < 12; i++) await store.executeTick()
+      const acts = store.activityLog.filter((e) => ['snap', 'belittle', 'argue'].includes(e.action))
+      expect(acts.length).toBeGreaterThan(0)
+      for (const entry of acts) expect(entry.cause?.factors.length, entry.details).toBeGreaterThan(0)
     })
   })
 

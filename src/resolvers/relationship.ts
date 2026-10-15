@@ -233,7 +233,8 @@ export const RelationshipResolvers = {
           memory.locationLotName AS locationLotName,
           memory.locationSpaceId AS locationSpaceId,
           memory.locationSpaceName AS locationSpaceName,
-          memory.relationshipIds AS relationshipIds
+          memory.relationshipIds AS relationshipIds,
+          memory.cause AS cause
         ORDER BY memory.createdAt DESC
       `, { relationshipId: parent.id })
   },

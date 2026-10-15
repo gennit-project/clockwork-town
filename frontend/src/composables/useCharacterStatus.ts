@@ -20,6 +20,9 @@ const ACTION_VERBS: Record<ActionName, string> = {
   volunteer: 'volunteering',
   pet_animal: 'spending time with a pet',
   work: 'working',
+  snap: 'snapping at someone',
+  belittle: 'belittling someone',
+  argue: 'arguing',
   idle: 'idle'
 }
 

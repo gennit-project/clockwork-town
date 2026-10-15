@@ -122,6 +122,8 @@ export interface DisapprovalCauseInput {
   topicId: string
   stance: string
   tick: number
+  /** When the witnessed act itself had a cause (an antisocial act), its story rides along. */
+  underlying?: Cause
 }
 
 export function buildDisapprovalCause(input: DisapprovalCauseInput): Cause {
@@ -131,7 +133,10 @@ export function buildDisapprovalCause(input: DisapprovalCauseInput): Cause {
     factors: [
       { label: 'Witnessed act', value: input.actSummary },
       { label: `${input.witnessName}'s stance on ${input.topicId}`, value: input.stance },
-      { label: 'Witnessed at tick', value: input.tick }
+      { label: 'Witnessed at tick', value: input.tick },
+      ...(input.underlying
+        ? [{ label: 'Why they did it', value: input.underlying.summary }, ...input.underlying.factors]
+        : [])
     ]
   }
 }
@@ -167,6 +172,54 @@ export function buildPressureCause(input: PressureCauseInput): Cause {
   return {
     kind: 'pressure',
     summary: `${input.residentName}'s ${input.meter} is ${fixed(input.value)} against a threshold of ${fixed(input.threshold)}`,
+    factors
+  }
+}
+
+/** Read a Cause stored as JSON (memories keep theirs as a string); anything malformed is ignored. */
+export function parseCause(raw: unknown): Cause | undefined {
+  if (!raw) return undefined
+  try {
+    const value = typeof raw === 'string' ? JSON.parse(raw) : raw
+    if (value && typeof value.kind === 'string' && typeof value.summary === 'string' && Array.isArray(value.factors)) {
+      return value as Cause
+    }
+  } catch {
+    // not JSON: no cause
+  }
+  return undefined
+}
+
+export interface AntisocialCauseInput {
+  actorName: string
+  targetName: string
+  /** "snapped at", "belittled", ... */
+  verb: string
+  rungId: string
+  rungMinMargin: number
+  margin: number
+  value: number
+  threshold: number
+  contributions: Array<{ label: string; amount: number }>
+  targetReason: string
+  witnessNames: string[]
+  intensity: string
+  dispositions: string[]
+}
+
+export function buildAntisocialCause(input: AntisocialCauseInput): Cause {
+  const factors: CauseFactor[] = [
+    { label: 'irritation', value: fixed(input.value), threshold: Number(fixed(input.threshold)) },
+    { label: `Rung: ${input.rungId}`, value: `${fixed(input.margin)} over the limit (needs ${fixed(input.rungMinMargin)})` },
+    ...input.contributions.map((c) => ({ label: c.label, value: `${Math.round((c.amount * 100) / Math.max(input.value, 0.0001))}% of the total` })),
+    { label: 'Why this person', value: input.targetReason },
+    { label: 'Who was there', value: input.witnessNames.length > 0 ? input.witnessNames.join(', ') : 'no one else' },
+    { label: 'Drama intensity', value: input.intensity }
+  ]
+  if (input.dispositions.length > 0) factors.push({ label: 'Dispositions', value: input.dispositions.join(', ') })
+  return {
+    kind: 'antisocial_act',
+    summary: `${input.actorName} ${input.verb} ${input.targetName}: irritation ${fixed(input.value)} against a limit of ${fixed(input.threshold)}`,
     factors
   }
 }

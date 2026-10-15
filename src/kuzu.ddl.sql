@@ -47,6 +47,7 @@ CREATE NODE TABLE IF NOT EXISTS Memory(
   locationLotId STRING, locationLotName STRING,
   locationSpaceId STRING, locationSpaceName STRING,
   relationshipIds STRING[],
+  cause STRING,
   PRIMARY KEY(id)
 );
 

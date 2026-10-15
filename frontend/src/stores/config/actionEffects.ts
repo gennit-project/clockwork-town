@@ -128,6 +128,11 @@ export const ACTION_EFFECTS: ActionEffects = {
     secondaryEffects: { sleep: -0.002 },
     cooldownTicks: 48  // 240 minutes
   },
+  // Antisocial acts (Epic 6.3). Chosen by pressure in utils/antisocial.ts, never by the planner,
+  // so they have no need effect and no cooldown of their own.
+  snap: { primaryNeed: null, primaryEffect: 0, secondaryEffects: {}, cooldownTicks: 0, antisocial: true },
+  belittle: { primaryNeed: null, primaryEffect: 0, secondaryEffects: {}, cooldownTicks: 0, antisocial: true },
+  argue: { primaryNeed: null, primaryEffect: 0, secondaryEffects: {}, cooldownTicks: 0, antisocial: true },
   idle: {
     primaryNeed: null,
     primaryEffect: 0,

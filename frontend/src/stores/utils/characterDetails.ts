@@ -1,3 +1,4 @@
+import { parseCause } from './causes'
 import type { CharacterRelationship, CharacterState, LongTermMemory } from '../types'
 
 export interface CharacterDetailsDependencies {
@@ -19,7 +20,11 @@ export async function refreshCharacterDetails(
   dependencies: Pick<CharacterDetailsDependencies, 'fetchCharacterDetails'>
 ): Promise<void> {
   const data = await dependencies.fetchCharacterDetails(characterId)
-  state.longTermMemories = data.character?.longTermMemories || []
+  state.longTermMemories = (data.character?.longTermMemories || []).map((memory) => {
+    const { cause, ...rest } = memory as LongTermMemory & { cause?: unknown }
+    const parsed = parseCause(cause)
+    return parsed ? { ...rest, cause: parsed } : rest
+  })
   state.relationships = data.character?.relationships || []
 }
 

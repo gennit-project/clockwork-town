@@ -338,7 +338,7 @@ const valueToAdd = ref('')
 const approvalTopics = APPROVAL_TOPICS
 const stanceOptions = [
   { key: 'disapproves', value: 'disapproves' as const, label: 'Disapproves', activeClass: 'border-gf-red bg-gf-red/20 text-gf-red' },
-  { key: 'neutral', value: null, label: 'Neutral', activeClass: 'border-gf-blue bg-gf-blue/20 text-gf-blue' },
+  { key: 'neutral', value: 'neutral' as const, label: 'Neutral', activeClass: 'border-gf-blue bg-gf-blue/20 text-gf-blue' },
   { key: 'approves', value: 'approves' as const, label: 'Approves', activeClass: 'border-gf-green bg-gf-green/20 text-gf-green' }
 ]
 
@@ -419,14 +419,18 @@ function removeValue(index: number) {
   formData.value.valueIds.splice(index, 1)
 }
 
-const stanceOf = (topicId: string): StanceValue | null => formData.value.stances[topicId] ?? null
+/** What they feel now: their own stance, else the topic's default, else neutral. */
+const stanceOf = (topicId: string): StanceValue =>
+  formData.value.stances[topicId] ?? APPROVAL_TOPICS.find((t) => t.id === topicId)?.defaultStance ?? 'neutral'
 
-function setStance(topicId: string, stance: StanceValue | null) {
+function setStance(topicId: string, stance: StanceValue) {
   const next = { ...formData.value.stances }
-  if (stance) {
-    next[topicId] = stance
-  } else {
+  const topicDefault = APPROVAL_TOPICS.find((t) => t.id === topicId)?.defaultStance
+  // Neutral only needs storing when the topic would otherwise have a default.
+  if (stance === 'neutral' && !topicDefault) {
     delete next[topicId]
+  } else {
+    next[topicId] = stance
   }
   formData.value.stances = next
 }

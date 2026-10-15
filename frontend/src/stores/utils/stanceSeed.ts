@@ -10,7 +10,7 @@ export interface StanceSummary {
 export function toStanceSeed(stances: StanceSummary[] | null | undefined): { stances: Record<string, StanceValue> } {
   const record: Record<string, StanceValue> = {}
   for (const { topicId, stance } of stances ?? []) {
-    if (stance === 'approves' || stance === 'disapproves') record[topicId] = stance
+    if (stance === 'approves' || stance === 'disapproves' || stance === 'neutral') record[topicId] = stance
   }
   return { stances: record }
 }

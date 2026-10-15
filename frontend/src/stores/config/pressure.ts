@@ -36,7 +36,7 @@ export const PRESSURE = {
   grievanceGain: 0.008,
   grievanceRepeatCap: 3,
   /** Added once to the person being disapproved of, at the moment of the reaction. */
-  disapprovedImpulse: 0.05,
+  disapprovedImpulse: 0.03,
   /** More than this many residents on one lot is a crowd; each extra adds this much per tick. */
   crowdAbove: 4,
   crowdGain: 0.003,

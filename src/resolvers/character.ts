@@ -40,7 +40,8 @@ export const CharacterResolvers = {
           m.locationLotName AS locationLotName,
           m.locationSpaceId AS locationSpaceId,
           m.locationSpaceName AS locationSpaceName,
-          m.relationshipIds AS relationshipIds
+          m.relationshipIds AS relationshipIds,
+          m.cause AS cause
         ORDER BY m.createdAt DESC
       `, { cid: parent.id });
     },
@@ -56,7 +57,8 @@ export const CharacterResolvers = {
           m.locationLotName AS locationLotName,
           m.locationSpaceId AS locationSpaceId,
           m.locationSpaceName AS locationSpaceName,
-          m.relationshipIds AS relationshipIds
+          m.relationshipIds AS relationshipIds,
+          m.cause AS cause
         ORDER BY m.createdAt DESC
       `, { cid: parent.id });
     },
@@ -279,7 +281,8 @@ export const CharacterResolvers = {
       locationLotName,
       locationSpaceId,
       locationSpaceName,
-      createdAt
+      createdAt,
+      cause
     }: {
       characterId: string;
       content: string;
@@ -290,6 +293,7 @@ export const CharacterResolvers = {
       locationSpaceId?: string | null;
       locationSpaceName?: string | null;
       createdAt?: string | null;
+      cause?: string | null;
     }) => {
       const id = crypto.randomUUID();
       const memoryCreatedAt = createdAt ?? new Date().toISOString();
@@ -305,7 +309,8 @@ export const CharacterResolvers = {
             locationLotName:$locationLotName,
             locationSpaceId:$locationSpaceId,
             locationSpaceName:$locationSpaceName,
-            relationshipIds:$relationshipIds
+            relationshipIds:$relationshipIds,
+            cause:$cause
           })
         `, {
           id,
@@ -316,7 +321,8 @@ export const CharacterResolvers = {
           locationLotName: locationLotName ?? null,
           locationSpaceId: locationSpaceId ?? null,
           locationSpaceName: locationSpaceName ?? null,
-          relationshipIds: relationshipIds ?? []
+          relationshipIds: relationshipIds ?? [],
+          cause: cause ?? null
         });
         await q(`
           MATCH (c:Character {id:$characterId}), (m:Memory {id:$id})
@@ -336,7 +342,8 @@ export const CharacterResolvers = {
           m.locationLotName AS locationLotName,
           m.locationSpaceId AS locationSpaceId,
           m.locationSpaceName AS locationSpaceName,
-          m.relationshipIds AS relationshipIds
+          m.relationshipIds AS relationshipIds,
+          m.cause AS cause
       `, { id });
 
       return memory;
@@ -408,7 +415,8 @@ export const CharacterResolvers = {
           m.locationLotName AS locationLotName,
           m.locationSpaceId AS locationSpaceId,
           m.locationSpaceName AS locationSpaceName,
-          m.relationshipIds AS relationshipIds
+          m.relationshipIds AS relationshipIds,
+          m.cause AS cause
       `, { memoryId });
 
       return memory ?? null;

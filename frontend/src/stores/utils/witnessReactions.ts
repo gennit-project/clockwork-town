@@ -12,7 +12,7 @@ export interface WitnessReaction {
   witnessId: string
   actorId: string
   topic: ApprovalTopic
-  stance: StanceValue
+  stance: Exclude<StanceValue, 'neutral'>
 }
 
 export const cooldownKey = (actorId: string, topicId: string) => `${actorId}:${topicId}`
@@ -46,8 +46,8 @@ export function detectWitnessReactions({
       if (witness.currentAction === 'sleep') continue
 
       for (const topic of topics) {
-        const stance = witness.stances?.[topic.id]
-        if (!stance) continue
+        const stance = witness.stances?.[topic.id] ?? topic.defaultStance
+        if (!stance || stance === 'neutral') continue
         if ((witness.witnessCooldowns?.[cooldownKey(actorId, topic.id)] ?? 0) > 0) continue
         reactions.push({ witnessId, actorId, topic, stance })
       }
