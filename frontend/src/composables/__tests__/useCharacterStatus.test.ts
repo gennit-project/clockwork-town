@@ -116,6 +116,55 @@ describe('useCharacterStatus', () => {
     expect(getCharacterStatusText(state)).toBe('chatting with Alex')
   })
 
+  describe('single-tick actions name their target', () => {
+    it('says what they are looking at', () => {
+      const state = createState({ currentAction: 'view_art', currentTargetName: 'Sunflower painting' })
+      expect(getCharacterStatusText(state)).toBe('looking at Sunflower painting')
+    })
+
+    it('says what they are watching', () => {
+      const state = createState({ currentAction: 'view_movie', currentTargetName: 'the TV' })
+      expect(getCharacterStatusText(state)).toBe('watching the TV')
+    })
+
+    it('never leaves a dangling "Looking at" or "Watching" when the target is unknown', () => {
+      expect(getCharacterStatusText(createState({ currentAction: 'view_art' }))).toBe('Looking at art')
+      expect(getCharacterStatusText(createState({ currentAction: 'view_movie' }))).toBe('Watching a movie')
+    })
+
+    it('names the pet being spent time with', () => {
+      expect(getCharacterStatusText(createState({ currentAction: 'pet_animal', currentTargetName: 'Diego' }))).toBe(
+        'spending time with Diego'
+      )
+      expect(getCharacterStatusText(createState({ currentAction: 'pet_animal' }))).toBe('Spending time with a pet')
+    })
+
+    it('names the pet for a multi-tick pet task from its current step', () => {
+      const state = createState({
+        currentAction: 'pet_animal',
+        currentTask: createTask({
+          goal: 'pet_animal',
+          action: 'pet_animal',
+          steps: [{ action: 'pet_animal', animalTargetName: 'Marmalade', remainingTicks: 1, totalTicks: 2 }]
+        })
+      })
+      expect(getCharacterStatusText(state)).toBe('spending time with Marmalade')
+    })
+
+    it('prefers the active task\'s target over a leftover one', () => {
+      const state = createState({
+        currentAction: 'read',
+        currentTargetName: 'old bookshelf',
+        currentTask: createTask({ goal: 'read', action: 'read', itemName: 'the library shelf' })
+      })
+      expect(getCharacterStatusText(state)).toBe('reading at the library shelf')
+    })
+
+    it('ignores a stale target once the character is idle', () => {
+      expect(getCharacterStatusText(createState({ currentAction: 'idle', currentTargetName: 'Painting' }))).toBe('Idle')
+    })
+  })
+
   it('includes room and lot in the status meta location', () => {
     const meta = getCharacterStatusMeta(createState())
     expect(meta).toEqual({

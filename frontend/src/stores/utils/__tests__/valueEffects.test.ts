@@ -223,6 +223,33 @@ describe('applyActionEffects via the store', () => {
   })
 })
 
+describe('current target name via the store', () => {
+  beforeEach(() => setActivePinia(createPinia()))
+
+  const complete = (store: ReturnType<typeof useSimulationStore>, intent: Record<string, unknown>) =>
+    store.applyActionEffects({
+      characterId: 'c1',
+      intent: { goal: 'read', strategy: 'test', utility: 1, travelCost: 0, ...intent } as never
+    })
+
+  it('records what the completed action was aimed at, and replaces it with the next action\'s', () => {
+    const store = useSimulationStore()
+    store.initializeCharacter({ id: 'c1', name: 'Viewer' })
+
+    complete(store, { action: 'view_art', itemName: 'Sunflower painting' })
+    expect(store.characterStates.c1.currentTargetName).toBe('Sunflower painting')
+
+    complete(store, { action: 'chat_friend', socialTargetName: 'Bob' })
+    expect(store.characterStates.c1.currentTargetName).toBe('Bob')
+
+    complete(store, { action: 'pet_animal', animalTargetName: 'Diego' })
+    expect(store.characterStates.c1.currentTargetName).toBe('Diego')
+
+    complete(store, { action: 'eat' })
+    expect(store.characterStates.c1.currentTargetName).toBeNull()
+  })
+})
+
 describe('value seed helpers', () => {
   it('starts every value freshly fulfilled and keeps rank order', () => {
     const { values } = toValueSeed([{ id: READ, name: 'Read' }, { id: ANIMALS, name: 'Animals' }])

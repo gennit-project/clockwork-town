@@ -206,6 +206,8 @@ export interface CharacterState {
   currentAction: ActionName
   location: CharacterLocation
   currentActivity?: CharacterActivity
+  /** What the current action is aimed at (item, person or pet), for status text; set when an action completes. */
+  currentTargetName?: string | null
   traits: string[]
   /** Trait ids (parallel to `traits` display names); drive TRAIT_EFFECTS. */
   traitIds: string[]

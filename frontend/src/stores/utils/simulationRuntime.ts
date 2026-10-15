@@ -347,6 +347,7 @@ export function createSimulationRuntime(
       : actionData
 
     const stateChange = applyActionToCharacterState(state, intent.action, effectiveActionData)
+    state.currentTargetName = intent.itemName || intent.socialTargetName || intent.animalTargetName || null
     markValuesFulfilled(state, intent.action)
     recordActionInTally(state, intent, state.location.lotName)
 

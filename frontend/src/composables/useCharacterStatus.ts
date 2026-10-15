@@ -23,6 +23,12 @@ const ACTION_VERBS: Record<ActionName, string> = {
   idle: 'idle'
 }
 
+/** What to say when an action has a verb that needs an object but we don't know the target. */
+const BARE_ACTION_TEXT: Partial<Record<ActionName, string>> = {
+  view_art: 'looking at art',
+  view_movie: 'watching a movie'
+}
+
 function formatAction(action: string): string {
   return action
     .split('_')
@@ -41,7 +47,12 @@ export function getCharacterStatusText(state: CharacterState | null | undefined)
     return 'Idle'
   }
 
-  const targetName = state.currentTask?.itemName || state.currentTask?.socialTargetName || state.currentActivity?.itemId || null
+  const targetName =
+    state.currentTask?.itemName ||
+    state.currentTask?.socialTargetName ||
+    state.currentTask?.steps?.[state.currentTask.currentStepIndex]?.animalTargetName ||
+    state.currentTargetName ||
+    null
   const verb = ACTION_VERBS[activeAction] || formatAction(activeAction)
 
   if (targetName) {
@@ -57,10 +68,15 @@ export function getCharacterStatusText(state: CharacterState | null | undefined)
       return `${verb} ${targetName}`
     }
 
+    if (activeAction === 'pet_animal') {
+      return `${verb.replace(' a pet', '')} ${targetName}`
+    }
+
     return `${verb} at ${targetName}`
   }
 
-  return verb.charAt(0).toUpperCase() + verb.slice(1)
+  const bare = BARE_ACTION_TEXT[activeAction] ?? verb
+  return bare.charAt(0).toUpperCase() + bare.slice(1)
 }
 
 export function getCharacterStatusMeta(state: CharacterState | null | undefined): { summary: string; location: string } {
