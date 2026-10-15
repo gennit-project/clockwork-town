@@ -79,6 +79,8 @@ export function addGrievance(
   if (existing) {
     existing.ticksRemaining = WITNESS_TUNING.grievanceDurationTicks
     existing.times += 1
+    // Doing it again reopens the wound, even if they'd talked it over.
+    existing.vented = false
     witness.grievances = grievances
     return existing
   }

@@ -35,3 +35,32 @@ export const GROUP_FUN = {
   /** The solo hobbies that lose out to group fun (volunteering and pet care are left alone). */
   soloFunActions: ['read', 'write', 'view_art', 'view_movie']
 } as const
+
+/**
+ * Being upset: a resident holding grievances wants to talk to a friend about it (and may comfort-eat).
+ * Venting to a friend who isn't the offender shortens the grievance; it never removes it outright.
+ */
+export const VENTING = {
+  /** Long-term relationship score at which someone counts as a good enough friend to complain to. */
+  friendMinLongTerm: 0.4,
+  /** Planner utility added to a chat with such a friend while upset. */
+  chatBonus: 0.9,
+  /** Planner utility added to eating while upset (comfort food), even when not hungry. */
+  comfortEatBonus: 0.4,
+  /** Venting leaves this fraction of a grievance's remaining time (0.5 = halves it). */
+  ventedRemainingFraction: 0.5,
+  /** A comfort meal leaves this fraction of every grievance's remaining time. */
+  comfortRemainingFraction: 0.85
+} as const
+
+/** Good-hearted and bitter residents are moved by the mood of the people around them. */
+export const WITNESS_MOOD = {
+  /** A neighbor at or above this happiness (mean of needs) counts as happy. */
+  happyAtOrAbove: 0.7,
+  /** A neighbor at or below this counts as unhappy. */
+  unhappyAtOrBelow: 0.4,
+  /** Fulfillment gained per tick for each neighbor who moves them. */
+  perNeighbor: 0.004,
+  /** Most fulfillment gained in one tick this way. */
+  maxPerTick: 0.012
+} as const

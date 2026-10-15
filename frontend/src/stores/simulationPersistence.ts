@@ -82,6 +82,7 @@ export async function persistCharacterDetails(input: {
   }>
   traitIds?: string[]
   valueIds?: string[]
+  stances?: Array<{ topicId: string; stance: string }>
 }): Promise<void> {
   await client.request(mutations.updateCharacter, { input })
 }
@@ -102,12 +103,14 @@ export async function createCharacterDetails(input: {
   }>
   traitIds?: string[]
   valueIds?: string[]
+  stances?: Array<{ topicId: string; stance: string }>
 }): Promise<void> {
   await client.request(mutations.createCharacter, {
     input: {
       ...input,
       traitIds: input.traitIds ?? [],
-      valueIds: input.valueIds ?? []
+      valueIds: input.valueIds ?? [],
+      stances: input.stances ?? []
     }
   })
 }

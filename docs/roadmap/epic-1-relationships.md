@@ -109,26 +109,36 @@ specific species or character.
 
 ### 1.3 — Approval / disapproval & reactions `[M]`
 
-**Status:** Part 1 implemented and verified live (witness reactions, grievances, tickets,
-persistence). Part 2 (venting and comfort desires, good-hearted and bitter traits, an opinions editor)
-not started. What a resident approves or disapproves of is stored per character as `stances`
-(`{topicId, stance}`; anything not listed is neutral; backend `src/stances.ts`, a `Character.stances`
-column with migration, GraphQL `stances` field and `updateCharacter` input, included in world
-backup/restore and in `npm run check:backup`). Topics live in `config/approvalTopics.ts`: public
-romance (a date), daytime napping (sleeping in waking hours outside the scheduled sleep block),
-watching movies, reading, volunteering, caring for animals. They match behaviors that already
-exist; the roadmap's example, haze, becomes one more entry once the action exists. After each tick
-(`recordWitnessReactions` in `simulationRuntime.ts`, pure detection in `utils/witnessReactions.ts`)
-every awake resident on the same lot as someone doing a topic act, with a stance on it, reacts, with
-a 2-hour cooldown per person and topic. Disapproval lowers the witness's feelings toward the actor
-(-0.15 short-term, -0.03 long-term), leaves a `disapproval` memory, adds a **grievance** (fades after 3
-sim days, refreshed and counted if it happens again, at most 6 held) and puts a notable event in the
-Recent events feed; approval warms the relationship slightly and leaves a quiet `approval` memory.
-Each grievance becomes a ticket ("Elena disapproves of Manny napping in the daytime") that resolves
-itself when the grievance fades. The dashboard shows "On their mind". The seed gives a few
-residents opinions (retired Elena disapproves of Manny's daytime naps). Known gaps: nobody can edit
-stances in the UI yet (part 2); only existing behaviors can be topics; reactions only change the
-witness's side of a relationship.
+**Status:** Implemented and verified live. What a resident approves or disapproves of is stored per
+character as `stances` (`{topicId, stance}`; anything not listed is neutral; backend `src/stances.ts`,
+a `Character.stances` column with migration, GraphQL `stances` field and `updateCharacter` /
+`createCharacter` inputs, included in world backup/restore and in `npm run check:backup`). Topics
+live in `config/approvalTopics.ts`: public romance (a date), daytime napping (sleeping in waking
+hours outside the scheduled sleep block), watching movies, reading, volunteering, caring for
+animals. They match behaviors that already exist; the roadmap's example, haze, becomes one more
+entry once the action exists. After each tick (`recordWitnessReactions` in `simulationRuntime.ts`,
+pure detection in `utils/witnessReactions.ts`) every awake resident on the same lot as someone doing
+a topic act, with a stance on it, reacts, with a 2-hour cooldown per person and topic. Disapproval
+lowers the witness's feelings toward the actor (-0.15 short-term, -0.03 long-term), leaves a
+`disapproval` memory, adds a **grievance** (fades after 3 sim days, refreshed and counted if it
+happens again, at most 6 held) and puts a notable event in the Recent events feed; approval warms the
+relationship slightly and leaves a quiet `approval` memory. Each grievance becomes a ticket ("Elena
+disapproves of Manny napping in the daytime") that resolves itself when the grievance fades. The
+dashboard shows "On their mind" and the resident's opinions. **Upset and venting**
+(`utils/venting.ts`, tuning in `VENTING` in `config/social.ts`): a resident with a grievance they
+haven't talked over is drawn to chat with a friend they can complain to (long-term score 0.4 or more,
+not the person they're upset with; weaker if their basics aren't met) and to comfort-eat. Chatting
+with such a friend marks the grievance talked over (it fades twice as fast, never vanishes), and
+leaves a `complaint` memory for them and a `listened` memory for the friend; a comfort meal takes 15%
+off every grievance; if the offender does it again the grievance reopens. **Mood traits:** the trait
+catalog gains Good-hearted and Bitter; each tick a good-hearted resident gains a little fulfillment
+for each happy person on their lot, a bitter one for each unhappy person (`utils/witnessMood.ts`,
+`witnessMood` in the trait effects, capped per tick). The character editor has an Opinions section
+(disapproves / neutral / approves per topic). The seed gives several residents opinions (retired
+Elena disapproves of Manny's daytime naps) and Sara and Tom the mood traits. Known gaps: only
+existing behaviors can be topics; reactions only change the witness's side of a relationship;
+venting is a planner nudge rather than its own action, and a complaint is not remembered by the
+person complained about beyond "listened"; the numbers (cooldown, decay, bonuses) are first guesses.
 
 **What to build.** Characters react to what they witness, based on traits/values:
 - A character who disapproves of a behavior (e.g. haze use — a fictional recreational

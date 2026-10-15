@@ -132,6 +132,36 @@
         </div>
 
         <div class="mb-6">
+          <label class="mb-1 block text-sm font-medium text-gf-text-weak">Opinions</label>
+          <p class="mb-2 text-xs text-gf-text-faint">
+            What they approve or disapprove of seeing other people do. Disapproval lowers their feelings
+            toward whoever does it and files a ticket.
+          </p>
+          <ul class="space-y-2">
+            <li
+              v-for="topic in approvalTopics"
+              :key="topic.id"
+              class="flex items-center justify-between gap-3 rounded border border-gf-border bg-gf-surface-2 px-3 py-2"
+            >
+              <span class="text-sm text-gf-text">{{ topic.label }}</span>
+              <div class="flex gap-1" role="group" :aria-label="`Opinion about ${topic.label}`">
+                <button
+                  v-for="option in stanceOptions"
+                  :key="option.key"
+                  type="button"
+                  :aria-pressed="stanceOf(topic.id) === option.value"
+                  class="rounded border px-2 py-0.5 text-xs transition-colors"
+                  :class="stanceOf(topic.id) === option.value ? option.activeClass : 'border-gf-border bg-gf-surface text-gf-text-weak hover:bg-gf-surface-3'"
+                  @click="setStance(topic.id, option.value)"
+                >
+                  {{ option.label }}
+                </button>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <div class="mb-6">
           <div class="mb-3 flex items-center justify-between">
             <label class="block text-sm font-medium text-gf-text-weak">Work Schedule</label>
             <button
@@ -228,6 +258,9 @@ import { useSimulationStore } from '../stores/simulation'
 import { pinDisabledNeeds } from '../stores/utils/traitEffects'
 import { describeAction, getValueDef } from '../stores/utils/valueEffects'
 import { mergeValueSeed, toValueSeed } from '../stores/utils/valueSeed'
+import { fromStanceRecord, toStanceSeed } from '../stores/utils/stanceSeed'
+import { APPROVAL_TOPICS } from '../stores/config/approvalTopics'
+import type { StanceValue } from '../stores/types'
 
 interface WorldSummary {
   id: string
@@ -253,6 +286,7 @@ interface CharacterResult {
     bio?: string | null
     traits?: Array<{ id: string; name: string }>
     values?: Array<{ id: string; name: string }>
+    stances?: Array<{ topicId: string; stance: string }>
     workSchedule?: Array<{
       day: string
       start: string
@@ -301,6 +335,12 @@ const weekdayOptions = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 
 const availableTraits = ref<TraitOption[]>([])
 const availableValues = ref<ValueOption[]>([])
 const valueToAdd = ref('')
+const approvalTopics = APPROVAL_TOPICS
+const stanceOptions = [
+  { key: 'disapproves', value: 'disapproves' as const, label: 'Disapproves', activeClass: 'border-gf-red bg-gf-red/20 text-gf-red' },
+  { key: 'neutral', value: null, label: 'Neutral', activeClass: 'border-gf-blue bg-gf-blue/20 text-gf-blue' },
+  { key: 'approves', value: 'approves' as const, label: 'Approves', activeClass: 'border-gf-green bg-gf-green/20 text-gf-green' }
+]
 
 const formData = ref({
   name: '',
@@ -309,6 +349,8 @@ const formData = ref({
   traitIds: [] as string[],
   /** Value ids in rank order, most important first. */
   valueIds: [] as string[],
+  /** Topic id -> stance; a topic that is absent is neutral. */
+  stances: {} as Record<string, StanceValue>,
   workSchedule: [] as Array<{
     day: string
     start: string
@@ -377,6 +419,18 @@ function removeValue(index: number) {
   formData.value.valueIds.splice(index, 1)
 }
 
+const stanceOf = (topicId: string): StanceValue | null => formData.value.stances[topicId] ?? null
+
+function setStance(topicId: string, stance: StanceValue | null) {
+  const next = { ...formData.value.stances }
+  if (stance) {
+    next[topicId] = stance
+  } else {
+    delete next[topicId]
+  }
+  formData.value.stances = next
+}
+
 function removeWorkShift(index: number) {
   formData.value.workSchedule.splice(index, 1)
 }
@@ -430,6 +484,7 @@ async function loadData() {
       bio: characterData.character.bio || '',
       traitIds: (characterData.character.traits || []).map((trait) => trait.id),
       valueIds: (characterData.character.values || []).map((value) => value.id),
+      stances: toStanceSeed(characterData.character.stances).stances,
       workSchedule: (characterData.character.workSchedule || []).map((shift) => ({
         day: shift.day,
         start: shift.start,
@@ -480,6 +535,7 @@ async function saveCharacter() {
         householdId: householdId.value,
         traitIds: formData.value.traitIds,
         valueIds: formData.value.valueIds,
+        stances: fromStanceRecord(formData.value.stances),
         workSchedule: normalizedWorkSchedule
       })
     } else if (savedCharacterId) {
@@ -490,6 +546,7 @@ async function saveCharacter() {
         bio: formData.value.bio,
         traitIds: formData.value.traitIds,
         valueIds: formData.value.valueIds,
+        stances: fromStanceRecord(formData.value.stances),
         workSchedule: normalizedWorkSchedule
       })
     }
@@ -502,6 +559,7 @@ async function saveCharacter() {
         state.traits = formData.value.traitIds.map(
           (id) => availableTraits.value.find((trait) => trait.id === id)?.name ?? id
         )
+        state.stances = { ...formData.value.stances }
         pinDisabledNeeds(state.needs, state.traitIds)
         state.values = mergeValueSeed(
           toValueSeed(formData.value.valueIds.map((id) => ({ id, name: valueName(id) }))).values,

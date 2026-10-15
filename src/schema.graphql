@@ -466,6 +466,7 @@ input NewCharacter {
   bio: String
   traitIds: [ID!]!        # pass Trait IDs; resolver attaches Trait nodes
   valueIds: [ID!]!        # pass Value IDs; resolver attaches Value nodes
+  stances: [StanceInput!]  # optional opinions (approves/disapproves by topic)
   homeLotId: ID!
   householdId: ID!
   workSchedule: [WorkShiftInput!]

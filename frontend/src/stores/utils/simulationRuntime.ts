@@ -44,7 +44,9 @@ import { applyPetInteraction, tickAnimals } from './animalRuntime'
 import { markValuesFulfilled } from './valueEffects'
 import { isNewDay, recordActionInTally, recordDailySummaries } from './dailySummary'
 import { evaluatePetEvents, updatePetTogetherness } from './petReunions'
-import { describeActionTarget, isGroupFunAction, requiresInvitation } from './groupSocial'
+import { describeActionTarget, isGroupFunAction, joinNames, requiresInvitation } from './groupSocial'
+import { canVentTo, comfortFromEating, ventGrievances } from './venting'
+import { applyWitnessMood } from './witnessMood'
 import { addGrievance, detectWitnessReactions, startReactionCooldown } from './witnessReactions'
 import {
   decayCharacterRelationships,
@@ -223,6 +225,53 @@ export function createSimulationRuntime(
     }
   }
 
+  /**
+   * Complaining to a friend: each participant with something on their mind who is talking to a
+   * friend they can complain to (and isn't the person they're upset with) talks it over. Their
+   * grievances fade sooner, they remember complaining, and the friend remembers listening.
+   */
+  async function recordVenting({ participantIds, intent }: { participantIds: string[]; intent: Intent }): Promise<void> {
+    const states = refs.characterStates.value
+    const timestamp = refs.simulationDateTime.value.iso
+
+    for (const venterId of participantIds) {
+      const venter = states[venterId]
+      if (!venter) continue
+      const listenerId = participantIds.find((id) => id !== venterId && states[id] && canVentTo(venter, id))
+      if (!listenerId) continue
+
+      const listener = states[listenerId]
+      const vented = ventGrievances(venter, listenerId)
+      if (vented.length === 0) continue
+
+      const about = joinNames([...new Set(vented.map((g) => g.aboutName))])
+      const relationshipId = venter.relationships?.find((rel) => rel.toCharacterId === listenerId)?.id
+      const listenerRelationshipId = listener.relationships?.find((rel) => rel.toCharacterId === venterId)?.id
+      const location = {
+        locationLotId: intent.targetLotId ?? undefined,
+        locationLotName: intent.targetLotName ?? undefined,
+        locationSpaceId: intent.targetSpaceId ?? undefined,
+        locationSpaceName: intent.targetSpaceName ?? undefined
+      }
+      await dependencies.createStructuredCharacterLongTermMemory({
+        characterId: venterId,
+        content: `Complained to ${listener.name} about ${about}.`,
+        relationshipIds: relationshipId ? [relationshipId] : [],
+        eventType: 'complaint',
+        ...location,
+        createdAt: timestamp
+      })
+      await dependencies.createStructuredCharacterLongTermMemory({
+        characterId: listenerId,
+        content: `Listened to ${venter.name} complain about ${about}.`,
+        relationshipIds: listenerRelationshipId ? [listenerRelationshipId] : [],
+        eventType: 'listened',
+        ...location,
+        createdAt: timestamp
+      })
+    }
+  }
+
   /** Residents react to what they see others doing: approval changes feelings, disapproval also leaves a grievance. */
   async function recordWitnessReactions(): Promise<void> {
     const states = refs.characterStates.value
@@ -393,6 +442,9 @@ export function createSimulationRuntime(
     state.currentTargetName = describeActionTarget(intent)
     markValuesFulfilled(state, intent.action)
     recordActionInTally(state, intent, state.location.lotName)
+    if (intent.action === 'eat') {
+      comfortFromEating(state)
+    }
 
     if (stateChange.primaryNeedChange) {
       const { need, oldValue, newValue, effect } = stateChange.primaryNeedChange
@@ -490,6 +542,14 @@ export function createSimulationRuntime(
           timestamp: refs.simulationDateTime.value.iso,
           intent,
           dependencies: relationshipDependencies
+        })
+      }
+
+      // Anyone upset who is now talking to a friend they can complain to does so.
+      if (intent.action === 'chat_friend') {
+        await recordVenting({
+          participantIds: [characterId, intent.socialTargetId, ...extraIds],
+          intent
         })
       }
     }
@@ -720,6 +780,7 @@ export function createSimulationRuntime(
 
     await recordPetReunions()
     await recordWitnessReactions()
+    applyWitnessMood(refs.characterStates.value)
 
     recordHappinessSample()
   }

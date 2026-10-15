@@ -406,7 +406,9 @@ async function seedTraits() {
     "char-leo-marsh": ["trait-big-appetite"],
     "char-priya-lin": ["trait-small-appetite"],
     "char-kim-nguyen": ["trait-asexual"],
-    "char-june-hale": ["trait-aromantic"]
+    "char-june-hale": ["trait-aromantic"],
+    "char-sara-marsh": ["trait-good-hearted"],
+    "char-tom-marsh": ["trait-bitter"]
   };
   for (const [characterId, traitIds] of Object.entries(assignments)) {
     await setCharacterTraits(characterId, traitIds);

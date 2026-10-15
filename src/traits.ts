@@ -12,7 +12,9 @@ export const TRAIT_CATALOG: Array<{ id: string; name: string; description: strin
   { id: "trait-big-appetite", name: "Big appetite", description: "Gets hungry fast; food drains quickly." },
   { id: "trait-small-appetite", name: "Small appetite", description: "Eats little; food drains slowly." },
   { id: "trait-asexual", name: "Asexual", description: "Does not experience romantic or sexual attraction; the romance need is disabled." },
-  { id: "trait-aromantic", name: "Aromantic", description: "Does not pursue romantic relationships; the romance need is disabled." }
+  { id: "trait-aromantic", name: "Aromantic", description: "Does not pursue romantic relationships; the romance need is disabled." },
+  { id: "trait-good-hearted", name: "Good-hearted", description: "Takes joy in other people's happiness; being around happy people lifts their mood." },
+  { id: "trait-bitter", name: "Bitter", description: "Takes grim satisfaction in other people's unhappiness; being around unhappy people lifts their mood." }
 ];
 
 /** Idempotently create any catalog traits that don't exist yet; returns how many were added. */

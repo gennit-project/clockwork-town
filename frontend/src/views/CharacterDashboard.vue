@@ -32,6 +32,16 @@
                 {{ t }}
               </span>
             </div>
+            <div v-if="opinionChips.length" class="mt-1.5 flex flex-wrap gap-1.5" data-testid="opinions">
+              <span
+                v-for="opinion in opinionChips"
+                :key="opinion.id"
+                class="rounded border px-2 py-0.5 text-[11px]"
+                :class="opinion.stance === 'approves' ? 'border-gf-green/40 bg-gf-green/10 text-gf-green' : 'border-gf-red/40 bg-gf-red/10 text-gf-red'"
+              >
+                {{ opinion.stance === 'approves' ? 'Likes' : 'Dislikes' }}: {{ opinion.label }}
+              </span>
+            </div>
           </div>
         </div>
         <div class="rounded border border-gf-border bg-gf-bg px-3 py-2">
@@ -128,6 +138,7 @@ import Panel from '../components/Panel.vue'
 import StatTile from '../components/StatTile.vue'
 import CharacterHappinessStackChart from '../components/charts/CharacterHappinessStackChart.vue'
 import NeedsByTier from '../components/NeedsByTier.vue'
+import { APPROVAL_TOPICS } from '../stores/config/approvalTopics'
 import OnTheirMind from '../components/OnTheirMind.vue'
 import ResidentRelationships from '../components/ResidentRelationships.vue'
 import MemoryTimeline from '../components/MemoryTimeline.vue'
@@ -168,6 +179,12 @@ const shortId = computed(() => (characterId.value || '').slice(0, 8))
 const traits = computed(() => state.value?.traits?.length ? state.value.traits : fetchedTraits.value)
 
 // The fulfillment layer of the happiness chart only means something if they have values.
+const opinionChips = computed(() =>
+  APPROVAL_TOPICS.flatMap((topic) => {
+    const stance = state.value?.stances?.[topic.id]
+    return stance ? [{ id: topic.id, label: topic.label, stance }] : []
+  })
+)
 const hasValues = computed(() => (state.value?.values?.length ?? 0) > 0)
 const happiness = computed(() => (state.value ? computeCharacterHappiness(state.value.needs, state.value.traitIds) : 0))
 const status = computed(() => happinessStatus(happiness.value))

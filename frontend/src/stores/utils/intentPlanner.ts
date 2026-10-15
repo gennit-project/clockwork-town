@@ -15,6 +15,7 @@ import { calculateUtility } from './actionUtility'
 import { isInvitationBackedOff } from './inviteBackoff'
 import { GROUP_FUN, GROUP_SOCIAL } from '../config/social'
 import { isGroupFunAction } from './groupSocial'
+import { comfortEatBonus, ventingChatBonus } from './venting'
 import { isActionDisabled } from './traitEffects'
 import { valueUtilityBonus } from './valueEffects'
 import { findItemsWithAffordance } from './pathfinding'
@@ -1244,7 +1245,11 @@ export function buildPlanCandidates({
         : candidate
     )
     .map((candidate) => {
-      const bonus = valueUtilityBonus(characterState, candidate.goal)
+      const bonus =
+        valueUtilityBonus(characterState, candidate.goal) +
+        // Upset: want to complain to a friend (chats), and to comfort-eat.
+        (candidate.goal === 'chat_friend' ? ventingChatBonus(characterState, candidate.primaryStep.socialTargetId) : 0) +
+        (candidate.goal === 'eat' ? comfortEatBonus(characterState) : 0)
       return bonus > 0 ? { ...candidate, utility: candidate.utility + bonus } : candidate
     })
     .filter((candidate) => {

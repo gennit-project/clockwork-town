@@ -13,6 +13,11 @@ export interface TraitEffect {
   decayMultipliers?: Partial<Record<NeedName, number>>
   /** Needs this trait switches off entirely: no decay, pinned full, actions unavailable. */
   disablesNeeds?: NeedName[]
+  /**
+   * How the mood of nearby residents moves them: 'joy' (gains from happy neighbors) or
+   * 'schadenfreude' (gains from unhappy ones). See utils/witnessMood.ts.
+   */
+  witnessMood?: 'joy' | 'schadenfreude'
 }
 
 export const TRAIT_EFFECTS: Record<string, TraitEffect> = {
@@ -22,5 +27,7 @@ export const TRAIT_EFFECTS: Record<string, TraitEffect> = {
   'trait-small-appetite': { decayMultipliers: { food: 0.6 } },
   // The sim has no separate physical-intimacy mechanic yet, so both switch off romance.
   'trait-asexual': { disablesNeeds: ['romance'] },
-  'trait-aromantic': { disablesNeeds: ['romance'] }
+  'trait-aromantic': { disablesNeeds: ['romance'] },
+  'trait-good-hearted': { witnessMood: 'joy' },
+  'trait-bitter': { witnessMood: 'schadenfreude' }
 }

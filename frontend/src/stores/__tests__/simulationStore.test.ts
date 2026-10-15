@@ -1128,6 +1128,184 @@ describe('simulation store integration', () => {
     })
   })
 
+  describe('venting, comfort and mood traits', () => {
+    const memoriesOfType = (eventType: string) =>
+      persistenceMocks.createStructuredCharacterLongTermMemory.mock.calls
+        .map(([input]) => input as { characterId: string; eventType?: string; content: string })
+        .filter((input) => input.eventType === eventType)
+
+    const upsetAboutCy = (over: Partial<{ vented: boolean }> = {}) => [
+      {
+        id: 'char-3:daytime-napping',
+        aboutCharacterId: 'char-3',
+        aboutName: 'Cy',
+        topicId: 'daytime-napping',
+        summary: 'napping in the daytime',
+        ticksRemaining: 600,
+        times: 1,
+        ...over
+      }
+    ]
+
+    // Alice (char-1) and Bob (char-2) in the Living Room; Alice chats with Bob and Bob is glad to.
+    function setupChat(bobLongTermScore: number) {
+      const store = setupStore()
+      setupSecondCharacter(store, 'lot-1', 'Test House', 'space-1', 'Living Room')
+      store.characterStates['char-1'].relationships = [
+        createRelationshipSeed({ fromCharacterId: 'char-1', toCharacterId: 'char-2', lastSeenAt: null, shortTermScore: 0.2, longTermScore: bobLongTermScore })
+      ]
+      store.characterStates['char-2'].relationships = [
+        createRelationshipSeed({ fromCharacterId: 'char-2', toCharacterId: 'char-1', lastSeenAt: null, shortTermScore: 0.2, longTermScore: bobLongTermScore })
+      ]
+      store.characterStates['char-2'].needs.friends = 0.1
+      return store
+    }
+
+    const chatWithBob = () => ({
+      action: 'chat_friend' as const,
+      itemId: 'item-1',
+      itemName: 'Couch',
+      targetSpaceId: 'space-1',
+      targetSpaceName: 'Living Room',
+      targetLotId: 'lot-1',
+      targetLotName: 'Test House',
+      socialTargetId: 'char-2',
+      socialTargetName: 'Bob',
+      utility: 10
+    })
+
+    it('complains to a friend: the grievance is talked over and fades sooner, and both remember it', async () => {
+      const store = setupChat(0.6)
+      store.characterStates['char-1'].grievances = upsetAboutCy()
+      store.enqueueIntent('char-1', chatWithBob())
+      await store.executeTick()
+
+      const [grievance] = store.characterStates['char-1'].grievances ?? []
+      expect(grievance.vented).toBe(true)
+      expect(grievance.ticksRemaining).toBeLessThanOrEqual(300)
+      expect(grievance.ticksRemaining).toBeGreaterThan(0)
+      expect(memoriesOfType('complaint')).toEqual([
+        expect.objectContaining({ characterId: 'char-1', content: 'Complained to Bob about Cy.' })
+      ])
+      expect(memoriesOfType('listened')).toEqual([
+        expect.objectContaining({ characterId: 'char-2', content: 'Listened to Alice complain about Cy.' })
+      ])
+    })
+
+    it('the listener can be the upset one too, when they are talking to a friend', async () => {
+      const store = setupChat(0.6)
+      store.characterStates['char-2'].grievances = upsetAboutCy()
+      store.enqueueIntent('char-1', chatWithBob())
+      await store.executeTick()
+      expect(store.characterStates['char-2'].grievances?.[0].vented).toBe(true)
+      expect(memoriesOfType('complaint').map((m) => m.characterId)).toEqual(['char-2'])
+      expect(memoriesOfType('listened').map((m) => m.characterId)).toEqual(['char-1'])
+    })
+
+    it('control: chatting with the person they are upset with is not venting', async () => {
+      const store = setupChat(0.6)
+      store.characterStates['char-1'].grievances = [{ ...upsetAboutCy()[0], id: 'char-2:x', aboutCharacterId: 'char-2', aboutName: 'Bob' }]
+      store.enqueueIntent('char-1', chatWithBob())
+      await store.executeTick()
+      expect(store.characterStates['char-1'].grievances?.[0].vented).toBeUndefined()
+      expect(memoriesOfType('complaint')).toHaveLength(0)
+    })
+
+    it('control: no complaint to someone who is not much of a friend', async () => {
+      const store = setupChat(0.1)
+      store.characterStates['char-1'].grievances = upsetAboutCy()
+      store.enqueueIntent('char-1', chatWithBob())
+      await store.executeTick()
+      expect(store.characterStates['char-1'].grievances?.[0].vented).toBeUndefined()
+      expect(memoriesOfType('complaint')).toHaveLength(0)
+    })
+
+    it('control: a calm resident has nothing to complain about', async () => {
+      const store = setupChat(0.6)
+      store.enqueueIntent('char-1', chatWithBob())
+      await store.executeTick()
+      expect(memoriesOfType('complaint')).toHaveLength(0)
+      expect(memoriesOfType('listened')).toHaveLength(0)
+    })
+
+    it('control: a grievance already talked over is not vented again', async () => {
+      const store = setupChat(0.6)
+      store.characterStates['char-1'].grievances = upsetAboutCy({ vented: true })
+      store.enqueueIntent('char-1', chatWithBob())
+      await store.executeTick()
+      expect(memoriesOfType('complaint')).toHaveLength(0)
+    })
+
+    it('in a group chat, they complain to a friend there, never to the person they are upset with', async () => {
+      const store = setupChat(0.6)
+      store.initializeCharacter({ id: 'char-3', name: 'Cy' })
+      store.updateCharacterLocation('char-3', 'region-1', 'lot-1', 'Test House', 'space-1', 'Living Room')
+      store.enqueueIntent('char-3', { action: 'idle', utility: 0 })
+      store.characterStates['char-3'].needs.friends = 0.1
+      const alice = store.characterStates['char-1']
+      alice.relationships = [...(alice.relationships ?? []), createRelationshipSeed({ fromCharacterId: 'char-1', toCharacterId: 'char-3', lastSeenAt: null, shortTermScore: 0.2, longTermScore: 0.9 })]
+      alice.grievances = upsetAboutCy()
+      store.enqueueIntent('char-1', { ...chatWithBob(), groupTargetIds: ['char-3'], groupTargetNames: ['Cy'] })
+      await store.executeTick()
+
+      expect(memoriesOfType('group_chat')).toHaveLength(3)
+      expect(memoriesOfType('complaint')).toEqual([
+        expect.objectContaining({ characterId: 'char-1', content: 'Complained to Bob about Cy.' })
+      ])
+    })
+
+    it('a comfort meal takes the edge off a grievance', () => {
+      const store = setupChat(0.6)
+      store.characterStates['char-1'].grievances = upsetAboutCy()
+      store.applyActionEffects({ characterId: 'char-1', intent: { goal: 'eat', strategy: 'test', action: 'eat', utility: 1, travelCost: 0 } as never })
+      expect(store.characterStates['char-1'].grievances?.[0].ticksRemaining).toBe(Math.floor(600 * 0.85))
+      // Other actions don't.
+      store.applyActionEffects({ characterId: 'char-1', intent: { goal: 'read', strategy: 'test', action: 'read', utility: 1, travelCost: 0 } as never })
+      expect(store.characterStates['char-1'].grievances?.[0].ticksRemaining).toBe(Math.floor(600 * 0.85))
+    })
+
+    describe('mood traits over a tick', () => {
+      function setupMoodRoom(trait: string | null, bobHappiness: number) {
+        const store = setupStore()
+        setupSecondCharacter(store, 'lot-1', 'Test House', 'space-1', 'Living Room')
+        store.initializeCharacter({ id: 'char-3', name: 'Cy' })
+        store.updateCharacterLocation('char-3', 'region-1', 'lot-1', 'Test House', 'space-1', 'Living Room')
+        store.enqueueIntent('char-1', { action: 'idle', utility: 0 })
+        store.enqueueIntent('char-3', { action: 'idle', utility: 0 })
+        const flat = (v: number) => ({ food: v, sleep: v, bladder: v, hygiene: v, health: v, friends: v, family: v, romance: v, fulfillment: v })
+        store.characterStates['char-1'].needs = flat(0.5)
+        store.characterStates['char-3'].needs = flat(0.5) // ordinary and unremarkable: neither happy nor unhappy
+        store.characterStates['char-2'].needs = flat(bobHappiness)
+        if (trait) store.characterStates['char-1'].traitIds = [trait]
+        return store
+      }
+
+      it('a good-hearted resident is lifted by a happy housemate, an ordinary one is not', async () => {
+        const store = setupMoodRoom('trait-good-hearted', 0.95)
+        await store.executeTick()
+        const gain = store.characterStates['char-1'].needs.fulfillment - store.characterStates['char-3'].needs.fulfillment
+        expect(gain).toBeCloseTo(0.004, 4)
+      })
+
+      it('a bitter resident is lifted by an unhappy housemate', async () => {
+        const store = setupMoodRoom('trait-bitter', 0.1)
+        await store.executeTick()
+        const gain = store.characterStates['char-1'].needs.fulfillment - store.characterStates['char-3'].needs.fulfillment
+        expect(gain).toBeCloseTo(0.004, 4)
+      })
+
+      it('and the other way round does nothing: good-hearted among the unhappy, bitter among the happy', async () => {
+        const kind = setupMoodRoom('trait-good-hearted', 0.1)
+        await kind.executeTick()
+        expect(kind.characterStates['char-1'].needs.fulfillment).toBeCloseTo(kind.characterStates['char-3'].needs.fulfillment, 4)
+
+        const grump = setupMoodRoom('trait-bitter', 0.95)
+        await grump.executeTick()
+        expect(grump.characterStates['char-1'].needs.fulfillment).toBeCloseTo(grump.characterStates['char-3'].needs.fulfillment, 4)
+      })
+    })
+  })
+
   describe('pet reunions', () => {
     afterEach(() => vi.restoreAllMocks())
 

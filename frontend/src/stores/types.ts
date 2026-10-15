@@ -251,6 +251,8 @@ export interface Grievance {
   ticksRemaining: number
   /** Times they've done it while this witness was watching. */
   times: number
+  /** True once they've talked it over with a friend; it still fades, sooner, but no longer drives them to vent. */
+  vented?: boolean
 }
 
 export interface CharacterValueState {

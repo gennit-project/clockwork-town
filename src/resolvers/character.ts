@@ -150,10 +150,10 @@ export const CharacterResolvers = {
   Mutation: {
     createCharacter: async (_: any, { input }: { input: {
       id: string, name: string, age: number, bio?: string,
-      traitIds: string[], valueIds: string[], homeLotId: string, householdId: string,
+      traitIds: string[], valueIds: string[], stances?: Array<{ topicId: string; stance: string }>, homeLotId: string, householdId: string,
       workSchedule?: Array<{ day: string; start: string; end: string; locationLotId: string }>
     }}) => {
-      const { id, name, age, bio, traitIds, valueIds, homeLotId, householdId, workSchedule } = input;
+      const { id, name, age, bio, traitIds, valueIds, stances, homeLotId, householdId, workSchedule } = input;
       await batch(async () => {
         await q(`CREATE (:Character {id:$id, name:$name, age:$age, bio:$bio, workSchedule:$workSchedule})`, {
           id,
@@ -172,6 +172,9 @@ export const CharacterResolvers = {
         }
         if (valueIds?.length) {
           await setCharacterValues(id, valueIds);
+        }
+        if (stances?.length) {
+          await setCharacterStances(id, stances);
         }
         const now = new Date().toISOString();
         await q(`
