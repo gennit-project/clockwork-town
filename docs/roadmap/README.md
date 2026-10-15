@@ -40,9 +40,6 @@ machine, run the backend on another port (e.g. `PORT=4001 npm run dev`) and poin
 Vite `/graphql` proxy at the same port (`vite.config.ts`). If you change the proxy for
 local dev, set it back to 4000 before committing.
 
-There are **3 pre-existing failing tests** in `frontend/src/stores/utils/__tests__/taskLifecycle.test.ts`.
-They are unrelated to current work; a green run is "3 failed, everything else passing."
-
 ## Where the simulation actually lives (orientation)
 
 The sim runs in the browser, per tick, in `frontend/src/stores/`:
@@ -57,9 +54,9 @@ The sim runs in the browser, per tick, in `frontend/src/stores/`:
 
 Design tokens (Grafana-dark) are in `frontend/src/style.css` (`gf-bg`, `gf-surface`, `gf-text`, `gf-blue`, etc.).
 
-## Current state at a glance (verified against the code)
+## What is not built yet (verified against the code)
 
-**Built:** approval and disapproval (witness reactions, grievances, tickets); daily summary memories; reunion hugs and pet greetings with a recent-events feed; homebody pets that live at their owner's home; ranked values (per-value state, neglect drain, planner nudge, dashboard panel, editor ranking); behavioral traits (per-character decay, disabled romance need, editor picker); need gating + rebalanced decay; live `/alerts` and `/tickets` (derived alerts, in-memory ticket lifecycle); 9-need utility sim; directed relationships (short/long-term scores + labels, proposals, decay); short/long-term memories + memory timeline with eventType filtering; activity log / log stream; employment & work shifts; read-only calendar; **animal runtime** (needs, movement, action choice) + **human↔animal petting**; coordinated `chat_friend` (pairs and groups of up to 4), group movies and art when bored, and `date` (always one other person), with a short per-target backoff after a rejection; Grafana reskin (world/region hexmap, town & character dashboards, relationships graph); world isolation; character editor (name/age/bio/schedule); household editor (members + animals); lot & household **template libraries**; lot/space/item creation (item authoring is inline per-room in `SpaceDetail.vue`); **backup/restore to Google Drive** (encrypted; the world export/import covers lots, spaces, items, households, residents with their schedules, traits and ranked values, and animals with owners, homes and locations; it does **not** yet include relationships, memories or live need state; `npm run check:backup` round-trips a world against a running backend and fails if anything is lost).
+**Built:** a great deal; see [completed/README.md](completed/README.md) for the list and for the specs of finished work. Everything else in this folder is work that is not done yet.
 
 **Schema-only, no behavior yet:** `Employment.salary`. (`Trait` is live for a behavioral subset; its GraphQL `basicNeedModifiers`/`emotionalNeedModifiers` fields are unused and return `[]`, since effects live in the frontend `TRAIT_EFFECTS` map.)
 
@@ -67,40 +64,40 @@ Design tokens (Grafana-dark) are in `frontend/src/style.css` (`gf-bg`, `gf-surfa
 
 **Partial:** death (only `isDeceasedTarget` + a "Deceased" badge); world/lot build UI (list-based via `LotsAndHouseholds.vue` / `LotTemplateEdit.vue`, no map, no roads); relationship memory filtering (eventType only, no family-tree relation filters).
 
-**Absent:** richer ticket generators (grief), ticket persistence, the full trait and value lists, group activities, finances, cooking rota, chores, weather/climate config, job slots, NPCs, illness, death triggers/warnings/grief, childcare/foster, difficulty levels, tutorial.
+**Absent:** richer ticket generators (grief), ticket persistence, the full trait and value lists, relationship milestones, antisocial behavior and rejection (Epic 6.2 onward), finances, cooking rota, chores, weather/climate config, job slots, NPCs, illness, death triggers/warnings/grief, childcare/foster, difficulty levels, tutorial.
 
 ## The ordering, and why
 
 Principle: **substrate (data + authoring) → mechanics that read it → content that exercises it → tutorial that wraps it → shipping.** Every epic should light up something visible in the service-desk UI so the project is always dogfooded.
 
 Two corrections to the original (pre-this-folder) numbering:
-1. **Item authoring was scheduled too early.** Traits + Values are the real foundation — fulfillment, approval/disapproval, the relationship milestone tree, trait modifiers, and the entire default-town cast all depend on traits/values, which currently do nothing. Build those first (Epic 0).
+1. **Item authoring was scheduled too early.** Traits + Values are the real foundation — fulfillment, approval/disapproval, the relationship milestone tree, trait modifiers, and the entire default-town cast all depend on traits/values. Build those first (Epic 0, now done).
 2. **The tutorial's map-based building UI (place/rotate buildings, draw roads) is the single most expensive feature and was silently blocking the tutorial.** It's decoupled: a non-spatial "add building → staff it" flow delivers the tutorial's substance. The spatial map editor is parked.
 
 | Epic | Theme | Spec |
 |------|-------|------|
-| 0 | Make the reskin real + data foundation (alerts/tickets, traits, values, need-gating) | [epic-0-foundation.md](epic-0-foundation.md) |
-| 1 | Make relationships feel alive (daily memory rollup, reunion events, approval, groups, milestones, workplace bonding) | [epic-1-relationships.md](epic-1-relationships.md) |
+| 1 | Make relationships feel alive: remaining items are milestones (1.5) and workplace bonding (1.6); 1.1–1.4 are done | [epic-1-relationships.md](epic-1-relationships.md) |
 | 2 | Authoring substrate (item catalog, character family/relationship/memory editing, world/region config) | [epic-2-authoring.md](epic-2-authoring.md) |
 | 3 | Domestic life & economy (finances, cooking rota, chores) | [epic-3-domestic-economy.md](epic-3-domestic-economy.md) |
 | 4 | Town as a living system (job slots, NPCs, illness, death & grief, childcare) | [epic-4-living-town.md](epic-4-living-town.md) |
 | 5 | Content & shipping (build-and-staff flow, default town, tutorial, difficulty) | [epic-5-content-shipping.md](epic-5-content-shipping.md) |
 | 6 | Friction & drama (autonomous antisocial behavior with an auditable cause, rejection, repair) | [epic-6-friction-and-drama.md](epic-6-friction-and-drama.md) |
+| ✓ | Completed work (Epic 0, Epic 1.1–1.4, Epic 6.1) | [completed/](completed/README.md) |
 | — | Parked / long-term / cut | [parked-long-term.md](parked-long-term.md) |
 
-Epics 0–2 are specified in full. Epics 3–5 capture everything known today; expect to
+Epics 1–2 are specified in full. Epics 3–5 capture everything known today; expect to
 refine each one's details just before starting it (and update its file when you do).
 
 **Epic 6 is numbered last but is not last in time.** It builds on the approval and
-disapproval system from Epic 1.3 (done) and can start once that and the trait system exist,
-which is now. Its first item (cause records) is worth doing early, because it makes every
-autonomous decision explainable. Epic 5.5's difficulty levels depend on its drama-intensity
+disapproval system from Epic 1.3 (done) and can start now. Its first item (6.1, cause
+records) is done, so every later item reports its reasons through it. Epic 5.5's difficulty levels depend on its drama-intensity
 setting (6.7).
 
 ## Conventions for these docs
 
 - **Size tags:** `[S]` hours, `[M]` a day or two, `[L]` multi-day, `[XL]` multi-week.
 - Work items are ordered within an epic. "Prerequisites" name cross-epic dependencies.
-- When you complete an item, update its **Status** line in the epic file and the
-  "Current state at a glance" section above. Keep the docs honest — they are only
-  useful to a cold session if they match reality.
+- When you complete an item, **move its spec out of the epic file** into `completed/`
+  (add it to `completed/README.md`), and leave only a one-line pointer plus any
+  still-open follow-ups behind. This folder lists only work that is not done. Keep the
+  docs honest: they are only useful to a cold session if they match reality.

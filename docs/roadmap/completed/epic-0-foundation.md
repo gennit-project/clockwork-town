@@ -1,6 +1,8 @@
-# Epic 0 — Make the reskin real + data foundation
+# Epic 0 — Make the reskin real + data foundation (COMPLETED)
 
-**Read [README.md](README.md) first** for project orientation, stack, and how the
+> Completed work, kept for reference. Open work lives in the parent folder.
+
+**Read [README.md](../README.md) first** for project orientation, stack, and how the
 simulation is structured.
 
 ## Goal
@@ -111,7 +113,7 @@ modifiers. Action availability is decided in `utils/intentPlanner.ts` /
 **0.2-UI — trait editing.** Extend `frontend/src/views/CharacterEditor.vue` (which
 today only edits name/age/bio/schedule) with a trait picker backed by the existing
 `traitIds` mutation path. The full canonical trait list lives in
-[epic-5-content-shipping.md](epic-5-content-shipping.md) ("Traits & values content");
+[epic-5-content-shipping.md](../epic-5-content-shipping.md) ("Traits & values content");
 for this item, support the behavioral subset above plus free display-only traits.
 
 **Done when.** A character with "needs little sleep" visibly sleeps less often than

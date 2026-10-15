@@ -18,7 +18,7 @@ together as a ritual with a cook rota, and keep house.
 
 ## Prerequisites
 
-- **Epic 0** (alerts/tickets, traits) — money/chore pressures file alerts; food
+- **Epic 0** (done; alerts/tickets, traits) — money/chore pressures file alerts; food
   traits (vegan/vegetarian/appetite) influence eating.
 - **Epic 2.2/2.3** (household authoring incl. primary cook; calendar editability).
 

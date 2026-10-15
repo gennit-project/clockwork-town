@@ -20,7 +20,7 @@ placed with foster families.
 
 ## Prerequisites
 
-- **Epic 0** (alerts/tickets — death warnings and grief file here; traits — grief
+- **Epic 0** (done; alerts/tickets — death warnings and grief file here; traits — grief
   expression, "hates holidays").
 - **Epic 1** (memory/relationship model — grief freezes relationships and rolls up
   grave-visit/letter desires; reuses the relationship-memory model, not a separate
