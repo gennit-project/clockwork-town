@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import type { Ref } from 'vue'
 import type {
   CharacterValueState,
+  SimulationEvent,
   AnimalState,
   AutoTickSpeed,
   CharacterState,
@@ -64,6 +65,9 @@ export const useSimulationStore = defineStore('simulation', () => {
 
   // Happiness history ring buffer (sampled once per tick) for time-series panels
   const happinessHistory: Ref<HappinessSample[]> = ref([])
+
+  // Notable happenings (reunions, ...) for the Alerts page's recent-events feed
+  const events: Ref<SimulationEvent[]> = ref([])
 
   // The world the in-memory simulation is currently scoped to (worlds are isolated)
   const activeWorldId: Ref<string | null> = ref(null)
@@ -191,7 +195,8 @@ export const useSimulationStore = defineStore('simulation', () => {
       activeCharacterId: ref<string | null>(null),
       autoTickSpeed,
       happinessHistory,
-      animalStates
+      animalStates,
+      events
     },
     {
       recordShortTermMemory,
@@ -220,6 +225,7 @@ export const useSimulationStore = defineStore('simulation', () => {
       animalStates.value = {}
       itemOccupancy.value = {}
       happinessHistory.value = []
+      events.value = []
     }
     if (worldId) {
       activeWorldId.value = worldId
@@ -286,6 +292,7 @@ export const useSimulationStore = defineStore('simulation', () => {
     isPaused,
     activityLog,
     happinessHistory,
+    events,
     activeWorldId,
     characterStates,
     animalStates,

@@ -82,6 +82,7 @@ function colorFor(et: string | null | undefined): string {
   if (/romance|date|propose/.test(e)) return '#d4537e' // pink — romance
   if (/chat|invite|lunch|movie|reunit|friend/.test(e)) return '#5794f2' // blue — social
   if (/work|volunteer/.test(e)) return '#ff9830' // amber — work
+  if (/daily/.test(e)) return '#4fb3a9' // teal — day recap
   if (/read|write|view|art/.test(e)) return '#b877d9' // purple — enrichment
   return '#9fa7b3' // neutral
 }

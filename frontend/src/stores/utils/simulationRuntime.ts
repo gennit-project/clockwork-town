@@ -11,6 +11,7 @@ import type {
   ItemOccupancy,
   Needs,
   SimulationDateTime,
+  SimulationEvent,
   WorldData
 } from '../types'
 import { ACTION_EFFECTS } from '../config/actionEffects'
@@ -41,6 +42,7 @@ import {
 } from './happinessMetrics'
 import { applyPetInteraction, tickAnimals } from './animalRuntime'
 import { markValuesFulfilled } from './valueEffects'
+import { isNewDay, recordActionInTally, recordDailySummaries } from './dailySummary'
 import {
   decayCharacterRelationships,
   recordRelationshipConversation,
@@ -64,6 +66,8 @@ export interface SimulationRuntimeRefs {
   autoTickSpeed: Ref<AutoTickSpeed>
   happinessHistory: Ref<HappinessSample[]>
   animalStates: Ref<Record<string, AnimalState>>
+  /** Capped feed of notable happenings (reunions, ...), newest last. */
+  events: Ref<SimulationEvent[]>
 }
 
 export interface SimulationRuntimeDependencies {
@@ -98,6 +102,9 @@ export interface SimulationRuntimeDependencies {
     createdAt?: string
   }) => Promise<void>
 }
+
+/** How many notable events the recent-events feed keeps. */
+export const EVENT_FEED_LIMIT = 50
 
 export function createSimulationRuntime(
   refs: SimulationRuntimeRefs,
@@ -191,9 +198,23 @@ export function createSimulationRuntime(
         },
         dependencies: {
           persistCharacterRelationship: dependencies.persistCharacterRelationship,
-          createStructuredCharacterLongTermMemory: dependencies.createStructuredCharacterLongTermMemory
+          createStructuredCharacterLongTermMemory: dependencies.createStructuredCharacterLongTermMemory,
+          onNotableEvent: recordNotableEvent
         }
       })
+    }
+  }
+
+  /** Put a notable event in the log stream and the capped recent-events feed. */
+  function recordNotableEvent(event: { type: string; message: string; characterIds: string[] }): void {
+    logActivity(event.characterIds[0], event.type, event.message)
+    refs.events.value.push({
+      tick: refs.currentTick.value,
+      iso: refs.simulationDateTime.value.iso,
+      ...event
+    })
+    if (refs.events.value.length > EVENT_FEED_LIMIT) {
+      refs.events.value.splice(0, refs.events.value.length - EVENT_FEED_LIMIT)
     }
   }
 
@@ -288,6 +309,7 @@ export function createSimulationRuntime(
 
     const stateChange = applyActionToCharacterState(state, intent.action, effectiveActionData)
     markValuesFulfilled(state, intent.action)
+    recordActionInTally(state, intent, state.location.lotName)
 
     if (stateChange.primaryNeedChange) {
       const { need, oldValue, newValue, effect } = stateChange.primaryNeedChange
@@ -545,6 +567,7 @@ export function createSimulationRuntime(
   }
 
   async function executeTick() {
+    const dayBeforeTick = refs.simulationDateTime.value.iso
     await runTick({
       currentTick: refs.currentTick,
       simulationDateTime: refs.simulationDateTime,
@@ -565,6 +588,14 @@ export function createSimulationRuntime(
       },
       progressTask
     })
+
+    if (isNewDay(dayBeforeTick, refs.simulationDateTime.value.iso)) {
+      await recordDailySummaries({
+        states: refs.characterStates.value,
+        previousIso: dayBeforeTick,
+        dependencies: { createStructuredCharacterLongTermMemory: dependencies.createStructuredCharacterLongTermMemory }
+      })
+    }
 
     tickAnimals({
       animalStates: refs.animalStates.value,
@@ -658,6 +689,7 @@ export function createSimulationRuntime(
     refs.activeCharacterId.value = null
     refs.happinessHistory.value = []
     refs.animalStates.value = {}
+    refs.events.value = []
     logger.logSimulationReset()
   }
 

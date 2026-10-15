@@ -1,7 +1,7 @@
 import type { CharacterRelationship, CharacterState, Intent } from '../types'
 import { hasBloodFamilyLabel } from './family'
+import { evaluateRelationshipEvents } from './relationshipEvents'
 
-const REUNION_ABSENCE_THRESHOLD_MINUTES = 6 * 60
 const LUNCH_START_HOUR = 11
 const LUNCH_END_HOUR = 14
 const MIN_RELATIONSHIP_SCORE = 0
@@ -53,6 +53,8 @@ export interface RelationshipRuntimeDependencies {
     locationSpaceName?: string
     createdAt?: string
   }) => Promise<void>
+  /** Called for events worth telling the player about (see relationshipEvents.ts). */
+  onNotableEvent?: (event: { type: string; message: string; characterIds: string[] }) => void
 }
 
 interface RelationshipLocation {
@@ -359,11 +361,6 @@ function getMinutesSinceTimestamp(timestamp: string | null | undefined, currentT
   return Math.max(0, Math.round((current - previous) / 60000))
 }
 
-function formatElapsedHours(minutes: number): string {
-  const hours = minutes / 60
-  return hours === 1 ? '1 hour' : `${Math.round(hours)} hours`
-}
-
 function isLunchTime(timestamp: string): boolean {
   const date = new Date(timestamp)
   const hour = date.getHours()
@@ -595,12 +592,18 @@ export async function recordRelationshipEncounter({
   }
 
   if (!forward.created && !reverse.created) {
-    const forwardMinutesApart = getMinutesSinceTimestamp(previousForwardLastSeenAt, timestamp)
-    const reverseMinutesApart = getMinutesSinceTimestamp(previousReverseLastSeenAt, timestamp)
-    const longestAbsenceMinutes = Math.max(forwardMinutesApart ?? 0, reverseMinutesApart ?? 0)
+    const events = evaluateRelationshipEvents({
+      characterState,
+      targetState,
+      forward: forward.relationship,
+      reverse: reverse.relationship,
+      minutesApart: {
+        forward: getMinutesSinceTimestamp(previousForwardLastSeenAt, timestamp),
+        reverse: getMinutesSinceTimestamp(previousReverseLastSeenAt, timestamp)
+      }
+    })
 
-    if (longestAbsenceMinutes >= REUNION_ABSENCE_THRESHOLD_MINUTES) {
-      const elapsedText = formatElapsedHours(longestAbsenceMinutes)
+    for (const event of events) {
       await createPairedRelationshipMemories({
         forwardRelationship: forward.relationship,
         reverseRelationship: reverse.relationship,
@@ -610,23 +613,30 @@ export async function recordRelationshipEncounter({
         targetState,
         timestamp,
         location,
-        eventType: 'reunited_after_long_absence',
-        buildForwardContent: () => `Saw ${targetState.name} again after ${elapsedText} apart.`,
-        buildReverseContent: () => `Saw ${characterState.name} again after ${elapsedText} apart.`,
+        eventType: event.type,
+        buildForwardContent: () => event.forwardMemory,
+        buildReverseContent: () => event.reverseMemory,
         dependencies
       })
       forwardRelationship = await applyRelationshipEventDelta({
         relationship: forward.relationship,
         fromState: characterState,
-        eventType: 'reunited_after_long_absence',
+        eventType: event.type,
         dependencies
       })
       reverseRelationship = await applyRelationshipEventDelta({
         relationship: reverse.relationship,
         fromState: targetState,
-        eventType: 'reunited_after_long_absence',
+        eventType: event.type,
         dependencies
       })
+      if (event.notable && event.logMessage) {
+        dependencies.onNotableEvent?.({
+          type: event.type,
+          message: event.logMessage,
+          characterIds: [characterId, targetCharacterId]
+        })
+      }
     }
   }
 

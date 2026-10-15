@@ -692,6 +692,109 @@ describe('simulation store integration', () => {
     }))
   })
 
+  describe('reunion events', () => {
+    function setupReunion(longTermScore: number) {
+      const store = setupStore()
+      store.simulationDateTime = {
+        ...store.simulationDateTime,
+        iso: '2026-04-06T18:00:00.000Z',
+        hour: 18,
+        minute: 0
+      }
+      setupSecondCharacter(store, 'lot-2', 'Community Center', 'space-3', 'Library')
+      seedDirectionalRelationship(store, 'char-1', 'char-2', '2026-04-06T08:00:00.000Z', { longTermScore })
+      seedDirectionalRelationship(store, 'char-2', 'char-1', '2026-04-06T08:00:00.000Z', { longTermScore })
+      enqueueLibraryReadIntent(store)
+      return store
+    }
+
+    const reunionMemoryContent = () =>
+      persistenceMocks.createStructuredCharacterLongTermMemory.mock.calls
+        .map(([input]) => input as { characterId: string; eventType?: string; content: string })
+        .filter((input) => input.eventType === 'reunited_after_long_absence')
+
+    it('warm friends hug: paired memories, a log entry and a recent event', async () => {
+      const store = setupReunion(0.8)
+      await store.executeTick()
+
+      const memories = reunionMemoryContent()
+      expect(memories.map((m) => [m.characterId, m.content])).toEqual([
+        ['char-1', 'Hugged Bob after 10 hours apart.'],
+        ['char-2', 'Hugged Alice after 10 hours apart.']
+      ])
+      expect(store.events).toHaveLength(1)
+      expect(store.events[0]).toMatchObject({
+        type: 'reunited_after_long_absence',
+        message: 'Alice and Bob hugged after 10 hours apart.',
+        characterIds: ['char-1', 'char-2']
+      })
+      expect(store.activityLog.some((e) => e.action === 'reunited_after_long_absence')).toBe(true)
+    })
+
+    it('control: a weak relationship still records the memories but stays quiet', async () => {
+      const store = setupReunion(0)
+      await store.executeTick()
+
+      expect(reunionMemoryContent().map((m) => m.content)).toEqual([
+        'Saw Bob again after 10 hours apart.',
+        'Saw Alice again after 10 hours apart.'
+      ])
+      expect(store.events).toHaveLength(0)
+      expect(store.activityLog.some((e) => e.action === 'reunited_after_long_absence')).toBe(false)
+    })
+
+    it('clears the recent-events feed when the simulation is reset', async () => {
+      const store = setupReunion(0.8)
+      await store.executeTick()
+      expect(store.events).toHaveLength(1)
+      store.resetSimulation()
+      expect(store.events).toHaveLength(0)
+    })
+  })
+
+  describe('daily summary', () => {
+    const summaryCalls = () =>
+      persistenceMocks.createStructuredCharacterLongTermMemory.mock.calls
+        .map(([input]) => input as { characterId: string; eventType?: string; content: string; createdAt?: string })
+        .filter((input) => input.eventType === 'daily_summary')
+
+    function setupDay(iso: string, hour: number, minute: number) {
+      const store = setupStore()
+      store.simulationDateTime = { ...store.simulationDateTime, iso, hour, minute }
+      enqueueReadIntent(store)
+      return store
+    }
+
+    it('writes a dated daily_summary memory when a tick crosses midnight, then resets the day', async () => {
+      const store = setupDay('2026-04-06T23:57:00.000Z', 23, 57)
+      await store.executeTick()
+
+      const calls = summaryCalls()
+      expect(calls).toHaveLength(1)
+      expect(calls[0]).toMatchObject({ characterId: 'char-1', createdAt: '2026-04-06T23:57:00.000Z' })
+      expect(calls[0].content).toContain('Monday, Apr 6')
+      expect(calls[0].content).toContain('read')
+      expect(store.characterStates['char-1'].memories).toEqual([])
+      expect(store.characterStates['char-1'].dayTally).toEqual({ actions: {}, places: {}, people: {} })
+    })
+
+    it('control: a tick that stays within the day writes no summary and keeps the tally', async () => {
+      const store = setupDay('2026-04-06T12:00:00.000Z', 12, 0)
+      await store.executeTick()
+
+      expect(summaryCalls()).toHaveLength(0)
+      expect(store.characterStates['char-1'].dayTally?.actions.read).toBe(1)
+    })
+
+    it('writes nothing for a resident who did nothing worth remembering', async () => {
+      const store = setupStore()
+      store.simulationDateTime = { ...store.simulationDateTime, iso: '2026-04-06T23:57:00.000Z', hour: 23, minute: 57 }
+      store.enqueueIntent('char-1', { action: 'idle', utility: 0 })
+      await store.executeTick()
+      expect(summaryCalls()).toHaveLength(0)
+    })
+  })
+
   it('creates an ate_lunch_together memory when characters eat lunch in the same space', async () => {
     const store = setupStore()
     store.simulationDateTime = {

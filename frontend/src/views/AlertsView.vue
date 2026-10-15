@@ -18,6 +18,18 @@
         </li>
       </ul>
     </Panel>
+
+    <Panel title="Recent events" class="mt-3">
+      <p v-if="recentEvents.length === 0" class="py-6 text-center text-sm text-gf-text-faint">
+        Nothing notable yet. Reunions and other moments show up here as they happen.
+      </p>
+      <ul v-else class="divide-y divide-gf-border">
+        <li v-for="event in recentEvents" :key="`${event.tick}-${event.message}`" class="flex items-center gap-3 px-3 py-2 text-sm">
+          <span class="w-20 shrink-0 text-xs text-gf-text-faint">{{ timeSince(event.iso, nowIso) }}</span>
+          <span class="min-w-0 text-gf-text-weak">{{ event.message }}</span>
+        </li>
+      </ul>
+    </Panel>
   </div>
 </template>
 
@@ -26,11 +38,16 @@ import { computed } from 'vue'
 import Panel from '../components/Panel.vue'
 import { useResidentLink } from '../composables/useResidentLink'
 import { useServiceDeskStore } from '../stores/serviceDesk'
+import { useSimulationStore } from '../stores/simulation'
+import { timeSince } from '../stores/utils/relativeTime'
 import { severityClass } from './serviceDeskStyles'
 
 const desk = useServiceDeskStore()
+const sim = useSimulationStore()
 const link = useResidentLink()
 const alerts = computed(() => desk.alerts)
+const recentEvents = computed(() => [...sim.events].reverse())
+const nowIso = computed(() => sim.simulationDateTime.iso)
 const worst = computed(() =>
   alerts.value.some((a) => a.severity === 'critical')
     ? 'critical'

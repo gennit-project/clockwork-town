@@ -41,8 +41,16 @@ logs/alerts/tickets.
 
 ### 1.1 — Memory daily summary `[M]`
 
-**Status:** Not started. Characters have `shortTermMemories` and `longTermMemories`;
-no rollup mechanism.
+**Status:** Implemented and verified live. Design differs from the original idea: short-term
+memory (`state.memories`) is only a 20-action ring (about 100 minutes), nowhere near a day, so
+residents keep a lightweight per-day tally instead (`utils/dailySummary.ts`: actions, places,
+people). When the sim date changes (midnight), each resident with something remarkable gets one
+long-term `daily_summary` memory (templated, deterministic text, dated to the day that ended;
+persisted via the structured-memory call), then their tally and short-term memories reset.
+Idle time, toilet visits and other unremarkable actions are left out. The memory timeline shows a
+"Daily Summary" filter chip. Known gaps: the tally is in memory only (a reload loses the current
+day's partial tally); summaries are one-to-two short sentences, not a diary; the tick that crosses
+midnight counts toward the day that just ended.
 
 **What to build.** Every 24 in-sim hours, convert the day's short-term memories into a
 summarized long-term memory ("daily summary"), pruning short-term. This keeps memory
@@ -59,7 +67,19 @@ long-term entry visible in the memory timeline; short-term list resets.
 
 ### 1.2 — Reunion & ambient relationship events (R8) `[M]` — high delight
 
-**Status:** Not started.
+**Status:** Human reunions implemented and verified live; pet reunions not started. Reunion
+memories already existed in `relationshipRuntime.ts`. Now reunions are the first of a generic list
+of relationship-event evaluators (`utils/relationshipEvents.ts`, `RELATIONSHIP_EVENT_EVALUATORS`):
+each evaluator turns a pair's last-seen/score data into an event (memory text for both sides, a
+score delta, a notable flag, a log message). A reunion after 6+ hours is a **hug** when the pair's
+average long-term score is at least 0.5, otherwise a quiet "saw them again" memory with no
+notification. Notable events go to the activity log and to a capped recent-events feed
+(`events` in the simulation store) shown in a "Recent events" panel on the Alerts page (alerts are
+derived conditions, so one-off events need their own feed). **Pet reunions are the next piece:**
+they need an owner on each animal in the frontend and a per-pet last-seen time, then an
+owner-greeting evaluator. Tuning note: because the threshold is 6 hours, housemates hug every
+evening when someone returns from a 9-to-5 shift; raise the threshold for notable events if the
+feed gets noisy.
 
 **What to build.** Generate events from relationship-event *evaluators* (not
 hardcoded strings):
@@ -157,7 +177,10 @@ pure repetition does not advance tiers.
 
 ### 1.6 — Workplace & routine bonding (R9) `[M]`
 
-**Status:** Not started. Work shifts exist; co-presence at work is derivable.
+**Status:** Partly exists. `relationshipRuntime.ts` already has a lunch-time window,
+`recordSharedMeal` (`ate_lunch_together` memories and score changes) and
+`recordSharedViewingExperience` (`watched_a_movie_together`). Not yet built: a generator for
+overlapping *work breaks* specifically, and counting repeated lunches toward milestones (1.5).
 
 **What to build.** Shared lunch at work (co-workers on overlapping shifts) generates
 memories and relationship change. **Co-presence alone is not enough** — a shared

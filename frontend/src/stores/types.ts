@@ -207,6 +207,8 @@ export interface CharacterState {
   values: CharacterValueState[]
   /** Ticks left before this character re-issues a rejected invitation (`action:targetId`). */
   inviteBackoff?: Record<string, number>
+  /** What this resident has done so far today (see utils/dailySummary.ts). */
+  dayTally?: DayTally
   memories?: Memory[]
   longTermMemories?: LongTermMemory[]
   relationships?: CharacterRelationship[]
@@ -225,6 +227,25 @@ export interface CharacterValueState {
   id: string
   name: string
   ticksSinceFulfilled: number
+}
+
+/** A resident's activity so far today; rolled into a daily summary memory at midnight. */
+export interface DayTally {
+  /** Completed actions by name. */
+  actions: Record<string, number>
+  /** Completed actions by lot name. */
+  places: Record<string, number>
+  /** Times each person was involved in a social action. */
+  people: Record<string, number>
+}
+
+/** A notable happening worth surfacing to the player (reunions today; grief etc. later). */
+export interface SimulationEvent {
+  tick: number
+  iso: string
+  type: string
+  message: string
+  characterIds: string[]
 }
 
 export interface Memory {
