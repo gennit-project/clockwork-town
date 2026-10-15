@@ -38,9 +38,13 @@ His irritation crosses his threshold and he snaps at Sara. Everyone present disa
    threshold, with someone available to direct it at. Same state in, same act out. If
    any randomness is ever used (for variety in wording, say) it is seeded and recorded.
    This keeps behavior testable and the explanations honest.
-3. **Proportional and recoverable.** Acts sit on an escalation ladder, with cooldowns
-   and a way back: cooling off, apologies, forgiveness. A town must not spiral into
-   permanent mutual hatred just because one run of bad luck happened.
+3. **Proportional, and recoverable, mostly.** Acts sit on an escalation ladder, with
+   cooldowns and a way back: cooling off, apologies, forgiveness. Most failures heal, so a
+   town doesn't spiral into mutual hatred after one bad streak. **But not all of them.**
+   A small number of acts are *unforgivable* to a particular person, and that is a feature:
+   a roster entry that reads "will never forgive Ravi for what he said at the funeral" is
+   a story the player can see. Permanence is held to the same standard as everything else:
+   it is deterministic, rare, and fully explained (see 6.5).
 4. **Tunable.** A *drama intensity* setting scales thresholds and caps, so the same
    engine gives a gentle town, a spicy one, or the "everyone is a bad person" hardest
    world in [Epic 5.5](epic-5-content-shipping.md). Off means off.
@@ -154,29 +158,66 @@ each with a recorded reason.
 **Done when.** A bystander who is close to the target defends them, and a third party
 with a competing value takes the other side, both with explanations.
 
-### 6.5 — Repair and de-escalation `[M]`
+### 6.5 — Repair, de-escalation, and the unforgivable `[M–L]`
 
 **Status:** Not started.
 
-**What to build.** A way back, so drama has an arc.
+**What to build.** A way back for most conflicts, and a deliberate, visible *no way back*
+for a few.
+
+*Repair (the common case):*
 - **Cooling off:** relief actions that drain pressure (leave the room, go for a walk,
   vent to a friend: already built, eat, rest).
-- **Apology and forgiveness:** the actor can apologize when pressure has dropped and
-  they hold remorse (a value, or a trait like *forgiving*/*proud*); the target forgives
-  or doesn't, with a recorded reason. Grievances fade faster when forgiven.
+- **Apology and forgiveness:** the actor can apologize when pressure has dropped and they
+  feel remorse (a value, or a trait like *forgiving*/*proud*); the target forgives or
+  doesn't, with a recorded reason. Grievances fade faster when forgiven.
 - **Mediation:** a close third party can bring two people together.
-- An **estranged** label for relationships that have broken down, and a
-  **reconciled** milestone (Epic 1.5) when they mend.
+- An **estranged** label for relationships that have broken down, and a **reconciled**
+  milestone (Epic 1.5) when they mend.
+
+*The unforgivable (the rare case):*
+- A grievance can become a **permanent grudge**: "will never forgive <person> for
+  <what they did>". It never fades, apologies don't clear it, and there is no repair
+  action for that pair. They can still be civil, share a household or a workplace, and
+  avoid each other; what is gone is the relationship's ability to heal, and the ceiling on
+  how close they can ever be.
+- **Deterministic and auditable, like everything else.** A grudge forms only when the
+  rules say so, never by dice, and the cause is recorded: *which* act, *why it crossed
+  the line*, and the factors (see 6.1). Plausible criteria, to be tuned: the act is a
+  serious rung of the ladder or a repeat of a lesser one; it violates something the
+  victim holds as a top-ranked value or a stance they hold strongly; the victim's
+  disposition makes them slow to forgive (*holds grudges*, not *forgiving*); and,
+  optionally, the offender has crossed this line against this person before. A trivial
+  slight never qualifies.
+- **Rare and bounded.** A cap per resident (for example three), a cooldown, and the
+  drama-intensity setting (6.7) scales how easily a grudge forms. At *Off*, none do.
+- **Visible where the story is.** On the relationship roster
+  (`CharacterRelationshipsTab.vue`, `ResidentRelationships.vue`) the entry shows the
+  grudge and its reason in plain words; the offended party's memory records it; a
+  ticket stays open (these are the ones worth a player's attention); and the cause view
+  explains how it came about. It can be filtered for ("who holds a grudge against whom").
+- **Authorable as backstory** (Epic 2.1): a starting world can include "never forgave her
+  father for leaving", with the reason stated, so the default town's stories (Epic 5)
+  can begin with a wound rather than build one.
+- **Only between adults.** A permanent grudge is never held by, or against, a child
+  (see Scope limits).
 
 **Done when.** An incident can end in an apology and forgiveness, or in lasting
-estrangement, and either way the reasons are visible.
+estrangement, and either way the reasons are visible. A serious enough act against
+someone with a strong stance or value, and a slow-to-forgive disposition, creates a
+permanent grudge that the roster shows with its reason, that no apology removes, and that
+never forms for a minor offence, a forgiving resident, or when intensity is Off.
+
+---
 
 ### 6.6 — Rejection and heartbreak `[M]`
 
 **Status:** Not started.
 
-**What to build.** Romantic proposals and dates that *can fail*, for typed, readable
-reasons rather than an opaque utility comparison: already in a relationship (naming
+**What to build.** Romantic proposals and dates that *can fail*. Rejection is a rule, not a
+roll: nobody flips a coin to turn someone down, so the same two people in the same state
+always get the same answer, for typed, readable reasons rather than an opaque utility
+comparison: already in a relationship (naming
 whom), not attracted (the existing asexual/aromantic traits, plus a compatibility
 check), too little bond, conflicting values, a blood relative (already enforced), or
 simply "not right now" (needs unmet). A declined proposal leaves the proposer with
@@ -196,8 +237,8 @@ over time (faster with friends).
 **Status:** Not started.
 
 **What to build.** One setting that scales the whole thing: **Off / Gentle / Normal /
-High / Relentless.** It scales pressure thresholds, forgiveness speed and cooldowns, and
-caps how many incidents a town can have per simulated day (and per resident), with a
+High / Relentless.** It scales pressure thresholds, forgiveness speed, **how easily a permanent grudge
+forms**, and cooldowns, and caps how many incidents a town can have per simulated day (and per resident), with a
 "calm period" after a big one. This is the knob [Epic 5.5](epic-5-content-shipping.md)
 uses for difficulty levels (the hardest world = Relentless), and it is a per-world
 setting the player can change. **Off** disables every antisocial act while leaving the
@@ -216,7 +257,8 @@ This is a text-only, service-desk-style sim. To keep the drama about *social* fr
   goes through the dark-themes toggle in Epic 5.5, and is not part of this epic.
 - **Children are protected.** Residents below the adult age are never romantic
   participants, never the target of serious antisocial acts (belittling, estrangement,
-  heartbreak), and never perform the serious rungs. Mild childhood squabbles are fine.
+  heartbreak), and never perform the serious rungs, and never hold or are the subject of a permanent grudge.
+  Mild childhood squabbles are fine.
 - **No death from conflict.** Death is its own story-driven system (Epic 4).
 - **No real-world slurs or hateful content**, in generated text or authored data.
 - The **drama intensity** setting must always include **Off**.
@@ -229,8 +271,17 @@ This is a text-only, service-desk-style sim. To keep the drama about *social* fr
 - Controls in every test: a calm resident, a below-threshold pressure, and intensity
   Off must each produce no act.
 - Caps and cooldowns are tested at their boundaries.
+- Permanent grudges: every one has a recorded cause and offence; none forms for a minor
+  act, a forgiving resident, a child, or at intensity Off; apologies never clear one; the
+  per-resident cap holds.
 
 ## Open decisions
+
+- **What makes an act unforgivable.** Recommended: serious or repeated acts that hit a
+  top-ranked value or strong stance of someone slow to forgive, with the exact thresholds
+  tuned from play. Open: whether the offender's remorse can ever lower a grudge to
+  "estranged" (recommended: no, that is what makes it permanent), and whether the
+  *player* may ever clear one (recommended: only through the editor, as authoring).
 
 - **Which dispositions first.** Recommended: *loses temper easily*, *jealous*, *petty*,
   *forgiving*; add the rest as the cause view proves out.
