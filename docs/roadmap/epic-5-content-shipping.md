@@ -181,6 +181,11 @@ everyone to max happiness/fulfillment — on the hardest level everyone is a bad
 and drama happens constantly. Difficulty is configurable. A toggle controls whether
 dark/adult-themed events ever happen.
 
+**How:** the drama itself comes from [Epic 6](epic-6-friction-and-drama.md): each
+difficulty level is a *drama intensity* setting (6.7) plus how many residents carry
+antisocial dispositions (6.2), and every act stays explainable. The "dark/adult-themed
+events" toggle is separate from drama intensity, and Epic 6's scope limits apply to both.
+
 ---
 
 ## Reference catalogs (content bible)

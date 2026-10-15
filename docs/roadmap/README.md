@@ -85,10 +85,17 @@ Two corrections to the original (pre-this-folder) numbering:
 | 3 | Domestic life & economy (finances, cooking rota, chores) | [epic-3-domestic-economy.md](epic-3-domestic-economy.md) |
 | 4 | Town as a living system (job slots, NPCs, illness, death & grief, childcare) | [epic-4-living-town.md](epic-4-living-town.md) |
 | 5 | Content & shipping (build-and-staff flow, default town, tutorial, difficulty) | [epic-5-content-shipping.md](epic-5-content-shipping.md) |
+| 6 | Friction & drama (autonomous antisocial behavior with an auditable cause, rejection, repair) | [epic-6-friction-and-drama.md](epic-6-friction-and-drama.md) |
 | — | Parked / long-term / cut | [parked-long-term.md](parked-long-term.md) |
 
 Epics 0–2 are specified in full. Epics 3–5 capture everything known today; expect to
 refine each one's details just before starting it (and update its file when you do).
+
+**Epic 6 is numbered last but is not last in time.** It builds on the approval and
+disapproval system from Epic 1.3 (done) and can start once that and the trait system exist,
+which is now. Its first item (cause records) is worth doing early, because it makes every
+autonomous decision explainable. Epic 5.5's difficulty levels depend on its drama-intensity
+setting (6.7).
 
 ## Conventions for these docs
 

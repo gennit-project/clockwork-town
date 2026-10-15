@@ -140,6 +140,10 @@ existing behaviors can be topics; reactions only change the witness's side of a 
 venting is a planner nudge rather than its own action, and a complaint is not remembered by the
 person complained about beyond "listened"; the numbers (cooldown, decay, bonuses) are first guesses.
 
+**Follow-up:** [Epic 6](epic-6-friction-and-drama.md) builds on this system to add autonomous
+antisocial behavior (a hot-tempered resident lashing out, jealousy, rejection) whose every
+act has an auditable cause, with disapproval as the consequence.
+
 **What to build.** Characters react to what they witness, based on traits/values:
 - A character who disapproves of a behavior (e.g. haze use — a fictional recreational
   herb) loses approval toward someone they see doing it → files a **ticket**
