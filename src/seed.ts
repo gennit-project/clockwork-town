@@ -43,6 +43,7 @@ const { HouseholdResolvers } = await import("./resolvers/household");
 const { upsertCharacterRelationship } = await import("./resolvers/relationship");
 const { ensureTraitCatalog, setCharacterTraits } = await import("./traits");
 const { ensureValueCatalog, setCharacterValues } = await import("./values");
+const { setCharacterStances } = await import("./stances");
 
 const createWorld = WorldResolvers.Mutation.createWorld;
 const createRegion = WorldResolvers.Mutation.createRegion;
@@ -448,6 +449,32 @@ async function seedValues() {
   }
 }
 
+// Opinions about what others do, so the demo shows disapproval (and tickets) on its own:
+// retired Elena disapproves of Manny napping in the daytime, and so on.
+async function seedStances() {
+  const assignments: Record<string, Array<{ topicId: string; stance: "approves" | "disapproves" }>> = {
+    "char-elena-reyes": [
+      { topicId: "daytime-napping", stance: "disapproves" },
+      { topicId: "reading", stance: "approves" }
+    ],
+    "char-manny-reyes": [{ topicId: "animal-care", stance: "approves" }],
+    "char-kim-nguyen": [{ topicId: "screen-time", stance: "disapproves" }],
+    "char-anh-nguyen": [{ topicId: "reading", stance: "approves" }],
+    "char-grace-okafor": [{ topicId: "public-romance", stance: "disapproves" }],
+    "char-daniel-okafor": [
+      { topicId: "reading", stance: "approves" },
+      { topicId: "screen-time", stance: "disapproves" }
+    ],
+    "char-sara-marsh": [{ topicId: "volunteering", stance: "approves" }],
+    "char-tom-marsh": [{ topicId: "daytime-napping", stance: "disapproves" }],
+    "char-ravi-lin": [{ topicId: "animal-care", stance: "approves" }],
+    "char-nadia-frost": [{ topicId: "reading", stance: "approves" }]
+  };
+  for (const [characterId, stances] of Object.entries(assignments)) {
+    await setCharacterStances(characterId, stances);
+  }
+}
+
 async function seed() {
   await applyDDL();
 
@@ -455,6 +482,7 @@ async function seed() {
   await seedPinehaven();
   await seedTraits();
   await seedValues();
+  await seedStances();
   await seedLibrary();
 
   // Flush to disk. Short-lived scripts need an explicit checkpoint + close.

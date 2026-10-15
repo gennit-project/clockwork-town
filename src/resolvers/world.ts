@@ -5,6 +5,7 @@ import { getDefaultItemComfort } from "./itemComfort";
 import { deserializeStoredWorkSchedule, serializeWorkSchedule } from "./workSchedule";
 import { setCharacterTraits } from "../traits";
 import { setCharacterValues } from "../values";
+import { deserializeStances, setCharacterStances } from "../stances";
 
 // Helper functions to safely encode/decode template data with special characters
 const encodeTemplateData = (data: any): string => {
@@ -1200,7 +1201,7 @@ export const WorldResolvers = {
         OPTIONAL MATCH (c)-[:HOME]->(home:Lot)
         OPTIONAL MATCH (c)-[located:AT]->(location:Lot)
         RETURN c.id AS id, c.name AS name, c.age AS age, c.bio AS bio,
-               c.workSchedule AS workSchedule, c.valueOrder AS valueOrder,
+               c.workSchedule AS workSchedule, c.valueOrder AS valueOrder, c.stances AS stances,
                h.id AS householdId, home.id AS homeLotId, location.id AS locationId,
                located.at AS locatedAt
       `, { worldId });
@@ -1224,11 +1225,12 @@ export const WorldResolvers = {
         }
       }
 
-      const characters = [...latestRowByCharacter.values()].map(({ valueOrder, locatedAt: _locatedAt, ...character }: any) => {
+      const characters = [...latestRowByCharacter.values()].map(({ valueOrder, stances, locatedAt: _locatedAt, ...character }: any) => {
         const memberValueIds = valueRows.filter((row) => row.characterId === character.id).map((row) => row.valueId);
         const rank = new Map<string, number>((valueOrder ?? []).map((id: string, index: number) => [id, index]));
         return {
           ...character,
+          stances: deserializeStances(stances),
           traitIds: traitRows.filter((row) => row.characterId === character.id).map((row) => row.traitId),
           // Values in rank order, most important first
           valueIds: memberValueIds.sort((x, y) => (rank.get(x) ?? Infinity) - (rank.get(y) ?? Infinity))
@@ -1448,6 +1450,7 @@ export const WorldResolvers = {
           // (anything no longer in the catalog is skipped rather than failing the restore).
           await setCharacterTraits(newCharId, (char.traitIds ?? []).filter((id: string) => knownTraitIds.has(id)));
           await setCharacterValues(newCharId, (char.valueIds ?? []).filter((id: string) => knownValueIds.has(id)));
+          await setCharacterStances(newCharId, char.stances ?? []);
 
           // Link to household
           if (newHouseholdId) {

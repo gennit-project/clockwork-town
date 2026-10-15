@@ -78,6 +78,10 @@ export const queries = {
             id
             name
           }
+          stances {
+            topicId
+            stance
+          }
           workSchedule {
             day
             start
@@ -362,6 +366,10 @@ export const queries = {
         values {
           id
           name
+        }
+        stances {
+          topicId
+          stance
         }
         workSchedule {
           day
@@ -706,6 +714,10 @@ export const mutations = {
         traits {
           id
           name
+        }
+        stances {
+          topicId
+          stance
         }
         workSchedule {
           day

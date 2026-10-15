@@ -61,7 +61,7 @@ CREATE NODE TABLE IF NOT EXISTS Value(
 );
 
 CREATE NODE TABLE IF NOT EXISTS Character(
-  id STRING, name STRING, age INT64, bio STRING, workSchedule STRING[], valueOrder STRING[],
+  id STRING, name STRING, age INT64, bio STRING, workSchedule STRING[], valueOrder STRING[], stances STRING[],
   PRIMARY KEY(id)
 );
 

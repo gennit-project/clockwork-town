@@ -141,6 +141,20 @@ export async function migrateDatabase(): Promise<{
     SET c.valueOrder = []
   `);
 
+  // Approval stances: JSON strings {topicId, stance}; empty means neutral about everything.
+  try {
+    await conn.query("ALTER TABLE Character ADD stances STRING[]");
+  } catch (error) {
+    if (!isDuplicatePropertyError(error, "stances")) {
+      throw error;
+    }
+  }
+  await conn.query(`
+    MATCH (c:Character)
+    WHERE c.stances IS NULL
+    SET c.stances = []
+  `);
+
   for (const [propertyName, dataType] of [
     ["fromCharacterId", "STRING"],
     ["toCharacterId", "STRING"],

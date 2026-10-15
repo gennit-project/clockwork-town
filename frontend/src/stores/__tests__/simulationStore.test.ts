@@ -3,6 +3,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { useSimulationStore } from '../simulation'
 import { createMockWorldData, mockConsole } from './mockData'
 import { getCharacterStatusText } from '../../composables/useCharacterStatus'
+import { useServiceDeskStore } from '../serviceDesk'
 
 const persistenceMocks = vi.hoisted(() => ({
   moveCharacterToLot: vi.fn(async () => {}),
@@ -993,6 +994,137 @@ describe('simulation store integration', () => {
       await store.executeTick()
       expect(memoriesOfType('group_movie')).toHaveLength(0)
       expect(memoriesOfType('watched_a_movie_together').length).toBeGreaterThan(0)
+    })
+  })
+
+  describe('witness reactions', () => {
+    const memoriesOfType = (eventType: string) =>
+      persistenceMocks.createStructuredCharacterLongTermMemory.mock.calls
+        .map(([input]) => input as { characterId: string; eventType?: string; content: string })
+        .filter((input) => input.eventType === eventType)
+
+    const setClock = (store: ReturnType<typeof useSimulationStore>, hour: number) => {
+      const iso = `2026-04-06T${String(hour).padStart(2, '0')}:00:00.000Z` // a Monday
+      store.simulationDateTime = { ...store.simulationDateTime, iso, hour, minute: 0, weekday: 'Monday' }
+    }
+
+    function setupHousemates(stances: Record<string, 'approves' | 'disapproves'> = {}, opts: { critic?: boolean } = {}) {
+      const store = setupStore() // char-1, Alice, in the Living Room
+      setupSecondCharacter(store, 'lot-1', 'Test House', 'space-1', 'Living Room') // char-2, Bob
+      store.characterStates['char-2'].stances = stances
+      store.characterStates['char-2'].relationships = [
+        createRelationshipSeed({ fromCharacterId: 'char-2', toCharacterId: 'char-1', lastSeenAt: null, shortTermScore: 0.5, longTermScore: 0.5 })
+      ]
+      if (opts.critic === false) store.characterStates['char-2'].stances = {}
+      return store
+    }
+
+    const bobsFeelingsAboutAlice = (store: ReturnType<typeof useSimulationStore>) =>
+      store.characterStates['char-2'].relationships?.find((r) => r.toCharacterId === 'char-1')
+
+    it('a housemate who disapproves of daytime napping holds it against the napper', async () => {
+      const store = setupHousemates({ 'daytime-napping': 'disapproves' })
+      setClock(store, 14)
+      enqueueSleepIntent(store)
+      await store.executeTick()
+
+      // Their feelings toward the napper drop (-0.15 short-term, less one tick of decay).
+      expect(bobsFeelingsAboutAlice(store)?.shortTermScore).toBeCloseTo(0.5 - 0.15 - 0.01, 2)
+      expect(bobsFeelingsAboutAlice(store)?.longTermScore).toBeLessThan(0.5)
+
+      expect(memoriesOfType('disapproval')).toEqual([
+        expect.objectContaining({ characterId: 'char-2', content: 'Disapproved of Alice napping in the daytime.' })
+      ])
+      expect(store.characterStates['char-2'].grievances).toEqual([
+        expect.objectContaining({ aboutCharacterId: 'char-1', aboutName: 'Alice', topicId: 'daytime-napping', times: 1 })
+      ])
+      expect(store.events.map((e) => e.message)).toEqual(['Bob disapproved of Alice napping in the daytime.'])
+      // The napper is not the one holding a grudge.
+      expect(store.characterStates['char-1'].grievances ?? []).toEqual([])
+    })
+
+    it('control: no opinion means no reaction', async () => {
+      const store = setupHousemates({})
+      setClock(store, 14)
+      enqueueSleepIntent(store)
+      await store.executeTick()
+      expect(bobsFeelingsAboutAlice(store)?.shortTermScore).toBeCloseTo(0.5 - 0.01, 2)
+      expect(memoriesOfType('disapproval')).toHaveLength(0)
+      expect(store.characterStates['char-2'].grievances ?? []).toEqual([])
+      expect(store.events).toHaveLength(0)
+    })
+
+    it('control: sleeping through the scheduled sleep block is not a nap', async () => {
+      const store = setupHousemates({ 'daytime-napping': 'disapproves' })
+      store.characterStates['char-1'].workSchedule = [
+        { day: 'Monday', start: '22:00', end: '06:00', activity: 'sleep', locationLotId: 'lot-1' }
+      ]
+      setClock(store, 23)
+      enqueueSleepIntent(store)
+      await store.executeTick()
+      expect(memoriesOfType('disapproval')).toHaveLength(0)
+      expect(store.characterStates['char-2'].grievances ?? []).toEqual([])
+    })
+
+    it('control: a witness on a different lot does not see it', async () => {
+      const store = setupHousemates({ 'daytime-napping': 'disapproves' })
+      store.updateCharacterLocation('char-2', 'region-1', 'lot-2', 'Community Center', 'space-3', 'Library')
+      setClock(store, 14)
+      enqueueSleepIntent(store)
+      await store.executeTick()
+      expect(memoriesOfType('disapproval')).toHaveLength(0)
+    })
+
+    it('reacts once, not on every tick of a long nap', async () => {
+      const store = setupHousemates({ 'daytime-napping': 'disapproves' })
+      setClock(store, 14)
+      enqueueSleepIntent(store) // sleeping takes several ticks
+      await store.executeTick()
+      await store.executeTick()
+      await store.executeTick()
+      expect(memoriesOfType('disapproval')).toHaveLength(1)
+      expect(store.characterStates['char-2'].grievances?.[0].times).toBe(1)
+      expect(bobsFeelingsAboutAlice(store)?.shortTermScore).toBeGreaterThan(0.5 - 0.15 - 0.05)
+    })
+
+    it('an approving witness warms to the reader: a memory, no grievance and no notification', async () => {
+      const store = setupHousemates({ reading: 'approves' })
+      enqueueReadIntent(store)
+      await store.executeTick()
+      expect(bobsFeelingsAboutAlice(store)?.shortTermScore).toBeCloseTo(0.5 + 0.08 - 0.01, 2)
+      expect(memoriesOfType('approval')).toEqual([
+        expect.objectContaining({ characterId: 'char-2', content: 'Approved of Alice reading.' })
+      ])
+      expect(store.characterStates['char-2'].grievances ?? []).toEqual([])
+      expect(store.events).toHaveLength(0)
+    })
+
+    it('files a ticket for the grievance, and the ticket resolves when it fades', async () => {
+      const store = setupHousemates({ 'daytime-napping': 'disapproves' })
+      setClock(store, 14)
+      enqueueSleepIntent(store)
+      await store.executeTick()
+
+      const desk = useServiceDeskStore()
+      desk.refresh()
+      expect(desk.tickets.map((t) => [t.title, t.status])).toEqual([
+        ['Bob disapproves of Alice napping in the daytime', 'open']
+      ])
+
+      store.characterStates['char-2'].grievances = []
+      desk.refresh()
+      expect(desk.tickets[0]).toMatchObject({ status: 'resolved', autoResolved: true })
+    })
+
+    it('clears the grievance after it has faded', async () => {
+      const store = setupHousemates({ 'daytime-napping': 'disapproves' })
+      setClock(store, 14)
+      enqueueSleepIntent(store)
+      await store.executeTick()
+      expect(store.characterStates['char-2'].grievances).toHaveLength(1)
+      store.characterStates['char-2'].grievances![0].ticksRemaining = 1
+      await store.executeTick()
+      expect(store.characterStates['char-2'].grievances).toEqual([])
     })
   })
 

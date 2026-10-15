@@ -213,6 +213,7 @@ import { useBreadcrumbs } from '../composables/useBreadcrumbs'
 import { computeCharacterHappiness } from '../stores/utils/happinessMetrics'
 import { toTraitSeed, type TraitSummary } from '../stores/utils/traitSeed'
 import { toValueSeed, type ValueSummary } from '../stores/utils/valueSeed'
+import { toStanceSeed, type StanceSummary } from '../stores/utils/stanceSeed'
 import { resolvePetOwnership } from '../stores/utils/petSeed'
 import type { InputLot, InputSpace, NeedName } from '../stores/types'
 
@@ -344,7 +345,7 @@ interface GetHouseholdsResult {
   households: HouseholdSummary[]
 }
 
-type RawRegionCharacter = Omit<CharacterSummary, 'traits'> & { traits?: TraitSummary[]; values?: ValueSummary[] }
+type RawRegionCharacter = Omit<CharacterSummary, 'traits'> & { traits?: TraitSummary[]; values?: ValueSummary[]; stances?: StanceSummary[] }
 
 interface GetRegionResult {
   region?: {
@@ -632,6 +633,7 @@ const loadData = async () => {
           name: character.name,
           ...toTraitSeed(character.traits),
           ...toValueSeed(character.values),
+          ...toStanceSeed(character.stances),
           householdId: household?.id ?? null,
           homeLotId: household?.lotId ?? character.location?.id ?? null,
           homeLotName: household?.lotName ?? character.location?.name ?? null,

@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import type { Ref } from 'vue'
 import type {
   CharacterValueState,
+  StanceValue,
   SimulationEvent,
   AnimalState,
   AutoTickSpeed,
@@ -42,6 +43,7 @@ interface CharacterSimulationSeed {
   traits?: string[]
   traitIds?: string[]
   values?: CharacterValueState[]
+  stances?: Record<string, StanceValue>
   householdId?: string | null
   homeLotId?: string | null
   homeLotName?: string | null
@@ -138,6 +140,9 @@ export const useSimulationStore = defineStore('simulation', () => {
     pinDisabledNeeds(state.needs, state.traitIds)
     if (character.values) {
       state.values = mergeValueSeed(character.values, state.values)
+    }
+    if (character.stances) {
+      state.stances = character.stances
     }
     state.householdId = character.householdId ?? state.householdId ?? null
     state.homeLotId = character.homeLotId ?? state.homeLotId ?? null

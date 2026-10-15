@@ -109,7 +109,26 @@ specific species or character.
 
 ### 1.3 — Approval / disapproval & reactions `[M]`
 
-**Status:** Not started.
+**Status:** Part 1 implemented and verified live (witness reactions, grievances, tickets,
+persistence). Part 2 (venting and comfort desires, good-hearted and bitter traits, an opinions editor)
+not started. What a resident approves or disapproves of is stored per character as `stances`
+(`{topicId, stance}`; anything not listed is neutral; backend `src/stances.ts`, a `Character.stances`
+column with migration, GraphQL `stances` field and `updateCharacter` input, included in world
+backup/restore and in `npm run check:backup`). Topics live in `config/approvalTopics.ts`: public
+romance (a date), daytime napping (sleeping in waking hours outside the scheduled sleep block),
+watching movies, reading, volunteering, caring for animals. They match behaviors that already
+exist; the roadmap's example, haze, becomes one more entry once the action exists. After each tick
+(`recordWitnessReactions` in `simulationRuntime.ts`, pure detection in `utils/witnessReactions.ts`)
+every awake resident on the same lot as someone doing a topic act, with a stance on it, reacts, with
+a 2-hour cooldown per person and topic. Disapproval lowers the witness's feelings toward the actor
+(-0.15 short-term, -0.03 long-term), leaves a `disapproval` memory, adds a **grievance** (fades after 3
+sim days, refreshed and counted if it happens again, at most 6 held) and puts a notable event in the
+Recent events feed; approval warms the relationship slightly and leaves a quiet `approval` memory.
+Each grievance becomes a ticket ("Elena disapproves of Manny napping in the daytime") that resolves
+itself when the grievance fades. The dashboard shows "On their mind". The seed gives a few
+residents opinions (retired Elena disapproves of Manny's daytime naps). Known gaps: nobody can edit
+stances in the UI yet (part 2); only existing behaviors can be topics; reactions only change the
+witness's side of a relationship.
 
 **What to build.** Characters react to what they witness, based on traits/values:
 - A character who disapproves of a behavior (e.g. haze use — a fictional recreational

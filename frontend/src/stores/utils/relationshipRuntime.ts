@@ -33,7 +33,10 @@ const RELATIONSHIP_EVENT_SCORES: Record<string, { shortTerm: number; longTerm: n
   reunited_after_long_absence: { shortTerm: 0.05, longTerm: 0.015 },
   // Fun done together (planned with people): see recordGroupInteraction
   view_movie: { shortTerm: 0.06, longTerm: 0.02 },
-  view_art: { shortTerm: 0.05, longTerm: 0.015 }
+  view_art: { shortTerm: 0.05, longTerm: 0.015 },
+  // Reactions to seeing someone do something the witness has an opinion about
+  witnessed_disapproval: { shortTerm: -0.15, longTerm: -0.03 },
+  witnessed_approval: { shortTerm: 0.08, longTerm: 0.015 }
 }
 
 export interface RelationshipRuntimeDependencies {
@@ -836,6 +839,88 @@ export async function recordGroupInteraction({
       createdAt: timestamp
     })
   }
+}
+
+/**
+ * A witness reacting to something someone did: only the witness's feelings change (their
+ * relationship toward the actor), and they get a memory of it. First-met handling applies if
+ * they somehow hadn't met.
+ */
+export async function recordWitnessReaction({
+  witnessId,
+  actorId,
+  witnessState,
+  actorState,
+  stance,
+  phrase,
+  timestamp,
+  dependencies
+}: {
+  witnessId: string
+  actorId: string
+  witnessState: CharacterState
+  actorState: CharacterState
+  stance: 'approves' | 'disapproves'
+  /** What the actor was doing: "napping in the daytime". */
+  phrase: string
+  timestamp: string
+  dependencies: RelationshipRuntimeDependencies
+}): Promise<void> {
+  const location = {
+    lotId: witnessState.location.lotId,
+    lotName: witnessState.location.lotName,
+    spaceId: witnessState.location.spaceId,
+    spaceName: witnessState.location.spaceName
+  }
+  const ensured = await ensureDirectionalRelationship({
+    fromCharacterId: witnessId,
+    toCharacterId: actorId,
+    fromState: witnessState,
+    lastSeenAt: timestamp,
+    dependencies
+  })
+  let relationship = ensured.relationship
+
+  if (ensured.created) {
+    await createFirstMetMemory({
+      characterId: witnessId,
+      otherCharacterName: actorState.name,
+      relationshipId: relationship.id,
+      timestamp,
+      location,
+      dependencies
+    })
+    relationship = await applyRelationshipEventDelta({
+      relationship,
+      fromState: witnessState,
+      eventType: 'first_met',
+      dependencies
+    })
+  }
+
+  const disapproves = stance === 'disapproves'
+  relationship = await applyRelationshipEventDelta({
+    relationship,
+    fromState: witnessState,
+    eventType: disapproves ? 'witnessed_disapproval' : 'witnessed_approval',
+    dependencies
+  })
+
+  await createLinkedRelationshipMemory({
+    characterId: witnessId,
+    content: `${disapproves ? 'Disapproved of' : 'Approved of'} ${actorState.name} ${phrase}.`,
+    relationshipId: relationship.id,
+    timestamp,
+    eventType: disapproves ? 'disapproval' : 'approval',
+    location,
+    dependencies
+  })
+
+  await syncRelationshipMilestoneLabels({
+    characterState: witnessState,
+    relationshipId: relationship.id,
+    dependencies
+  })
 }
 
 export async function recordRelationshipDirectContact({

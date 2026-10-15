@@ -3,6 +3,7 @@ import { deserializeStoredWorkSchedule, serializeWorkSchedule } from "./workSche
 import { syncMemoryRelationships } from "./relationship";
 import { setCharacterTraits } from "../traits";
 import { getCharacterValues, setCharacterValues } from "../values";
+import { getCharacterStances, setCharacterStances } from "../stances";
 
 export const CharacterResolvers = {
   Trait: {
@@ -12,6 +13,7 @@ export const CharacterResolvers = {
   },
   Character: {
     values: async (parent: { id: string }) => getCharacterValues(parent.id),
+    stances: async (parent: { id: string }) => getCharacterStances(parent.id),
     traits: async (parent: { id: string }) => {
       return q(`
         MATCH (c:Character {id:$cid})-[:HAS_TRAIT]->(t:Trait)
@@ -195,8 +197,9 @@ export const CharacterResolvers = {
       workSchedule?: Array<{ day: string; start: string; end: string; locationLotId: string }>;
       traitIds?: string[];
       valueIds?: string[];
+      stances?: Array<{ topicId: string; stance: string }>;
     } }) => {
-      const { id, traitIds, valueIds, ...updates } = input;
+      const { id, traitIds, valueIds, stances, ...updates } = input;
       const setFields: string[] = [];
       const params: Record<string, unknown> = { id };
 
@@ -217,7 +220,7 @@ export const CharacterResolvers = {
         params.workSchedule = serializeWorkSchedule(updates.workSchedule);
       }
 
-      if (setFields.length === 0 && traitIds === undefined && valueIds === undefined) {
+      if (setFields.length === 0 && traitIds === undefined && valueIds === undefined && stances === undefined) {
         throw new Error('No character fields to update');
       }
 
@@ -227,6 +230,10 @@ export const CharacterResolvers = {
 
       if (valueIds !== undefined) {
         await setCharacterValues(id, valueIds);
+      }
+
+      if (stances !== undefined) {
+        await setCharacterStances(id, stances);
       }
 
       if (setFields.length === 0) {

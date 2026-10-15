@@ -81,6 +81,11 @@
         <NeedsByTier :state="state" :edit-link="editLink" />
       </Panel>
 
+      <!-- What they're holding against people -->
+      <Panel v-if="(state.grievances?.length ?? 0) > 0" title="On their mind" class="mt-3">
+        <OnTheirMind :grievances="state.grievances ?? []" :resident-link="residentLink" />
+      </Panel>
+
       <!-- Weekly schedule -->
       <Panel v-if="(state.workSchedule || []).length > 0" title="Schedule" class="mt-3">
         <WeeklySchedule :entries="scheduleEntries" :today-weekday="simWeekday" :now-minutes="simMinutes" />
@@ -123,6 +128,7 @@ import Panel from '../components/Panel.vue'
 import StatTile from '../components/StatTile.vue'
 import CharacterHappinessStackChart from '../components/charts/CharacterHappinessStackChart.vue'
 import NeedsByTier from '../components/NeedsByTier.vue'
+import OnTheirMind from '../components/OnTheirMind.vue'
 import ResidentRelationships from '../components/ResidentRelationships.vue'
 import MemoryTimeline from '../components/MemoryTimeline.vue'
 import NeedTrendHeatmap from '../components/charts/NeedTrendHeatmap.vue'
@@ -186,6 +192,9 @@ const residentNames = computed(() => {
   }
   return map
 })
+
+const residentLink = (id: string): string | null =>
+  worldId.value && regionId.value ? `/world/${worldId.value}/region/${regionId.value}/character/${id}` : null
 
 function goToResident(id: string) {
   if (worldId.value && regionId.value) {

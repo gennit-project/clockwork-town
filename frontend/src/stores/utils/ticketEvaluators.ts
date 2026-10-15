@@ -56,7 +56,29 @@ export const evaluateNeglectedValueTickets: TicketEvaluator = ({ states }) => {
   return candidates
 }
 
-export const TICKET_EVALUATORS: TicketEvaluator[] = [evaluateUnmetNeeds, evaluateNeglectedValueTickets]
+/** Someone is holding something against someone else (see witnessReactions.ts). */
+export const evaluateGrievanceTickets: TicketEvaluator = ({ states }) => {
+  const candidates: TicketCandidate[] = []
+  for (const [characterId, state] of Object.entries(states)) {
+    for (const grievance of state.grievances ?? []) {
+      candidates.push({
+        key: `grievance:${characterId}:${grievance.aboutCharacterId}:${grievance.topicId}`,
+        rule: 'grievance',
+        severity: 'warning',
+        characterId,
+        characterName: state.name,
+        title: `${state.name} disapproves of ${grievance.aboutName} ${grievance.summary}`
+      })
+    }
+  }
+  return candidates
+}
+
+export const TICKET_EVALUATORS: TicketEvaluator[] = [
+  evaluateUnmetNeeds,
+  evaluateNeglectedValueTickets,
+  evaluateGrievanceTickets
+]
 
 export function evaluateTicketCandidates(
   ctx: TicketContext,

@@ -105,3 +105,13 @@ export function describeTicksAgo(ticks: number): string {
 export function describeAction(action: ActionName): string {
   return action.replace(/_/g, ' ')
 }
+
+/** How long until something fades, from a tick count: "under an hour", "5h", "2d 4h". */
+export function describeTicksRemaining(ticks: number): string {
+  const hours = Math.floor(ticks / TICKS_PER_HOUR)
+  if (hours < 1) return 'under an hour'
+  if (hours < 24) return `${hours}h`
+  const days = Math.floor(hours / 24)
+  const rest = hours % 24
+  return rest ? `${days}d ${rest}h` : `${days}d`
+}

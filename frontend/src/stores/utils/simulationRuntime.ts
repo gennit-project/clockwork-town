@@ -45,9 +45,11 @@ import { markValuesFulfilled } from './valueEffects'
 import { isNewDay, recordActionInTally, recordDailySummaries } from './dailySummary'
 import { evaluatePetEvents, updatePetTogetherness } from './petReunions'
 import { describeActionTarget, isGroupFunAction, requiresInvitation } from './groupSocial'
+import { addGrievance, detectWitnessReactions, startReactionCooldown } from './witnessReactions'
 import {
   decayCharacterRelationships,
   recordGroupInteraction,
+  recordWitnessReaction,
   recordRelationshipConversation,
   recordRelationshipDirectContact,
   recordRelationshipEncounter,
@@ -218,6 +220,44 @@ export function createSimulationRuntime(
     })
     if (refs.events.value.length > EVENT_FEED_LIMIT) {
       refs.events.value.splice(0, refs.events.value.length - EVENT_FEED_LIMIT)
+    }
+  }
+
+  /** Residents react to what they see others doing: approval changes feelings, disapproval also leaves a grievance. */
+  async function recordWitnessReactions(): Promise<void> {
+    const states = refs.characterStates.value
+    const timestamp = refs.simulationDateTime.value.iso
+
+    for (const reaction of detectWitnessReactions({ states, simulationDateTime: refs.simulationDateTime.value })) {
+      const witness = states[reaction.witnessId]
+      const actor = states[reaction.actorId]
+      if (!witness || !actor) {
+        continue
+      }
+
+      startReactionCooldown(witness, reaction.actorId, reaction.topic.id)
+      await recordWitnessReaction({
+        witnessId: reaction.witnessId,
+        actorId: reaction.actorId,
+        witnessState: witness,
+        actorState: actor,
+        stance: reaction.stance,
+        phrase: reaction.topic.phrase,
+        timestamp,
+        dependencies: {
+          persistCharacterRelationship: dependencies.persistCharacterRelationship,
+          createStructuredCharacterLongTermMemory: dependencies.createStructuredCharacterLongTermMemory
+        }
+      })
+
+      if (reaction.stance === 'disapproves') {
+        addGrievance(witness, { id: reaction.actorId, name: actor.name }, reaction.topic)
+        recordNotableEvent({
+          type: 'disapproval',
+          message: `${witness.name} disapproved of ${actor.name} ${reaction.topic.phrase}.`,
+          characterIds: [reaction.witnessId, reaction.actorId]
+        })
+      }
     }
   }
 
@@ -679,6 +719,7 @@ export function createSimulationRuntime(
     })
 
     await recordPetReunions()
+    await recordWitnessReactions()
 
     recordHappinessSample()
   }

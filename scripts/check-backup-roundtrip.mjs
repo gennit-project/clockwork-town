@@ -19,11 +19,17 @@ const worldId = process.env.WORLD_ID ?? 'world-desert-willow'
 const regionId = process.env.REGION_ID ?? 'region-desert-willow'
 
 async function gql(query, variables = {}) {
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ query, variables })
-  })
+  let res
+  try {
+    res = await fetch(url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ query, variables })
+    })
+  } catch (error) {
+    console.error(`Could not reach the backend at ${url} (${error.cause?.code ?? error.message}). Is it running?`)
+    process.exit(2)
+  }
   const body = await res.json()
   if (body.errors) throw new Error(JSON.stringify(body.errors).slice(0, 500))
   return body.data
@@ -31,7 +37,7 @@ async function gql(query, variables = {}) {
 
 const REGION = `query($r:ID!){
   region(id:$r){
-    characters{ id name traits{id} values{id} location{ name } workSchedule{ day start end activity location{ name } } }
+    characters{ id name traits{id} values{id} stances{ topicId stance } location{ name } workSchedule{ day start end activity location{ name } } }
     animals{ id name ownerId traits }
   }
   households(regionId:$r){ id name lotName }
@@ -45,6 +51,7 @@ async function snapshot(region) {
     [...data.region.characters].sort((a, b) => a.name.localeCompare(b.name)).map((c) => [c.name, {
       traits: c.traits.map((t) => t.id).sort(),
       values: c.values.map((v) => v.id), // rank order matters
+      stances: c.stances.map((s) => `${s.topicId}=${s.stance}`).sort(),
       at: c.location?.name ?? null,
       schedule: c.workSchedule
         .map((s) => [s.day, s.start, s.end, s.activity, s.location.name].join('|'))

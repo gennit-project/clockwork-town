@@ -5,6 +5,7 @@ import { fetchCharacterDetails } from '../stores/simulationPersistence'
 import { refreshCharacterDetails } from '../stores/utils/characterDetails'
 import { toTraitSeed, type TraitSummary } from '../stores/utils/traitSeed'
 import { toValueSeed, type ValueSummary } from '../stores/utils/valueSeed'
+import { toStanceSeed, type StanceSummary } from '../stores/utils/stanceSeed'
 import { resolvePetOwnership } from '../stores/utils/petSeed'
 import type { InputLot, WorkShift } from '../stores/types'
 
@@ -14,6 +15,7 @@ interface RegionCharacter {
   age?: number
   traits?: TraitSummary[]
   values?: ValueSummary[]
+  stances?: StanceSummary[]
   location?: { id: string; name: string } | null
   workSchedule?: Array<{
     day: string
@@ -112,6 +114,7 @@ export function useTownDataLoader() {
           name: character.name,
           ...toTraitSeed(character.traits),
           ...toValueSeed(character.values),
+          ...toStanceSeed(character.stances),
           householdId: household?.id ?? null,
           homeLotId: household?.lotId ?? character.location?.id ?? null,
           homeLotName: household?.lotName ?? character.location?.name ?? null,

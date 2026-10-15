@@ -19,6 +19,7 @@ import { effectiveDecayRate, isActionDisabled, pinDisabledNeeds } from './traitE
 import { tickValues, valueNeglectDrain } from './valueEffects'
 import { backOffInvitation, MAX_INVITE_ATTEMPTS_PER_TICK, tickInviteBackoff } from './inviteBackoff'
 import { isGroupCapableAction, requiresInvitation } from './groupSocial'
+import { tickWitnessState } from './witnessReactions'
 import { selectBestIntent } from './decisionMaking'
 import { debugLog } from './simulationDebug'
 import { advanceSimulationDateTime } from './simulationCalendar'
@@ -551,6 +552,7 @@ export async function executeTick({
     state.needs.fulfillment = Math.max(0, state.needs.fulfillment - valueNeglectDrain(state))
 
     tickInviteBackoff(state)
+    tickWitnessState(state)
 
     // Decrement cooldowns
     for (const action in state.cooldowns) {

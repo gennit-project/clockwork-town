@@ -217,6 +217,12 @@ export interface CharacterState {
   inviteBackoff?: Record<string, number>
   /** What this resident has done so far today (see utils/dailySummary.ts). */
   dayTally?: DayTally
+  /** What they approve or disapprove of, by topic id; anything not listed is neutral. */
+  stances?: Record<string, StanceValue>
+  /** Things they currently hold against people (see utils/witnessReactions.ts). */
+  grievances?: Grievance[]
+  /** Ticks left before they react again to `${actorId}:${topicId}`. */
+  witnessCooldowns?: Record<string, number>
   memories?: Memory[]
   longTermMemories?: LongTermMemory[]
   relationships?: CharacterRelationship[]
@@ -229,6 +235,22 @@ export interface CharacterState {
   homeLotName?: string | null
   accessibleLotIds: string[]
   workSchedule: WorkShift[]
+}
+
+export type StanceValue = 'approves' | 'disapproves'
+
+/** Something a witness holds against someone, until it fades or (later) they vent about it. */
+export interface Grievance {
+  id: string
+  aboutCharacterId: string
+  aboutName: string
+  topicId: string
+  /** What the other person was doing, as a phrase: "napping in the daytime". */
+  summary: string
+  /** Ticks until it fades; refreshed if they do it again. */
+  ticksRemaining: number
+  /** Times they've done it while this witness was watching. */
+  times: number
 }
 
 export interface CharacterValueState {

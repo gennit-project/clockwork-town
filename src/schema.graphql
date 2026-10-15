@@ -172,6 +172,16 @@ type SelfActualizationNeed {
   goal: Int!
 }
 
+type Stance {
+  topicId: ID!
+  stance: String!   # "approves" or "disapproves"
+}
+
+input StanceInput {
+  topicId: ID!
+  stance: String!
+}
+
 type Value {
   id: ID!
   name: String!        # e.g., "Family", "Creativity", "Outdoors"
@@ -260,6 +270,7 @@ type Character {
   bio: String
   traits: [Trait!]!
   values: [Value!]!   # in rank order, most important first
+  stances: [Stance!]! # what they approve or disapprove of; anything not listed is neutral
 
   # Family (can be derived from PARENT_OF edges; exposed directly for convenience)
   biologicalParents: [Character!]!
@@ -468,6 +479,7 @@ input UpdateCharacterInput {
   workSchedule: [WorkShiftInput!]
   traitIds: [ID!]      # when provided, replaces the character's traits
   valueIds: [ID!]      # when provided, replaces the character's values; order = rank (first is most important)
+  stances: [StanceInput!] # when provided, replaces the character's stances (an empty list clears them)
 }
 
 input WorkShiftInput {
