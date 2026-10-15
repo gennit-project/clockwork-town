@@ -65,6 +65,11 @@ hook the tutorial uses ("Manny is sick but the town has no doctor").
 
 ### 4.4 — Death & grief (R10) `[L]`
 
+**Mode note:** in the default (hands-off, recoverable) mode, nobody dies from neglect; the
+forewarned, player-chosen death below is the only kind, and an unattended town must never
+lose a resident to inattention. Death from neglect belongs to harder autonomy modes
+(Epic 5.5).
+
 - **No death without warning:** the player is always notified in advance and can
   choose to heal or allow the death (an alert/ticket from Epic 0.1).
 - **Frozen relationships:** a deceased friend/relative stays on survivors'
@@ -81,6 +86,25 @@ hook the tutorial uses ("Manny is sick but the town has no doctor").
   or an NPC household (which then becomes playable).
 - Split households: when a child's parents live in two households, the game proposes a
   weekly switch in the calendar view for the player to approve/reject.
+
+### 4.6 — Town viability: the essential facilities `[M]`
+
+The end state of the "self-sustaining town" principle: an autonomously healthy town is only
+possible when the **minimum facilities that sustain a normal life exist**, at least one
+grocery store and one doctor's office (and then, as needed, housing, power and water,
+a school once there are children). Until this ships food just appears in the fridges.
+- A **viability check** that evaluates the town against its essentials (per region), surfaced
+  as an alert/ticket ("No grocery store: food will run short") and a plain checklist view.
+- The **fallback in the default mode**: with an essential facility missing, residents are
+  looked after by an abstract safety net so the walk-away guarantee still holds, but the town
+  is flagged as "propped up" until a real facility exists. Harder autonomy modes remove the net.
+- Ties to 4.1 (job slots staff the store and the clinic), 4.3 (illness needs a doctor) and
+  Epic 3.1 (groceries and prices). The tutorial's "sick but no doctor" beat (Epic 5.4) is this
+  check, dramatized.
+
+**Done when.** Removing the only grocery store or clinic raises a viability alert; the default
+mode keeps residents fed and healthy through a safety net, labelled as such; a harder mode lets
+the shortage bite; the walk-away test passes with and without the facilities.
 
 ## Out of scope
 

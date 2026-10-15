@@ -44,6 +44,13 @@ spend on food (and later other goods). Surface balance on household/character
 dashboards and raise an alert/ticket when a household can't afford essentials.
 Plug earning into the existing shift system and spending into the eat/grocery flow.
 
+**Assumption until this ships:** food appears in the fridges and there is no scarcity, so
+nothing can starve for lack of money or supply. When finances arrive, the default
+(hands-off) mode must still keep an unattended town fed (see the README's design principles
+and the walk-away test in Epic 6.8): households that cannot afford food get help in the
+default mode rather than starving, and the real scarcity is a harder-mode setting. Groceries
+become a facility the town needs (Epic 4.6).
+
 ### 3.2 — Dinner & cooking rota `[M]`
 
 Households are tight-knit and eat together by default — meals are a near-unskippable

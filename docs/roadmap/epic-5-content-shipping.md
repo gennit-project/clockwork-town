@@ -186,6 +186,15 @@ difficulty level is a *drama intensity* setting (6.7) plus how many residents ca
 antisocial dispositions (6.2), and every act stays explainable. The "dark/adult-themed
 events" toggle is separate from drama intensity, and Epic 6's scope limits apply to both.
 
+**Autonomy / care modes (a second axis).** Difficulty is not only drama. A separate *autonomy*
+setting says how much the town looks after itself, from a **hands-off** default (residents keep
+themselves fed, rested and housed; every failure recovers; you check in and optionally step in
+on interesting things) up to **manual-care** modes where neglect has lasting consequences and
+the town needs you. A starter world is a combination of the two (for example: gentle drama,
+hands-off; or heavy drama, manual care). The default mode must pass the walk-away test
+(Epic 6.8). Lasting harm from neglect, permanent grudges and similar are reserved for the
+harder modes.
+
 ---
 
 ## Reference catalogs (content bible)

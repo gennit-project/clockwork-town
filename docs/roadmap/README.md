@@ -66,6 +66,32 @@ Design tokens (Grafana-dark) are in `frontend/src/style.css` (`gf-bg`, `gf-surfa
 
 **Absent:** richer ticket generators (grief), ticket persistence, the full trait and value lists, relationship milestones, antisocial behavior and rejection (Epic 6.3b onward), finances, cooking rota, chores, weather/climate config, job slots, NPCs, illness, death triggers/warnings/grief, childcare/foster, difficulty levels, tutorial.
 
+## Design principles (read before designing anything that can go wrong)
+
+1. **The town sustains itself.** Clockwork Town is something you check in on now and then and
+   find interesting things happening, which you can step into or ignore. Left alone, a town in
+   the default mode must stay healthy: nobody starves, freezes or gets stranded because you were
+   away (the opposite of leaving a Sims household running). Interesting events (friction,
+   rejection, arguments, even illness) are a layer on top of a healthy baseline; they are never
+   how an unattended town collapses.
+2. **Two separate axes of mode.** *Drama intensity* (Off to Relentless; Epic 6.7) is how much
+   story you get. *Autonomy / care level* (Epic 5.5) is how much the town looks after itself
+   versus how much you must do. Harder modes can ask for more attention; the default asks for
+   none.
+3. **Default is recoverable.** In the default mode every failure can recover (see Epic 6.5's
+   repair paths). Lasting consequences (permanent grudges, lasting harm from neglect) belong to
+   harder modes. Epic 6 already scopes permanent grudges as rare and bounded; this extends the
+   rule to neglect.
+4. **A healthy town needs its essentials, eventually.** The end state is that an autonomously
+   healthy town is only possible when the minimum facilities that sustain a normal life exist:
+   at least a grocery store and a doctor's office (Epic 4.6). Until then, **food is assumed to
+   appear in the fridges** and there is no scarcity. Nothing in the sim should depend on that
+   assumption silently: when finances and groceries arrive (Epic 3.1), the walk-away guarantee
+   (below) must still hold in the default mode.
+5. **The walk-away guarantee is tested.** A bounded headless test runs the town for weeks with
+   no intervention and fails if anyone stays critical or stuck (Epic 6.8). Any new way to fail
+   (money, illness, death, childcare, any new action) must keep it green in the default mode.
+
 ## The ordering, and why
 
 Principle: **substrate (data + authoring) → mechanics that read it → content that exercises it → tutorial that wraps it → shipping.** Every epic should light up something visible in the service-desk UI so the project is always dogfooded.
@@ -79,9 +105,10 @@ Two corrections to the original (pre-this-folder) numbering:
 | 1 | Make relationships feel alive: remaining items are milestones (1.5) and workplace bonding (1.6); 1.1–1.4 are done | [epic-1-relationships.md](epic-1-relationships.md) |
 | 2 | Authoring substrate (item catalog, character family/relationship/memory editing, world/region config) | [epic-2-authoring.md](epic-2-authoring.md) |
 | 3 | Domestic life & economy (finances, cooking rota, chores) | [epic-3-domestic-economy.md](epic-3-domestic-economy.md) |
-| 4 | Town as a living system (job slots, NPCs, illness, death & grief, childcare) | [epic-4-living-town.md](epic-4-living-town.md) |
+| 4 | Town as a living system (job slots, NPCs, illness, death & grief, childcare, essential facilities) | [epic-4-living-town.md](epic-4-living-town.md) |
 | 5 | Content & shipping (build-and-staff flow, default town, tutorial, difficulty) | [epic-5-content-shipping.md](epic-5-content-shipping.md) |
 | 6 | Friction & drama (autonomous antisocial behavior with an auditable cause, rejection, repair) | [epic-6-friction-and-drama.md](epic-6-friction-and-drama.md) |
+| 6.8 | Walk-away test and tuning pass (next up; guards the principles above) | [epic-6-friction-and-drama.md](epic-6-friction-and-drama.md) |
 | ✓ | Completed work (Epic 0, Epic 1.1–1.4, Epic 6.1–6.2, 6.3 first half) | [completed/](completed/README.md) |
 | — | Parked / long-term / cut | [parked-long-term.md](parked-long-term.md) |
 
