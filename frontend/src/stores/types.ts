@@ -163,7 +163,7 @@ export type SocialInvitationStatus = 'pending' | 'accepted' | 'rejected'
 
 export interface SocialInvitation {
   id: string
-  action: Extract<ActionName, 'chat_friend' | 'date' | 'invite_over' | 'propose_relationship'>
+  action: Extract<ActionName, 'chat_friend' | 'date' | 'invite_over' | 'propose_relationship' | 'view_art' | 'view_movie'>
   inviteContextType?: InviteOverContext
   proposedRelationshipLabel?: RelationshipProposalLabel
   fromCharacterId: string

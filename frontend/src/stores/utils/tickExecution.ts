@@ -4,7 +4,6 @@
 
 import type { Ref } from 'vue'
 import type {
-  ActionName,
   AnimalState,
   CharacterState,
   NeedName,
@@ -19,6 +18,7 @@ import { NEED_DECAY_RATES } from '../config/needs'
 import { effectiveDecayRate, isActionDisabled, pinDisabledNeeds } from './traitEffects'
 import { tickValues, valueNeglectDrain } from './valueEffects'
 import { backOffInvitation, MAX_INVITE_ATTEMPTS_PER_TICK, tickInviteBackoff } from './inviteBackoff'
+import { isGroupCapableAction, requiresInvitation } from './groupSocial'
 import { selectBestIntent } from './decisionMaking'
 import { debugLog } from './simulationDebug'
 import { advanceSimulationDateTime } from './simulationCalendar'
@@ -26,7 +26,6 @@ import { createActivityLogEntry } from './characterState'
 import { calculateUtility } from './actionUtility'
 import { evaluateRelationshipAvailability } from './relationshipAvailability'
 
-const INVITATION_RESPONSE_ACTIONS = new Set<ActionName>(['chat_friend', 'date', 'invite_over', 'propose_relationship'])
 
 function calculateTravelCostToIntentTarget({
   characterState,
@@ -131,7 +130,7 @@ function buildSocialInvitation({
 }): SocialInvitation {
   return {
     id: crypto.randomUUID(),
-    action: intent.action as Extract<ActionName, 'chat_friend' | 'date' | 'invite_over' | 'propose_relationship'>,
+    action: intent.action as SocialInvitation['action'],
     inviteContextType: intent.inviteContextType,
     proposedRelationshipLabel: intent.proposedRelationshipLabel,
     fromCharacterId: characterId,
@@ -334,11 +333,11 @@ function assignSocialParticipation(params: SocialParticipationParams): boolean {
   if (!inviteParticipant(params)) {
     return false
   }
-  if (!INVITATION_RESPONSE_ACTIONS.has(intent.action) || !intent.socialTargetId) {
+  if (!requiresInvitation(intent) || !intent.socialTargetId) {
     return true
   }
 
-  if (intent.action !== 'chat_friend' || !intent.groupTargetIds?.length) {
+  if (!isGroupCapableAction(intent.action) || !intent.groupTargetIds?.length) {
     intent.groupTargetIds = undefined
     intent.groupTargetNames = undefined
     return true
@@ -363,7 +362,7 @@ function assignSocialParticipation(params: SocialParticipationParams): boolean {
       acceptedIds.push(extraId)
       acceptedNames.push(extraState.name)
     } else {
-      backOffInvitation(state, 'chat_friend', extraId)
+      backOffInvitation(state, intent.action, extraId)
     }
   }
 
@@ -395,7 +394,7 @@ function inviteParticipant({
   simulationDateTime,
   activityLog
 }: SocialParticipationParams): boolean {
-  if (!INVITATION_RESPONSE_ACTIONS.has(intent.action)) {
+  if (!requiresInvitation(intent)) {
     return true
   }
 
@@ -646,7 +645,7 @@ export async function executeTick({
       })
 
       const rejectedInvitation =
-        !socialParticipationAssigned && INVITATION_RESPONSE_ACTIONS.has(intent.action) && !!intent.socialTargetId
+        !socialParticipationAssigned && requiresInvitation(intent) && !!intent.socialTargetId
       if (!rejectedInvitation) {
         break
       }
@@ -656,7 +655,7 @@ export async function executeTick({
 
     intents[characterId] = intent
     claimAnimalTarget(intent)
-    if (!socialParticipationAssigned && INVITATION_RESPONSE_ACTIONS.has(intent.action)) {
+    if (!socialParticipationAssigned && requiresInvitation(intent)) {
       intents[characterId] = {
         action: 'idle',
         utility: 0

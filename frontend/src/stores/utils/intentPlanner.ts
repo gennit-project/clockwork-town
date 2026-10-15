@@ -13,7 +13,8 @@ import type {
 } from '../types'
 import { calculateUtility } from './actionUtility'
 import { isInvitationBackedOff } from './inviteBackoff'
-import { GROUP_SOCIAL } from '../config/social'
+import { GROUP_FUN, GROUP_SOCIAL } from '../config/social'
+import { isGroupFunAction } from './groupSocial'
 import { isActionDisabled } from './traitEffects'
 import { valueUtilityBonus } from './valueEffects'
 import { findItemsWithAffordance } from './pathfinding'
@@ -49,6 +50,7 @@ const DEFAULT_PLANNED_ACTIONS: CooldownAction[] = [
   'read',
   'write',
   'view_art',
+  'view_movie',
   'volunteer'
 ]
 
@@ -312,7 +314,7 @@ function buildSocialPlanCandidates({
   characterStates = {},
   reservedCharacterIds = []
 }: {
-  action: 'chat_friend' | 'date'
+  action: 'chat_friend' | 'date' | 'view_art' | 'view_movie'
   characterId: string
   characterState: CharacterState
   worldData: WorldData
@@ -321,6 +323,7 @@ function buildSocialPlanCandidates({
   reservedCharacterIds?: string[]
 }): PlanCandidate[] {
   const reservedCharacterIdSet = new Set(reservedCharacterIds)
+  const isFun = isGroupFunAction(action)
   const socialItemOptions = findItemsWithAffordance({
     characterId,
     action,
@@ -390,7 +393,10 @@ function buildSocialPlanCandidates({
         calculateUtility(characterId, action, characterState.needs, {
           ...itemOption,
           travelCost: itemOption.travelCost + socialTargetTravelCost
-        }) + (isHousehold ? GROUP_SOCIAL.householdChatBonus : 0)
+        }) +
+        (isHousehold ? GROUP_SOCIAL.householdChatBonus : 0) +
+        // Doing something fun together is better than doing it alone.
+        (isFun ? GROUP_FUN.bonusPerOtherParticipant : 0)
       const primaryStep: TaskStep = {
         action,
         label: `${action}:${socialTargetState.name}`,
@@ -420,15 +426,18 @@ function buildSocialPlanCandidates({
         id: socialTargetId,
         name: socialTargetState.name,
         isHousehold,
-        // The same bonus a relationship-ranked chat with this person would get.
-        relationshipBonus: relationship ? buildRelationshipUtilityBonus({ relationship }) : 0,
+        // The same bonus a relationship-ranked chat with this person would get (chats only: fun
+        // is driven by the group bonus, so a loved one doesn't make a movie outrank eating).
+        relationshipBonus: !isFun && relationship ? buildRelationshipUtilityBonus({ relationship }) : 0,
         candidate: pairCandidate
       })
     }
 
-    if (action === 'chat_friend') {
-      const groupCandidate = buildGroupChatCandidate({
-        pool: groupPool.filter((entry) => !isInvitationBackedOff(characterState, 'chat_friend', entry.id)),
+    // A date is always exactly one other person; everything else here can be a group.
+    if (action !== 'date') {
+      const groupCandidate = buildGroupCandidate({
+        action,
+        pool: groupPool.filter((entry) => !isInvitationBackedOff(characterState, action, entry.id)),
         maxUsers: worldData.items[itemOption.itemId]?.maxSimultaneousUsers
       })
       if (groupCandidate) {
@@ -455,10 +464,17 @@ interface GroupPoolEntry {
  * same pair, so it is preferred when available but nobody is forced into one. `date` never
  * comes through here: it is always exactly one other person.
  */
-export function buildGroupChatCandidate({
+/** A group chat; see buildGroupCandidate. */
+export function buildGroupChatCandidate(args: { pool: GroupPoolEntry[]; maxUsers: number | null | undefined }): PlanCandidate | null {
+  return buildGroupCandidate({ ...args, action: 'chat_friend' })
+}
+
+export function buildGroupCandidate({
+  action,
   pool,
   maxUsers
 }: {
+  action: 'chat_friend' | 'view_art' | 'view_movie'
   pool: GroupPoolEntry[]
   /** The item's capacity including the initiator; null/undefined means unlimited. */
   maxUsers: number | null | undefined
@@ -485,17 +501,18 @@ export function buildGroupChatCandidate({
   const names = [primary.name, ...extras.map((extra) => extra.name)]
   const step: TaskStep = {
     ...primary.candidate.primaryStep,
-    label: `chat_friend:${names.join('+')}`,
+    label: `${action}:${names.join('+')}`,
     groupTargetIds: extras.map((extra) => extra.id),
     groupTargetNames: extras.map((extra) => extra.name)
   }
+  const perExtra = action === 'chat_friend' ? GROUP_SOCIAL.groupChatBonusPerExtra : GROUP_FUN.bonusPerOtherParticipant
   const extrasBonus = extras.reduce(
-    (sum, extra) => sum + GROUP_SOCIAL.groupChatBonusPerExtra + bonus(extra) * GROUP_SOCIAL.extraRelationshipWeight,
+    (sum, extra) => sum + perExtra + bonus(extra) * GROUP_SOCIAL.extraRelationshipWeight,
     0
   )
   return {
     ...primary.candidate,
-    strategy: 'chat_friend:group',
+    strategy: `${action}:group`,
     utility: score(primary) + extrasBonus,
     primaryStep: step,
     steps: [step]
@@ -1187,6 +1204,20 @@ export function buildPlanCandidates({
       continue
     }
 
+    // Fun can be done together as well as alone: add the with-people options, then fall through
+    // to the solo ones below.
+    if (action === 'view_art' || action === 'view_movie') {
+      candidates.push(...buildSocialPlanCandidates({
+        action,
+        characterId,
+        characterState,
+        worldData,
+        itemOccupancy,
+        characterStates,
+        reservedCharacterIds
+      }))
+    }
+
     candidates.push(...buildDirectPlanCandidates({
       characterId,
       action,
@@ -1198,7 +1229,20 @@ export function buildPlanCandidates({
 
   // Traits can switch a need off; drop actions that serve it, for the character
   // and for any social target who would have to take part.
+  // When bored, group fun beats solo hobbies; if no group option exists, solo is left alone.
+  const bored = characterState.needs.fulfillment < GROUP_FUN.boredThreshold
+  const groupFunAvailable =
+    bored &&
+    candidates.some((c) => isGroupFunAction(c.goal) && !!c.primaryStep.socialTargetId)
+  const isSoloFun = (c: PlanCandidate) =>
+    (GROUP_FUN.soloFunActions as readonly ActionName[]).includes(c.goal) && !c.primaryStep.socialTargetId
+
   return candidates
+    .map((candidate) =>
+      groupFunAvailable && isSoloFun(candidate)
+        ? { ...candidate, utility: candidate.utility - GROUP_FUN.soloPenalty }
+        : candidate
+    )
     .map((candidate) => {
       const bonus = valueUtilityBonus(characterState, candidate.goal)
       return bonus > 0 ? { ...candidate, utility: candidate.utility + bonus } : candidate

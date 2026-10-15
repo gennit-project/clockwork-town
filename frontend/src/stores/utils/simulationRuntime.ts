@@ -44,10 +44,10 @@ import { applyPetInteraction, tickAnimals } from './animalRuntime'
 import { markValuesFulfilled } from './valueEffects'
 import { isNewDay, recordActionInTally, recordDailySummaries } from './dailySummary'
 import { evaluatePetEvents, updatePetTogetherness } from './petReunions'
-import { describeActionTarget } from './groupSocial'
+import { describeActionTarget, isGroupFunAction, requiresInvitation } from './groupSocial'
 import {
   decayCharacterRelationships,
-  recordGroupConversation,
+  recordGroupInteraction,
   recordRelationshipConversation,
   recordRelationshipDirectContact,
   recordRelationshipEncounter,
@@ -300,7 +300,8 @@ export function createSimulationRuntime(
         })
       }
 
-      if (intent.action === 'view_movie' && otherState.currentAction === 'view_movie') {
+      // (Movies planned with people are recorded once for the whole group in completeIntent.)
+      if (intent.action === 'view_movie' && otherState.currentAction === 'view_movie' && !requiresInvitation(intent)) {
         await recordSharedViewingExperience({
           characterId,
           targetCharacterId: otherCharacterId,
@@ -434,7 +435,7 @@ export function createSimulationRuntime(
         const participants = [characterId, intent.socialTargetId, ...extraIds]
           .map((id) => ({ id, state: refs.characterStates.value[id] }))
           .filter((participant): participant is { id: string; state: CharacterState } => !!participant.state)
-        await recordGroupConversation({
+        await recordGroupInteraction({
           participants,
           timestamp: refs.simulationDateTime.value.iso,
           intent,
@@ -449,6 +450,24 @@ export function createSimulationRuntime(
           timestamp: refs.simulationDateTime.value.iso,
           intent,
           dependencies: relationshipDependencies
+        })
+      }
+    }
+
+    // Fun planned with people (a movie or art together): recorded once, by the initiator.
+    if (isGroupFunAction(intent.action) && requiresInvitation(intent) && intent.socialTargetId && !intent.isSocialParticipant) {
+      const participants = [characterId, intent.socialTargetId, ...(intent.groupTargetIds ?? [])]
+        .map((id) => ({ id, state: refs.characterStates.value[id] }))
+        .filter((participant): participant is { id: string; state: CharacterState } => !!participant.state)
+      if (participants.length > 1) {
+        await recordGroupInteraction({
+          participants,
+          timestamp: refs.simulationDateTime.value.iso,
+          intent,
+          dependencies: {
+            persistCharacterRelationship: dependencies.persistCharacterRelationship,
+            createStructuredCharacterLongTermMemory: dependencies.createStructuredCharacterLongTermMemory
+          }
         })
       }
     }

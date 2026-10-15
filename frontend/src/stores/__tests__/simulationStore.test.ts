@@ -869,6 +869,133 @@ describe('simulation store integration', () => {
     })
   })
 
+  describe('group fun effects', () => {
+    const memoriesOfType = (eventType: string) =>
+      persistenceMocks.createStructuredCharacterLongTermMemory.mock.calls
+        .map(([input]) => input as { characterId: string; eventType?: string; content: string })
+        .filter((input) => input.eventType === eventType)
+
+    function setupMovieNight() {
+      const store = setupStore() // char-1, Alice
+      // The couch can show a movie and art, and has room for everyone.
+      const couch = store.worldData.items['item-1']
+      couch.maxSimultaneousUsers = null
+      for (const action of ['view_movie', 'view_art'] as const) {
+        couch.affordances.push({ action, weight: 1 })
+        couch.allowedActivities.push(action)
+        store.worldData.itemsByAffordance[action] = ['item-1']
+      }
+      setupSecondCharacter(store, 'lot-1', 'Test House', 'space-1', 'Living Room') // Bob
+      store.initializeCharacter({ id: 'char-3', name: 'Cy' })
+      store.updateCharacterLocation('char-3', 'region-1', 'lot-1', 'Test House', 'space-1', 'Living Room')
+      store.enqueueIntent('char-3', { action: 'idle', utility: 0 })
+      const seed = (from: string, to: string) =>
+        createRelationshipSeed({ fromCharacterId: from, toCharacterId: to, lastSeenAt: null, shortTermScore: 0.2, longTermScore: 0.1 })
+      store.characterStates['char-1'].relationships = [seed('char-1', 'char-2'), seed('char-1', 'char-3')]
+      store.characterStates['char-2'].relationships = [seed('char-2', 'char-1')]
+      store.characterStates['char-3'].relationships = [seed('char-3', 'char-1')]
+      // Bored, with nothing else pressing, so guests say yes.
+      for (const id of ['char-1', 'char-2', 'char-3']) {
+        Object.assign(store.characterStates[id].needs, {
+          food: 1, sleep: 1, bladder: 1, hygiene: 1, health: 1, friends: 1, family: 1, romance: 1, fulfillment: 0.2
+        })
+      }
+      return store
+    }
+
+    const together = (extra: Record<string, unknown> = {}) => ({
+      goal: 'view_movie' as const,
+      strategy: 'view_movie:group',
+      action: 'view_movie' as const,
+      itemId: 'item-1',
+      itemName: 'Couch',
+      targetSpaceId: 'space-1',
+      targetSpaceName: 'Living Room',
+      targetLotId: 'lot-1',
+      targetLotName: 'Test House',
+      socialTargetId: 'char-2',
+      socialTargetName: 'Bob',
+      groupTargetIds: ['char-3'],
+      groupTargetNames: ['Cy'],
+      utility: 10,
+      ...extra
+    })
+
+    const score = (store: ReturnType<typeof useSimulationStore>, from: string, to: string) =>
+      store.characterStates[from].relationships?.find((r) => r.toCharacterId === to)
+
+    // A movie together is worth +0.06 short-term, less one tick of decay (0.01).
+    const ONE_MOVIE = 0.06 - 0.01
+
+    it('a movie with a group records each pair once and leaves one memory per person', async () => {
+      const store = setupMovieNight()
+      store.enqueueIntent('char-1', together())
+      await store.executeTick()
+
+      expect(score(store, 'char-1', 'char-2')?.shortTermScore).toBeCloseTo(0.2 + ONE_MOVIE, 2)
+      expect(score(store, 'char-1', 'char-3')?.shortTermScore).toBeCloseTo(0.2 + ONE_MOVIE, 2)
+      expect(memoriesOfType('group_movie').map((m) => [m.characterId, m.content])).toEqual([
+        ['char-1', 'Watched a movie with Bob and Cy.'],
+        ['char-2', 'Watched a movie with Alice and Cy.'],
+        ['char-3', 'Watched a movie with Alice and Bob.']
+      ])
+      // Not also recorded by the older "who else is in the room" path.
+      expect(memoriesOfType('watched_a_movie_together')).toHaveLength(0)
+    })
+
+    it('watching something is not a conversation, so it does not count as having spoken', async () => {
+      const store = setupMovieNight()
+      store.enqueueIntent('char-1', together())
+      await store.executeTick()
+      expect(score(store, 'char-1', 'char-2')?.lastSpokeAt ?? null).toBeNull()
+      expect(score(store, 'char-1', 'char-2')?.lastSeenAt).toBeTruthy()
+    })
+
+    it('shows everyone watching together in their status', async () => {
+      const store = setupMovieNight()
+      store.enqueueIntent('char-1', together())
+      await store.executeTick()
+      expect(getCharacterStatusText(store.characterStates['char-1'])).toBe('watching Couch with Bob and Cy')
+      expect(getCharacterStatusText(store.characterStates['char-2'])).toBe('watching Couch with Alice and Cy')
+    })
+
+    it('art together works the same way', async () => {
+      const store = setupMovieNight()
+      store.enqueueIntent('char-1', together({ action: 'view_art', goal: 'view_art', strategy: 'view_art:group' }))
+      await store.executeTick()
+      expect(memoriesOfType('group_art').map((m) => m.content)).toEqual([
+        'Looked at art with Bob and Cy.',
+        'Looked at art with Alice and Cy.',
+        'Looked at art with Alice and Bob.'
+      ])
+    })
+
+    it('a pair watching together gets a pair memory', async () => {
+      const store = setupMovieNight()
+      store.enqueueIntent('char-1', together({ strategy: 'view_movie:with-participant', groupTargetIds: undefined, groupTargetNames: undefined }))
+      await store.executeTick()
+      expect(memoriesOfType('group_movie').map((m) => m.content)).toEqual([
+        'Watched a movie with Bob.',
+        'Watched a movie with Alice.'
+      ])
+    })
+
+    it('control: people who just happen to watch in the same room are still recorded the old way', async () => {
+      const store = setupMovieNight()
+      const solo = (id: string) =>
+        store.enqueueIntent(id, {
+          goal: 'view_movie', strategy: 'view_movie:direct', action: 'view_movie', itemId: 'item-1', itemName: 'Couch',
+          targetSpaceId: 'space-1', targetSpaceName: 'Living Room', targetLotId: 'lot-1', targetLotName: 'Test House', utility: 10
+        })
+      store.characterStates['char-2'].queuedActions = []
+      solo('char-1')
+      solo('char-2')
+      await store.executeTick()
+      expect(memoriesOfType('group_movie')).toHaveLength(0)
+      expect(memoriesOfType('watched_a_movie_together').length).toBeGreaterThan(0)
+    })
+  })
+
   describe('pet reunions', () => {
     afterEach(() => vi.restoreAllMocks())
 

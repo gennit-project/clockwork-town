@@ -134,27 +134,35 @@ to others' moods are observable.
 
 ### 1.4 — Group situations `[M]`
 
-**Status:** Part 1 implemented and verified live (group chats, household preference, group
-memories); Part 2 (group fun before solo) not started. A chat can now include 1-3 other people
-(`Intent.groupTargetIds` carries the extras beyond `socialTargetId`, max `GROUP_SOCIAL.maxGroupExtras`
-in `config/social.ts`). The planner builds one group candidate per item from the best pair
-candidate plus extras (housemates first), bounded by the item's `maxSimultaneousUsers`; it scores a
-little above the same pair and counts the relationship bonus the relationship-ranked chats get
-(without that, groups never won for people who love each other). Coordination
-(`tickExecution.ts`, `assignSocialParticipation`) invites the primary partner, then the extras; the
-group forms with whoever accepts, an extra who declines is backed off, one who is simply busy is
-skipped. `date` is always exactly one other person (enforced in the planner and coordination).
-`recordGroupConversation` records the chat once: every pair is updated in both directions (people who
-have not met get first-met handling) and each person gets one `group_chat` memory ("Chatted with X and
-Y.") linked to their relationships. Housemates get a small chat bonus
-(`householdChatBonus`), so they hang out autonomously. Status text names the whole group.
-**Fixed along the way:** every chat/date used to change the relationship twice (once per
+**Status:** Implemented and verified live (group chats, household preference, group fun before
+solo). A chat can include 1-3 other people (`Intent.groupTargetIds` carries the extras beyond
+`socialTargetId`, max `GROUP_SOCIAL.maxGroupExtras` in `config/social.ts`). The planner builds one
+group candidate per item from the best pair candidate plus extras (housemates first), bounded by the
+item's `maxSimultaneousUsers`; it scores a little above the same pair and, for chats, counts the
+relationship bonus the relationship-ranked chats get (without that, groups never won for people who
+love each other). Coordination (`tickExecution.ts`, `assignSocialParticipation`) invites the primary
+partner, then the extras; the group forms with whoever accepts, an extra who declines is backed off,
+one who is simply busy is skipped. `date` is always exactly one other person (enforced in the
+planner and in coordination). `recordGroupInteraction` records a group chat, movie or art viewing
+once: every pair is updated in both directions (people who have not met get first-met handling) and
+each person gets one memory (`group_chat`, `group_movie`, `group_art`: "Chatted with X and Y.")
+linked to their relationships. Housemates get a small chat bonus (`householdChatBonus`), so they
+hang out autonomously. Status text names the whole group ("watching the TV with Bo and Cy").
+**Group fun:** `view_art` and `view_movie` (`GROUP_FUN_ACTIONS`) are planned both together and alone
+(`view_movie` is now an autonomous option; there is one TV in the seeded town, in the community
+center). Together gets a bonus per other person; when the resident is bored (fulfillment below
+`GROUP_FUN.boredThreshold`) and a group option exists, solo hobbies (read, write, solo art/movie)
+lose `soloPenalty`, and are left alone when nobody is available. Fun planned with people needs an
+invitation (`requiresInvitation`); a solo movie, or the follow-up to being invited over to watch one,
+does not. **Fixed along the way:** every chat/date used to change the relationship twice (once per
 participant's completion); now only the initiator records it (participant intents carry
 `isSocialParticipant`), and the chat/date base deltas were doubled so friendships grow at the same
 pace as before. Also fixed: status text for a chat at an item said "chatting with Couch".
 Known gaps: pair chats still create no "chatted with" memory (only groups do); groups give every
-pair the full chat bump, so chatty households grow close a bit faster; extras are picked by score,
-not by whether they like each other.
+pair the full chat bump, so chatty households grow close a bit faster; for tightly bonded people the
+relationship-ranked chats (about 2.5) outscore any fun, so group fun mostly happens when those are
+on cooldown or the bond is weaker; extras are picked by score, not by whether they like each other;
+only art and movies can be done together until Epic 2 adds more activities.
 
 **What to build.**
 - `chat_friend` can involve **1–3** other participating people (not just one).

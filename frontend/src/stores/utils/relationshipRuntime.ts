@@ -1,4 +1,4 @@
-import type { CharacterRelationship, CharacterState, Intent } from '../types'
+import type { ActionName, CharacterRelationship, CharacterState, Intent } from '../types'
 import { hasBloodFamilyLabel } from './family'
 import { evaluateRelationshipEvents } from './relationshipEvents'
 import { joinNames } from './groupSocial'
@@ -30,7 +30,10 @@ const RELATIONSHIP_EVENT_SCORES: Record<string, { shortTerm: number; longTerm: n
   propose_relationship: { shortTerm: 0.12, longTerm: 0.05 },
   ate_lunch_together: { shortTerm: 0.07, longTerm: 0.025 },
   watched_a_movie_together: { shortTerm: 0.06, longTerm: 0.02 },
-  reunited_after_long_absence: { shortTerm: 0.05, longTerm: 0.015 }
+  reunited_after_long_absence: { shortTerm: 0.05, longTerm: 0.015 },
+  // Fun done together (planned with people): see recordGroupInteraction
+  view_movie: { shortTerm: 0.06, longTerm: 0.02 },
+  view_art: { shortTerm: 0.05, longTerm: 0.015 }
 }
 
 export interface RelationshipRuntimeDependencies {
@@ -662,7 +665,8 @@ export async function recordRelationshipConversation({
   targetState,
   timestamp,
   intent,
-  dependencies
+  dependencies,
+  spoke = true
 }: {
   characterId: string
   targetCharacterId: string
@@ -671,13 +675,16 @@ export async function recordRelationshipConversation({
   timestamp: string
   intent: Intent
   dependencies: RelationshipRuntimeDependencies
+  /** False for shared activities that aren't a conversation (watching something together). */
+  spoke?: boolean
 }): Promise<void> {
+  const spokeAt = spoke ? timestamp : undefined
   const forward = await ensureDirectionalRelationship({
     fromCharacterId: characterId,
     toCharacterId: targetCharacterId,
     fromState: characterState,
     lastSeenAt: timestamp,
-    lastSpokeAt: timestamp,
+    lastSpokeAt: spokeAt,
     dependencies
   })
   const reverse = await ensureDirectionalRelationship({
@@ -685,7 +692,7 @@ export async function recordRelationshipConversation({
     toCharacterId: characterId,
     fromState: targetState,
     lastSeenAt: timestamp,
-    lastSpokeAt: timestamp,
+    lastSpokeAt: spokeAt,
     dependencies
   })
 
@@ -736,7 +743,7 @@ export async function recordRelationshipConversation({
     relationship: buildUpdatedRelationship({
       relationship: forwardRelationship,
       lastSeenAt: timestamp,
-      lastSpokeAt: timestamp
+      lastSpokeAt: spokeAt
     }),
     fromState: characterState,
     eventType: intent.action,
@@ -746,7 +753,7 @@ export async function recordRelationshipConversation({
     relationship: buildUpdatedRelationship({
       relationship: reverseRelationship,
       lastSeenAt: timestamp,
-      lastSpokeAt: timestamp
+      lastSpokeAt: spokeAt
     }),
     fromState: targetState,
     eventType: intent.action,
@@ -767,13 +774,21 @@ export async function recordRelationshipConversation({
 
 export const GROUP_CHAT_EVENT_TYPE = 'group_chat'
 
+/** How each group-capable action is remembered (memory type, wording) and whether it is a conversation. */
+const GROUP_INTERACTIONS: Partial<Record<ActionName, { eventType: string; describe: (names: string) => string; spoke: boolean }>> = {
+  chat_friend: { eventType: GROUP_CHAT_EVENT_TYPE, describe: (names) => `Chatted with ${names}.`, spoke: true },
+  view_movie: { eventType: 'group_movie', describe: (names) => `Watched a movie with ${names}.`, spoke: false },
+  view_art: { eventType: 'group_art', describe: (names) => `Looked at art with ${names}.`, spoke: false }
+}
+
 /**
- * A chat between three or more people, recorded once by the initiator. Every pair gets the
- * ordinary conversation update (both directions, first-met handling, milestone labels), so
- * everyone who talked grows closer to everyone else, and each person gets a single group
- * memory linked to their relationships with the others (rather than one memory per pair).
+ * Something done together by two or more people (a group chat, a movie, looking at art),
+ * recorded once by the initiator. Every pair gets the ordinary relationship update (both
+ * directions, first-met handling, milestone labels), so everyone grows closer to everyone else,
+ * and each person gets a single memory linked to their relationships with the others (rather
+ * than one memory per pair).
  */
-export async function recordGroupConversation({
+export async function recordGroupInteraction({
   participants,
   timestamp,
   intent,
@@ -784,6 +799,11 @@ export async function recordGroupConversation({
   intent: Intent
   dependencies: RelationshipRuntimeDependencies
 }): Promise<void> {
+  const interaction = GROUP_INTERACTIONS[intent.action]
+  if (!interaction) {
+    return
+  }
+
   for (let i = 0; i < participants.length; i++) {
     for (let j = i + 1; j < participants.length; j++) {
       await recordRelationshipConversation({
@@ -793,17 +813,12 @@ export async function recordGroupConversation({
         targetState: participants[j].state,
         timestamp,
         intent,
-        dependencies
+        dependencies,
+        spoke: interaction.spoke
       })
     }
   }
 
-  const location = {
-    lotId: intent.targetLotId,
-    lotName: intent.targetLotName,
-    spaceId: intent.targetSpaceId,
-    spaceName: intent.targetSpaceName
-  }
   for (const participant of participants) {
     const others = participants.filter((other) => other.id !== participant.id)
     const relationshipIds = others
@@ -811,13 +826,13 @@ export async function recordGroupConversation({
       .filter((id): id is string => !!id)
     await dependencies.createStructuredCharacterLongTermMemory({
       characterId: participant.id,
-      content: `Chatted with ${joinNames(others.map((other) => other.state.name))}.`,
+      content: interaction.describe(joinNames(others.map((other) => other.state.name))),
       relationshipIds,
-      eventType: GROUP_CHAT_EVENT_TYPE,
-      locationLotId: location.lotId ?? undefined,
-      locationLotName: location.lotName ?? undefined,
-      locationSpaceId: location.spaceId ?? undefined,
-      locationSpaceName: location.spaceName ?? undefined,
+      eventType: interaction.eventType,
+      locationLotId: intent.targetLotId ?? undefined,
+      locationLotName: intent.targetLotName ?? undefined,
+      locationSpaceId: intent.targetSpaceId ?? undefined,
+      locationSpaceName: intent.targetSpaceName ?? undefined,
       createdAt: timestamp
     })
   }
