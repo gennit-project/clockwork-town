@@ -205,6 +205,8 @@ export interface CharacterState {
   traitIds: string[]
   /** Ranked values, most important first. See config/valueDefs.ts. */
   values: CharacterValueState[]
+  /** Ticks left before this character re-issues a rejected invitation (`action:targetId`). */
+  inviteBackoff?: Record<string, number>
   memories?: Memory[]
   longTermMemories?: LongTermMemory[]
   relationships?: CharacterRelationship[]

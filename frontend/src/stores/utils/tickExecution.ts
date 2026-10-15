@@ -18,6 +18,7 @@ import type {
 import { NEED_DECAY_RATES } from '../config/needs'
 import { effectiveDecayRate, isActionDisabled, pinDisabledNeeds } from './traitEffects'
 import { tickValues, valueNeglectDrain } from './valueEffects'
+import { backOffInvitation, MAX_INVITE_ATTEMPTS_PER_TICK, tickInviteBackoff } from './inviteBackoff'
 import { selectBestIntent } from './decisionMaking'
 import { debugLog } from './simulationDebug'
 import { advanceSimulationDateTime } from './simulationCalendar'
@@ -485,6 +486,8 @@ export async function executeTick({
     tickValues(state)
     state.needs.fulfillment = Math.max(0, state.needs.fulfillment - valueNeglectDrain(state))
 
+    tickInviteBackoff(state)
+
     // Decrement cooldowns
     for (const action in state.cooldowns) {
       const actionKey = action as keyof typeof state.cooldowns
@@ -544,34 +547,50 @@ export async function executeTick({
       continue
     }
 
-    // Select the best intent for this character (pass itemOccupancy to check slot availability)
-    const intent = selectBestIntent({
-      characterId,
-      characterState: state,
-      worldData: worldData.value,
-      itemOccupancy: itemOccupancy.value,
-      simulationDateTime: simulationDateTime?.value,
-      characterStates: characterStates.value,
-      reservedCharacterIds: [...reservedCharacterIds],
-      animalStates: animalStates?.value,
-      reservedAnimalIds: [...claimedAnimalIds]
-    })
+    // Select the best intent for this character (pass itemOccupancy to check slot availability).
+    // If the best intent is an invitation that gets turned down, back off from that target and
+    // fall through to the next-best option instead of idling (and repeating it next tick).
+    let intent: Intent
+    let socialParticipationAssigned: boolean
+    let attempts = 0
+    do {
+      intent = selectBestIntent({
+        characterId,
+        characterState: state,
+        worldData: worldData.value,
+        itemOccupancy: itemOccupancy.value,
+        simulationDateTime: simulationDateTime?.value,
+        characterStates: characterStates.value,
+        reservedCharacterIds: [...reservedCharacterIds],
+        animalStates: animalStates?.value,
+        reservedAnimalIds: [...claimedAnimalIds]
+      })
+
+      socialParticipationAssigned = assignSocialParticipation({
+        currentTick: currentTick.value,
+        characterId,
+        state,
+        intent,
+        intents,
+        reservedCharacterIds,
+        characterStates: characterStates.value,
+        worldData: worldData.value,
+        itemOccupancy: itemOccupancy.value,
+        simulationDateTime: simulationDateTime?.value,
+        activityLog
+      })
+
+      const rejectedInvitation =
+        !socialParticipationAssigned && INVITATION_RESPONSE_ACTIONS.has(intent.action) && !!intent.socialTargetId
+      if (!rejectedInvitation) {
+        break
+      }
+      backOffInvitation(state, intent.action, intent.socialTargetId as string)
+      attempts++
+    } while (attempts < MAX_INVITE_ATTEMPTS_PER_TICK)
+
     intents[characterId] = intent
     claimAnimalTarget(intent)
-
-    const socialParticipationAssigned = assignSocialParticipation({
-      currentTick: currentTick.value,
-      characterId,
-      state,
-      intent,
-      intents,
-      reservedCharacterIds,
-      characterStates: characterStates.value,
-      worldData: worldData.value,
-      itemOccupancy: itemOccupancy.value,
-      simulationDateTime: simulationDateTime?.value,
-      activityLog
-    })
     if (!socialParticipationAssigned && INVITATION_RESPONSE_ACTIONS.has(intent.action)) {
       intents[characterId] = {
         action: 'idle',

@@ -12,6 +12,7 @@ import type {
   WorldData
 } from '../types'
 import { calculateUtility } from './actionUtility'
+import { isInvitationBackedOff } from './inviteBackoff'
 import { isActionDisabled } from './traitEffects'
 import { valueUtilityBonus } from './valueEffects'
 import { findItemsWithAffordance } from './pathfinding'
@@ -1112,6 +1113,9 @@ export function buildPlanCandidates({
         return false
       }
       const targetId = candidate.primaryStep.socialTargetId
+      if (targetId && isInvitationBackedOff(characterState, candidate.goal, targetId)) {
+        return false
+      }
       const targetState = targetId ? characterStates[targetId] : undefined
       return !targetState || !isActionDisabled(candidate.goal, targetState.traitIds)
     })

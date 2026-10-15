@@ -137,6 +137,8 @@ its whole window, a Values panel on the dashboard (`ValuesPanel.vue`), and a ran
 books, be a good friend, have a happy family, have a good romantic relationship (switched off by
 asexual/aromantic), do a good job at work. The seed gives every resident two to three.
 
+**Related fix:** residents whose best intent was an invitation that got rejected used to idle (and repeat the same invitation every tick). `tickExecution.ts` now backs off from that target for 6 ticks (`utils/inviteBackoff.ts`, per action + target) and falls through to the next-best intent in the same tick, up to 3 attempts; the planner skips backed-off invitations.
+
 **Decisions:** the fulfillment need stays in the needs gauge (it still drives happiness, gating and
 the planner); the Values panel sits beside it instead of replacing it.
 
@@ -145,8 +147,7 @@ play games, nature, religion, learn about science, ...); value windows and the d
 first guesses, tune after watching a full simulated day; `lastFulfilled` is in-memory only and
 restarts fresh on reload; the nudge cannot pull a resident across town (travel cost ~2 outweighs
 it), so a value whose activity is far away goes neglected and files a ticket, which is intended;
-residents who keep proposing an invitation that gets rejected fall back to idle instead of trying
-the next candidate (pre-existing, see below); the "no values yet" prompt is untested visually;
+the "no values yet" prompt is untested visually;
 trait chips and value rows have no effect tooltips beyond the disabled-trait one.
 
 **What to build.** Values are a character's *ranked* sources of meaning, each mapped
