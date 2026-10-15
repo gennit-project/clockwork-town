@@ -76,7 +76,8 @@ function buildSocialParticipationIntent({
       source: 'manual',
       travelCost: 0,
       socialTargetId: initiatorId,
-      socialTargetName: initiatorState.name
+      socialTargetName: initiatorState.name,
+      isSocialParticipant: true
     }
   }
 
@@ -97,6 +98,9 @@ function buildSocialParticipationIntent({
     travelCost,
     socialTargetId: initiatorId,
     socialTargetName: initiatorState.name,
+    isSocialParticipant: true,
+    groupTargetIds: undefined,
+    groupTargetNames: undefined,
     hostedFollowUp: intent.hostedFollowUp
       ? {
           ...intent.hostedFollowUp,
@@ -305,19 +309,7 @@ function evaluateInvitationAcceptance({
   return { accepted: true }
 }
 
-function assignSocialParticipation({
-  currentTick,
-  characterId,
-  state,
-  intent,
-  intents,
-  reservedCharacterIds,
-  characterStates,
-  worldData,
-  itemOccupancy,
-  simulationDateTime,
-  activityLog
-}: {
+interface SocialParticipationParams {
   currentTick: number
   characterId: string
   state: CharacterState
@@ -329,7 +321,80 @@ function assignSocialParticipation({
   itemOccupancy: ItemOccupancy
   simulationDateTime?: SimulationDateTime
   activityLog: Ref<ActivityLogEntry[]>
-}): boolean {
+}
+
+/**
+ * Coordinate a social intent. The primary partner is invited first; if they accept and the
+ * intent is a group chat, the extras are invited too and the group forms with whoever
+ * accepts. Only a chat can ever be a group: a date is always exactly one other person.
+ */
+function assignSocialParticipation(params: SocialParticipationParams): boolean {
+  const { intent, state, intents, reservedCharacterIds, characterStates } = params
+
+  if (!inviteParticipant(params)) {
+    return false
+  }
+  if (!INVITATION_RESPONSE_ACTIONS.has(intent.action) || !intent.socialTargetId) {
+    return true
+  }
+
+  if (intent.action !== 'chat_friend' || !intent.groupTargetIds?.length) {
+    intent.groupTargetIds = undefined
+    intent.groupTargetNames = undefined
+    return true
+  }
+
+  const acceptedIds: string[] = []
+  const acceptedNames: string[] = []
+  for (const extraId of intent.groupTargetIds) {
+    const extraState = characterStates[extraId]
+    // Someone already taken by another group this tick was busy, not unwilling: skip, don't back off.
+    if (!extraState || reservedCharacterIds.has(extraId)) {
+      continue
+    }
+    const extraIntent: Intent = {
+      ...intent,
+      socialTargetId: extraId,
+      socialTargetName: extraState.name,
+      groupTargetIds: undefined,
+      groupTargetNames: undefined
+    }
+    if (inviteParticipant({ ...params, intent: extraIntent })) {
+      acceptedIds.push(extraId)
+      acceptedNames.push(extraState.name)
+    } else {
+      backOffInvitation(state, 'chat_friend', extraId)
+    }
+  }
+
+  intent.groupTargetIds = acceptedIds.length > 0 ? acceptedIds : undefined
+  intent.groupTargetNames = acceptedNames.length > 0 ? acceptedNames : undefined
+
+  // Let everyone in the group know who else is there (for status text).
+  const everyone = [intent.socialTargetId, ...acceptedIds]
+  for (const participantId of everyone) {
+    const participantIntent = intents[participantId]
+    if (!participantIntent) continue
+    const others = everyone.filter((id) => id !== participantId)
+    participantIntent.groupTargetIds = others.length > 0 ? others : undefined
+    participantIntent.groupTargetNames = others.length > 0 ? others.map((id) => characterStates[id]?.name ?? id) : undefined
+  }
+  return true
+}
+
+function inviteParticipant({
+  currentTick,
+  characterId,
+  state,
+  intent,
+  intents,
+  reservedCharacterIds,
+  characterStates,
+  worldData,
+  itemOccupancy,
+  simulationDateTime,
+  activityLog
+}: SocialParticipationParams): boolean {
   if (!INVITATION_RESPONSE_ACTIONS.has(intent.action)) {
     return true
   }

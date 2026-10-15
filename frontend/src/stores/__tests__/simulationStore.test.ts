@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useSimulationStore } from '../simulation'
 import { createMockWorldData, mockConsole } from './mockData'
+import { getCharacterStatusText } from '../../composables/useCharacterStatus'
 
 const persistenceMocks = vi.hoisted(() => ({
   moveCharacterToLot: vi.fn(async () => {}),
@@ -749,6 +750,122 @@ describe('simulation store integration', () => {
       expect(store.events).toHaveLength(1)
       store.resetSimulation()
       expect(store.events).toHaveLength(0)
+    })
+  })
+
+  describe('group chats and conversation effects', () => {
+    const groupMemories = () =>
+      persistenceMocks.createStructuredCharacterLongTermMemory.mock.calls
+        .map(([input]) => input as { characterId: string; eventType?: string; content: string; relationshipIds?: string[] })
+        .filter((input) => input.eventType === 'group_chat')
+
+    function setupThree() {
+      const store = setupStore() // char-1, Alice
+      setupSecondCharacter(store, 'lot-1', 'Test House', 'space-1', 'Living Room') // char-2, Bob
+      store.initializeCharacter({ id: 'char-3', name: 'Cy' })
+      store.updateCharacterLocation('char-3', 'region-1', 'lot-1', 'Test House', 'space-1', 'Living Room')
+      store.enqueueIntent('char-3', { action: 'idle', utility: 0 })
+      // Alice knows both; Bob and Cy have not met (their relationship is created by the chat).
+      const seed = (from: string, to: string, short: number, long: number) =>
+        createRelationshipSeed({ fromCharacterId: from, toCharacterId: to, lastSeenAt: null, shortTermScore: short, longTermScore: long })
+      store.characterStates['char-1'].relationships = [seed('char-1', 'char-2', 0.2, 0.1), seed('char-1', 'char-3', 0.2, 0.1)]
+      store.characterStates['char-2'].relationships = [seed('char-2', 'char-1', 0.05, 0.02)]
+      store.characterStates['char-3'].relationships = [seed('char-3', 'char-1', 0.05, 0.02)]
+      // Happy to be asked to chat, with nothing more appealing to do (a full romance need keeps
+      // the relationship-ranked invite_over from beating the chat).
+      for (const id of ['char-1', 'char-2', 'char-3']) store.characterStates[id].needs.romance = 1
+      store.characterStates['char-2'].needs.friends = 0.1
+      store.characterStates['char-3'].needs.friends = 0.1
+      return store
+    }
+
+    const chat = (extra: Record<string, unknown> = {}) => ({
+      action: 'chat_friend' as const,
+      itemId: 'item-1',
+      itemName: 'Couch',
+      targetSpaceId: 'space-1',
+      targetSpaceName: 'Living Room',
+      targetLotId: 'lot-1',
+      targetLotName: 'Test House',
+      socialTargetId: 'char-2',
+      socialTargetName: 'Bob',
+      utility: 10,
+      ...extra
+    })
+
+    const score = (store: ReturnType<typeof useSimulationStore>, from: string, to: string) =>
+      store.characterStates[from].relationships?.find((r) => r.toCharacterId === to)?.shortTermScore ?? NaN
+
+    // One chat is worth +0.24 short-term, less one tick of decay (0.01).
+    const ONE_CHAT = 0.24 - 0.01
+
+    it('a three-person chat updates every pair once, in both directions', async () => {
+      const store = setupThree()
+      store.enqueueIntent('char-1', chat({ groupTargetIds: ['char-3'], groupTargetNames: ['Cy'] }))
+      await store.executeTick()
+
+      expect(score(store, 'char-1', 'char-2')).toBeCloseTo(0.2 + ONE_CHAT, 2)
+      expect(score(store, 'char-2', 'char-1')).toBeCloseTo(0.05 + ONE_CHAT, 2)
+      expect(score(store, 'char-1', 'char-3')).toBeCloseTo(0.2 + ONE_CHAT, 2)
+      expect(score(store, 'char-3', 'char-1')).toBeCloseTo(0.05 + ONE_CHAT, 2)
+      // The two participants met each other too: a relationship now exists in both directions,
+      // and they grew closer (they are not only connected through the initiator).
+      expect(score(store, 'char-2', 'char-3')).toBeGreaterThan(0.2)
+      expect(score(store, 'char-3', 'char-2')).toBeGreaterThan(0.2)
+      expect(persistenceMocks.createStructuredCharacterLongTermMemory).toHaveBeenCalledWith(
+        expect.objectContaining({ characterId: 'char-2', eventType: 'first_met', content: 'Met Cy for the first time.' })
+      )
+    })
+
+    it('gives each person one group memory linked to their relationships with the others', async () => {
+      const store = setupThree()
+      store.enqueueIntent('char-1', chat({ groupTargetIds: ['char-3'], groupTargetNames: ['Cy'] }))
+      await store.executeTick()
+
+      const memories = groupMemories()
+      expect(memories.map((m) => [m.characterId, m.content])).toEqual([
+        ['char-1', 'Chatted with Bob and Cy.'],
+        ['char-2', 'Chatted with Alice and Cy.'],
+        ['char-3', 'Chatted with Alice and Bob.']
+      ])
+      for (const memory of memories) expect(memory.relationshipIds).toHaveLength(2)
+    })
+
+    it('shows the whole group in everyone\'s status', async () => {
+      const store = setupThree()
+      store.enqueueIntent('char-1', chat({ groupTargetIds: ['char-3'], groupTargetNames: ['Cy'] }))
+      await store.executeTick()
+
+      expect(getCharacterStatusText(store.characterStates['char-1'])).toBe('chatting with Bob and Cy')
+      expect(getCharacterStatusText(store.characterStates['char-2'])).toBe('chatting with Alice and Cy')
+      expect(getCharacterStatusText(store.characterStates['char-3'])).toBe('chatting with Alice and Bob')
+    })
+
+    it('control: a plain pair chat makes no group memory and shows just the partner', async () => {
+      const store = setupThree()
+      store.enqueueIntent('char-1', chat())
+      await store.executeTick()
+      expect(groupMemories()).toHaveLength(0)
+      expect(getCharacterStatusText(store.characterStates['char-1'])).toBe('chatting with Bob')
+    })
+
+    it('a pair chat changes the relationship once, not once per participant', async () => {
+      const store = setupThree()
+      store.enqueueIntent('char-1', chat())
+      await store.executeTick()
+      // Before the fix this was applied twice (0.2 + 0.46 - 0.01 = 0.65).
+      expect(score(store, 'char-1', 'char-2')).toBeCloseTo(0.2 + ONE_CHAT, 2)
+      expect(score(store, 'char-2', 'char-1')).toBeCloseTo(0.05 + ONE_CHAT, 2)
+    })
+
+    it('a date never becomes a group, even with extras attached', async () => {
+      const store = setupThree()
+      store.enqueueIntent('char-1', chat({ action: 'date', groupTargetIds: ['char-3'], groupTargetNames: ['Cy'] }))
+      await store.executeTick()
+      expect(groupMemories()).toHaveLength(0)
+      // Cy was never invited, so nothing happened between Cy and the others.
+      expect(score(store, 'char-3', 'char-1')).toBeLessThan(0.05)
+      expect(store.characterStates['char-3'].currentAction).not.toBe('date')
     })
   })
 

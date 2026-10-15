@@ -1,6 +1,7 @@
 import type { CharacterRelationship, CharacterState, Intent } from '../types'
 import { hasBloodFamilyLabel } from './family'
 import { evaluateRelationshipEvents } from './relationshipEvents'
+import { joinNames } from './groupSocial'
 
 const LUNCH_START_HOUR = 11
 const LUNCH_END_HOUR = 14
@@ -19,8 +20,10 @@ const SHARED_EXPERIENCE_EVENT_TYPES = new Set([
 
 const RELATIONSHIP_EVENT_SCORES: Record<string, { shortTerm: number; longTerm: number }> = {
   first_met: { shortTerm: 0.08, longTerm: 0.03 },
-  chat_friend: { shortTerm: 0.12, longTerm: 0.03 },
-  date: { shortTerm: 0.18, longTerm: 0.06 },
+  // Chat and date are recorded once per conversation by the initiator. They used to be applied
+  // once per participant (so twice per pair); these values are doubled to keep the same pace.
+  chat_friend: { shortTerm: 0.24, longTerm: 0.06 },
+  date: { shortTerm: 0.36, longTerm: 0.12 },
   text_romance: { shortTerm: 0.05, longTerm: 0.01 },
   call_romance: { shortTerm: 0.08, longTerm: 0.02 },
   invite_over: { shortTerm: 0.1, longTerm: 0.025 },
@@ -760,6 +763,64 @@ export async function recordRelationshipConversation({
     relationshipId: reverseRelationship.id,
     dependencies
   })
+}
+
+export const GROUP_CHAT_EVENT_TYPE = 'group_chat'
+
+/**
+ * A chat between three or more people, recorded once by the initiator. Every pair gets the
+ * ordinary conversation update (both directions, first-met handling, milestone labels), so
+ * everyone who talked grows closer to everyone else, and each person gets a single group
+ * memory linked to their relationships with the others (rather than one memory per pair).
+ */
+export async function recordGroupConversation({
+  participants,
+  timestamp,
+  intent,
+  dependencies
+}: {
+  participants: Array<{ id: string; state: CharacterState }>
+  timestamp: string
+  intent: Intent
+  dependencies: RelationshipRuntimeDependencies
+}): Promise<void> {
+  for (let i = 0; i < participants.length; i++) {
+    for (let j = i + 1; j < participants.length; j++) {
+      await recordRelationshipConversation({
+        characterId: participants[i].id,
+        targetCharacterId: participants[j].id,
+        characterState: participants[i].state,
+        targetState: participants[j].state,
+        timestamp,
+        intent,
+        dependencies
+      })
+    }
+  }
+
+  const location = {
+    lotId: intent.targetLotId,
+    lotName: intent.targetLotName,
+    spaceId: intent.targetSpaceId,
+    spaceName: intent.targetSpaceName
+  }
+  for (const participant of participants) {
+    const others = participants.filter((other) => other.id !== participant.id)
+    const relationshipIds = others
+      .map((other) => participant.state.relationships?.find((rel) => rel.toCharacterId === other.id)?.id)
+      .filter((id): id is string => !!id)
+    await dependencies.createStructuredCharacterLongTermMemory({
+      characterId: participant.id,
+      content: `Chatted with ${joinNames(others.map((other) => other.state.name))}.`,
+      relationshipIds,
+      eventType: GROUP_CHAT_EVENT_TYPE,
+      locationLotId: location.lotId ?? undefined,
+      locationLotName: location.lotName ?? undefined,
+      locationSpaceId: location.spaceId ?? undefined,
+      locationSpaceName: location.spaceName ?? undefined,
+      createdAt: timestamp
+    })
+  }
 }
 
 export async function recordRelationshipDirectContact({

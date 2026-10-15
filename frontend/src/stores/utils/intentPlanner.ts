@@ -13,6 +13,7 @@ import type {
 } from '../types'
 import { calculateUtility } from './actionUtility'
 import { isInvitationBackedOff } from './inviteBackoff'
+import { GROUP_SOCIAL } from '../config/social'
 import { isActionDisabled } from './traitEffects'
 import { valueUtilityBonus } from './valueEffects'
 import { findItemsWithAffordance } from './pathfinding'
@@ -339,6 +340,9 @@ function buildSocialPlanCandidates({
       continue
     }
 
+    // People who could join a chat at this item, for building a group candidate below.
+    const groupPool: GroupPoolEntry[] = []
+
     for (const [socialTargetId, socialTargetState] of Object.entries(characterStates)) {
       if (socialTargetId === characterId || reservedCharacterIdSet.has(socialTargetId)) {
         continue
@@ -377,10 +381,16 @@ function buildSocialPlanCandidates({
         continue
       }
 
-      const utility = calculateUtility(characterId, action, characterState.needs, {
-        ...itemOption,
-        travelCost: itemOption.travelCost + socialTargetTravelCost
-      })
+      // Housemates are natural company: nudge chats toward them.
+      const isHousehold =
+        action === 'chat_friend' &&
+        !!characterState.householdId &&
+        socialTargetState.householdId === characterState.householdId
+      const utility =
+        calculateUtility(characterId, action, characterState.needs, {
+          ...itemOption,
+          travelCost: itemOption.travelCost + socialTargetTravelCost
+        }) + (isHousehold ? GROUP_SOCIAL.householdChatBonus : 0)
       const primaryStep: TaskStep = {
         action,
         label: `${action}:${socialTargetState.name}`,
@@ -396,18 +406,100 @@ function buildSocialPlanCandidates({
         socialTargetName: socialTargetState.name
       }
 
-      candidates.push({
+      const pairCandidate: PlanCandidate = {
         goal: action,
         strategy: `${action}:with-participant`,
         utility,
         travelCost: itemOption.travelCost,
         primaryStep,
         steps: [primaryStep]
+      }
+      candidates.push(pairCandidate)
+      const relationship = characterState.relationships?.find((rel) => rel.toCharacterId === socialTargetId)
+      groupPool.push({
+        id: socialTargetId,
+        name: socialTargetState.name,
+        isHousehold,
+        // The same bonus a relationship-ranked chat with this person would get.
+        relationshipBonus: relationship ? buildRelationshipUtilityBonus({ relationship }) : 0,
+        candidate: pairCandidate
       })
+    }
+
+    if (action === 'chat_friend') {
+      const groupCandidate = buildGroupChatCandidate({
+        pool: groupPool.filter((entry) => !isInvitationBackedOff(characterState, 'chat_friend', entry.id)),
+        maxUsers: worldData.items[itemOption.itemId]?.maxSimultaneousUsers
+      })
+      if (groupCandidate) {
+        candidates.push(groupCandidate)
+      }
     }
   }
 
   return candidates
+}
+
+interface GroupPoolEntry {
+  id: string
+  name: string
+  isHousehold: boolean
+  /** What this person's relationship adds to a chat with them (see buildRelationshipUtilityBonus). */
+  relationshipBonus?: number
+  candidate: PlanCandidate
+}
+
+/**
+ * The best group chat at an item: the best pair candidate plus up to two more people,
+ * household first, as far as the item has room for. A group scores a little higher than the
+ * same pair, so it is preferred when available but nobody is forced into one. `date` never
+ * comes through here: it is always exactly one other person.
+ */
+export function buildGroupChatCandidate({
+  pool,
+  maxUsers
+}: {
+  pool: GroupPoolEntry[]
+  /** The item's capacity including the initiator; null/undefined means unlimited. */
+  maxUsers: number | null | undefined
+}): PlanCandidate | null {
+  const bonus = (entry: GroupPoolEntry) => entry.relationshipBonus ?? 0
+  const score = (entry: GroupPoolEntry) => entry.candidate.utility + bonus(entry)
+
+  const byScore = [...pool].sort((a, b) => score(b) - score(a) || a.id.localeCompare(b.id))
+  const [primary, ...rest] = byScore
+  if (!primary) return null
+
+  // Seats beyond the initiator and the primary partner.
+  const seats = maxUsers === null || maxUsers === undefined ? Infinity : Math.max(0, maxUsers - 2)
+  const extrasCount = Math.min(GROUP_SOCIAL.maxGroupExtras, rest.length, seats)
+  if (extrasCount < 1) return null
+
+  const extras = rest
+    .sort(
+      (a, b) =>
+        Number(b.isHousehold) - Number(a.isHousehold) || score(b) - score(a) || a.id.localeCompare(b.id)
+    )
+    .slice(0, extrasCount)
+
+  const names = [primary.name, ...extras.map((extra) => extra.name)]
+  const step: TaskStep = {
+    ...primary.candidate.primaryStep,
+    label: `chat_friend:${names.join('+')}`,
+    groupTargetIds: extras.map((extra) => extra.id),
+    groupTargetNames: extras.map((extra) => extra.name)
+  }
+  const extrasBonus = extras.reduce(
+    (sum, extra) => sum + GROUP_SOCIAL.groupChatBonusPerExtra + bonus(extra) * GROUP_SOCIAL.extraRelationshipWeight,
+    0
+  )
+  return {
+    ...primary.candidate,
+    strategy: 'chat_friend:group',
+    utility: score(primary) + extrasBonus,
+    primaryStep: step,
+    steps: [step]
+  }
 }
 
 function buildRelationshipSocialPlanCandidates({
@@ -446,6 +538,9 @@ function buildRelationshipSocialPlanCandidates({
   const chatCandidatesByTargetId = new Map<string, PlanCandidate>()
   for (const candidate of socialCandidates) {
     const socialTargetId = candidate.primaryStep.socialTargetId
+    if (candidate.strategy === 'chat_friend:group') {
+      continue
+    }
     if (!socialTargetId || chatCandidatesByTargetId.has(socialTargetId)) {
       continue
     }
@@ -1148,6 +1243,8 @@ export function planCandidateToIntent(candidate: PlanCandidate): Intent {
     source: 'auto',
     socialTargetId: candidate.primaryStep.socialTargetId,
     socialTargetName: candidate.primaryStep.socialTargetName,
+    groupTargetIds: candidate.primaryStep.groupTargetIds,
+    groupTargetNames: candidate.primaryStep.groupTargetNames,
     animalTargetId: candidate.primaryStep.animalTargetId,
     animalTargetName: candidate.primaryStep.animalTargetName,
     inviteContextType: candidate.primaryStep.inviteContextType,

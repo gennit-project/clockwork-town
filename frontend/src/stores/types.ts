@@ -396,6 +396,18 @@ export interface Intent {
   source?: 'auto' | 'manual'
   socialTargetId?: string
   socialTargetName?: string
+  /**
+   * Extra participants in a group chat, beyond `socialTargetId` (the primary partner).
+   * Only chat_friend is ever a group; `date` is always exactly one other person. After
+   * coordination this holds only the people who accepted.
+   */
+  groupTargetIds?: string[]
+  groupTargetNames?: string[]
+  /**
+   * True on the intent given to someone who accepted an invitation. The initiator records
+   * the shared event once; participants must not record it again.
+   */
+  isSocialParticipant?: boolean
   /** When the action targets an animal (e.g. pet_animal), the animal being interacted with. */
   animalTargetId?: string
   animalTargetName?: string
@@ -418,6 +430,8 @@ export interface TaskStep {
   remainingTicks: number
   socialTargetId?: string
   socialTargetName?: string
+  groupTargetIds?: string[]
+  groupTargetNames?: string[]
   animalTargetId?: string
   animalTargetName?: string
   inviteContextType?: InviteOverContext

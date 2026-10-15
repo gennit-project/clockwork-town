@@ -44,8 +44,10 @@ import { applyPetInteraction, tickAnimals } from './animalRuntime'
 import { markValuesFulfilled } from './valueEffects'
 import { isNewDay, recordActionInTally, recordDailySummaries } from './dailySummary'
 import { evaluatePetEvents, updatePetTogetherness } from './petReunions'
+import { describeActionTarget } from './groupSocial'
 import {
   decayCharacterRelationships,
+  recordGroupConversation,
   recordRelationshipConversation,
   recordRelationshipDirectContact,
   recordRelationshipEncounter,
@@ -347,7 +349,7 @@ export function createSimulationRuntime(
       : actionData
 
     const stateChange = applyActionToCharacterState(state, intent.action, effectiveActionData)
-    state.currentTargetName = intent.itemName || intent.socialTargetName || intent.animalTargetName || null
+    state.currentTargetName = describeActionTarget(intent)
     markValuesFulfilled(state, intent.action)
     recordActionInTally(state, intent, state.location.lotName)
 
@@ -417,10 +419,28 @@ export function createSimulationRuntime(
       setItemOccupancy(characterId, intent.itemId)
     }
 
-    if ((intent.action === 'chat_friend' || intent.action === 'date') && intent.socialTargetId) {
+    // The initiator records the conversation once; a participant's own completion must not
+    // apply the same relationship change a second time.
+    if ((intent.action === 'chat_friend' || intent.action === 'date') && intent.socialTargetId && !intent.isSocialParticipant) {
       const state = refs.characterStates.value[characterId]
       const targetState = refs.characterStates.value[intent.socialTargetId]
-      if (state && targetState) {
+      const relationshipDependencies = {
+        persistCharacterRelationship: dependencies.persistCharacterRelationship,
+        createStructuredCharacterLongTermMemory: dependencies.createStructuredCharacterLongTermMemory
+      }
+      const extraIds = intent.action === 'chat_friend' ? intent.groupTargetIds ?? [] : []
+      if (state && targetState && extraIds.length > 0) {
+        // A group chat: one record for the whole group, not one per pair per participant.
+        const participants = [characterId, intent.socialTargetId, ...extraIds]
+          .map((id) => ({ id, state: refs.characterStates.value[id] }))
+          .filter((participant): participant is { id: string; state: CharacterState } => !!participant.state)
+        await recordGroupConversation({
+          participants,
+          timestamp: refs.simulationDateTime.value.iso,
+          intent,
+          dependencies: relationshipDependencies
+        })
+      } else if (state && targetState) {
         await recordRelationshipConversation({
           characterId,
           targetCharacterId: intent.socialTargetId,
@@ -428,10 +448,7 @@ export function createSimulationRuntime(
           targetState,
           timestamp: refs.simulationDateTime.value.iso,
           intent,
-          dependencies: {
-            persistCharacterRelationship: dependencies.persistCharacterRelationship,
-            createStructuredCharacterLongTermMemory: dependencies.createStructuredCharacterLongTermMemory
-          }
+          dependencies: relationshipDependencies
         })
       }
     }
