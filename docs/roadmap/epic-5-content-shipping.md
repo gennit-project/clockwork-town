@@ -224,6 +224,11 @@ watching** and cutting away when it stops being interesting.
   help. It never shows more than the sim knows: no invented dialogue beyond what the sim's own
   memories and log entries say.
 
+**Tone.** The cameras view is where the project's voice is loudest: ominous bureaucratic
+language doing a benign job (see the README's Voice section), for example *"CAM 3, Library:
+subject unobserved for 6 hours; welfare dispatch recommended"*. Feeds describe only what the sim
+knows; the menace is purely in the register.
+
 **Where it plugs in.** Read-only over existing state: the activity log, the recent-events feed,
 tickets, grievances, pressure readings (`utils/pressure.ts`) and causes (`utils/causes.ts`). The
 new code is the scoring and cut-timing logic (pure and unit-testable, like the rest of Epic 6),

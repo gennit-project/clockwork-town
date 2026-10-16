@@ -94,6 +94,16 @@ Design tokens (Grafana-dark) are in `frontend/src/style.css` (`gf-bg`, `gf-surfa
    no intervention and fails if anyone stays critical or stuck (Epic 6.8, built: `townWeek.test.ts`). Any new way to fail
    (money, illness, death, childcare, any new action) must keep it green in the default mode.
 
+## Voice (applies to every piece of player-facing text)
+
+Think **the NSA, but for emotional well-being**: ominous bureaucratic language doing a very
+benign job. Deadpan, procedural, faintly menacing in register, and entirely kind in substance.
+*"Subject has not eaten; welfare dispatch recommended."* *"Wellness check: no action required."*
+The comedy is the gap between the register and the stakes, so the text must never actually be
+cruel or creepy, and it never gets more specific than the sim's own data (no invented
+surveillance detail). New alerts, tickets, event-feed lines, cause summaries and the cameras view
+(Epic 5.6) should read this way. It is a style target for copy, not a feature to build.
+
 ## The ordering, and why
 
 Principle: **substrate (data + authoring) → mechanics that read it → content that exercises it → tutorial that wraps it → shipping.** Every epic should light up something visible in the service-desk UI so the project is always dogfooded.
