@@ -54,6 +54,9 @@ export const PRESSURE = {
 /** Human labels for each trigger, shown in the cause view. */
 export const PRESSURE_TRIGGER_LABELS: Record<string, string> = {
   unmet_needs: 'Unmet basic needs',
+  insulted: 'Being on the receiving end of an act',
+  confronted: 'Being confronted by someone stepping in',
+  distress: 'Watching other people fight',
   grievances: 'Grievances they hold',
   disapproved: 'Being disapproved of',
   crowding: 'Crowding',

@@ -52,13 +52,15 @@ import { addPressure, relievePressure, tickPressure } from './pressure'
 import { applyFamilyPresence, familyTimeBoost } from './familyTime'
 import { DEFAULT_DRAMA_INTENSITY, PRESSURE, type DramaIntensity } from '../config/pressure'
 import { getApprovalTopic } from '../config/approvalTopics'
-import { applyAntisocialActEffects, decideAntisocialActs, tickAntisocial } from './antisocial'
+import { applyAntisocialActEffects, decideAntisocialActs, tickAntisocial, type AntisocialAct } from './antisocial'
+import { applySideEffects, decideSides } from './sides'
 import { buildDisapprovalCause } from './causes'
 import { addGrievance, detectWitnessReactions, startReactionCooldown } from './witnessReactions'
 import {
   decayCharacterRelationships,
   recordGroupInteraction,
   recordWitnessReaction,
+  recordDirectedRelationshipEvent,
   recordRelationshipConversation,
   recordRelationshipDirectContact,
   recordRelationshipEncounter,
@@ -346,7 +348,7 @@ export function createSimulationRuntime(
    * action is set to the act so bystanders react to it through the ordinary approval system.
    * Returns each actor's cause so those reactions can carry the whole story.
    */
-  async function recordAntisocialActs(): Promise<Record<string, Cause>> {
+  async function recordAntisocialActs(): Promise<{ causes: Record<string, Cause>; acts: AntisocialAct[] }> {
     actingResidents = []
     const states = refs.characterStates.value
     const intensity = refs.dramaIntensity?.value ?? DEFAULT_DRAMA_INTENSITY
@@ -355,7 +357,8 @@ export function createSimulationRuntime(
     tickAntisocial(states)
 
     const causes: Record<string, Cause> = {}
-    for (const act of decideAntisocialActs({ states, intensity, dayKey })) {
+    const acts = decideAntisocialActs({ states, intensity, dayKey })
+    for (const act of acts) {
       const actor = states[act.actorId]
       const target = states[act.targetId]
       applyAntisocialActEffects(states, act, dayKey)
@@ -417,7 +420,78 @@ export function createSimulationRuntime(
         addGrievance(victim, { id: otherId, name: other.name }, topic, cause, true)
       }
     }
-    return causes
+    return { causes, acts }
+  }
+
+  /** Bystanders step in, take sides or are upset (see utils/sides.ts); relationships, memories, log and feed. */
+  async function recordSides(acts: AntisocialAct[]): Promise<void> {
+    if (acts.length === 0) return
+    const states = refs.characterStates.value
+    const intensity = refs.dramaIntensity?.value ?? DEFAULT_DRAMA_INTENSITY
+    const timestamp = refs.simulationDateTime.value.iso
+    const deps = {
+      persistCharacterRelationship: dependencies.persistCharacterRelationship,
+      createStructuredCharacterLongTermMemory: dependencies.createStructuredCharacterLongTermMemory
+    }
+    const pushEvent = (type: string, message: string, characterIds: string[], cause: Cause) => {
+      refs.events.value.push({ tick: refs.currentTick.value, iso: timestamp, type, message, characterIds, cause })
+      if (refs.events.value.length > EVENT_FEED_LIMIT) {
+        refs.events.value.splice(0, refs.events.value.length - EVENT_FEED_LIMIT)
+      }
+    }
+
+    for (const outcome of decideSides({ acts, states, intensity })) {
+      const { act } = outcome
+      const applied = applySideEffects(states, outcome, intensity)
+      const actor = states[act.actorId]
+      const target = states[act.targetId]
+
+      if (outcome.intervener && applied.interveneCause) {
+        const defenderId = outcome.intervener.bystanderId
+        const defender = states[defenderId]
+        const cause = applied.interveneCause
+        const message = `Welfare intervention: ${defender.name} stood between ${actor.name} and ${target.name}${applied.backfired ? ' (escalated)' : ''}.`
+        logActivity(defenderId, 'intervene', message, cause)
+        pushEvent('intervention', message, [defenderId, act.actorId, act.targetId], cause)
+        await recordDirectedRelationshipEvent({ fromId: defenderId, toId: act.targetId, fromState: defender, toState: target, eventType: 'defended_someone', memoryContent: `Stepped in when ${actor.name} ${act.rung.verb} ${target.name}.`, memoryEventType: 'intervention', timestamp, cause, dependencies: deps })
+        await recordDirectedRelationshipEvent({ fromId: act.targetId, toId: defenderId, fromState: target, toState: defender, eventType: 'was_defended', memoryContent: `${defender.name} stepped in when ${actor.name} turned on me.`, memoryEventType: 'was_defended', timestamp, cause, dependencies: deps })
+        if (applied.backfired) {
+          await recordDirectedRelationshipEvent({ fromId: act.actorId, toId: defenderId, fromState: actor, toState: defender, eventType: 'confronted_by_defender', memoryContent: `Was confronted by ${defender.name}.`, memoryEventType: 'confronted', timestamp, cause, dependencies: deps })
+        }
+      }
+
+      for (const { id: backerId, cause } of applied.backerCauses) {
+        const backer = states[backerId]
+        const message = `${backer.name} aligned with ${actor.name} against ${target.name}.`
+        logActivity(backerId, 'took_side', message, cause)
+        pushEvent('took_side', message, [backerId, act.actorId, act.targetId], cause)
+        await recordDirectedRelationshipEvent({ fromId: backerId, toId: act.actorId, fromState: backer, toState: actor, eventType: 'defended_someone', memoryContent: `Took ${actor.name}'s side against ${target.name}.`, memoryEventType: 'took_side', timestamp, cause, dependencies: deps })
+        await recordDirectedRelationshipEvent({ fromId: act.targetId, toId: backerId, fromState: target, toState: backer, eventType: 'sided_with_aggressor', memoryContent: `${backer.name} took ${actor.name}'s side against me.`, memoryEventType: 'took_side', timestamp, cause, dependencies: deps })
+        await recordDirectedRelationshipEvent({ fromId: act.actorId, toId: backerId, fromState: actor, toState: backer, eventType: 'backed_by_ally', memoryContent: `${backer.name} backed me up.`, memoryEventType: 'backed_up', timestamp, cause, dependencies: deps })
+        addGrievance(
+          target,
+          { id: backerId, name: backer.name },
+          { id: 'sided-with-aggressor', label: 'Taking sides', phrase: `taking ${actor.name}'s side against them`, matches: () => false },
+          cause,
+          true
+        )
+      }
+
+      for (const { id: witnessId, cause } of applied.upsetCauses) {
+        const witness = states[witnessId]
+        await dependencies.createStructuredCharacterLongTermMemory({
+          characterId: witnessId,
+          content: `Was upset watching ${actor.name} and ${target.name} fall out.`,
+          eventType: 'witnessed_conflict',
+          locationLotId: witness.location.lotId ?? undefined,
+          locationLotName: witness.location.lotName ?? undefined,
+          locationSpaceId: witness.location.spaceId ?? undefined,
+          locationSpaceName: witness.location.spaceName ?? undefined,
+          createdAt: timestamp,
+          cause
+        })
+      }
+    }
   }
 
   function restoreAfterActs(): void {
@@ -903,7 +977,8 @@ export function createSimulationRuntime(
     })
 
     await recordPetReunions()
-    const actCauses = await recordAntisocialActs()
+    const { causes: actCauses, acts } = await recordAntisocialActs()
+    await recordSides(acts)
     await recordWitnessReactions(actCauses)
     restoreAfterActs()
     applyWitnessMood(refs.characterStates.value)

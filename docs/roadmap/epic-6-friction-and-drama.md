@@ -118,18 +118,11 @@ limit, a deterministic target, a cause, an approval topic, relief for the actor)
 **Done when** each exists, is flagged `antisocial`, carries a cause, and appears in the invariant
 sweep.
 
-### 6.4 — Taking sides and bystanders `[M]`
+### 6.4 — Taking sides and bystanders `[M]` — DONE
 
-**Status:** Not started.
-
-**What to build.** Reactions beyond disapproval: someone who loves the target steps in
-(a prosocial *intervene* act, justified by relationship and values); children and
-sensitive residents are upset by what they see; a resident whose value is "make mom
-happy" sides with their mother. Allies and enemies emerge from relationships and values,
-each with a recorded reason.
-
-**Done when.** A bystander who is close to the target defends them, and a third party
-with a competing value takes the other side, both with explanations.
+Built: bystanders step in, align with the actor, or are upset by what they see, each with a
+recorded reason. See [completed/epic-6-4-taking-sides.md](completed/epic-6-4-taking-sides.md).
+Still open from it: persistent ally and enemy labels on the relationship roster (do with 6.5).
 
 ### 6.5 — Repair, de-escalation, and the unforgivable `[M–L]`
 

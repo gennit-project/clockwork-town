@@ -21,7 +21,9 @@ export const TRAIT_CATALOG: Array<{ id: string; name: string; description: strin
   { id: "trait-petty", name: "Petty", description: "Small wrongs weigh heavily." },
   { id: "trait-jealous", name: "Jealous", description: "Feels it when someone they love gives their attention elsewhere." },
   { id: "trait-gossip", name: "Gossip", description: "Loves talking about other people." },
-  { id: "trait-arrogant", name: "Arrogant", description: "Thinks rather well of themselves." }
+  { id: "trait-arrogant", name: "Arrogant", description: "Thinks rather well of themselves." },
+  { id: "trait-protective", name: "Protective", description: "Steps in when someone they care about is being treated badly." },
+  { id: "trait-sensitive", name: "Sensitive", description: "Gets upset watching other people argue." }
 ];
 
 /** Idempotently create any catalog traits that don't exist yet; returns how many were added. */

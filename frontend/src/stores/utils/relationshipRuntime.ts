@@ -36,7 +36,13 @@ const RELATIONSHIP_EVENT_SCORES: Record<string, { shortTerm: number; longTerm: n
   view_art: { shortTerm: 0.05, longTerm: 0.015 },
   // Reactions to seeing someone do something the witness has an opinion about
   witnessed_disapproval: { shortTerm: -0.15, longTerm: -0.03 },
-  witnessed_approval: { shortTerm: 0.08, longTerm: 0.015 }
+  witnessed_approval: { shortTerm: 0.08, longTerm: 0.015 },
+  // Taking sides (Epic 6.4)
+  defended_someone: { shortTerm: 0.05, longTerm: 0.02 },
+  was_defended: { shortTerm: 0.15, longTerm: 0.05 },
+  confronted_by_defender: { shortTerm: -0.1, longTerm: -0.03 },
+  sided_with_aggressor: { shortTerm: -0.12, longTerm: -0.04 },
+  backed_by_ally: { shortTerm: 0.06, longTerm: 0.02 }
 }
 
 export interface RelationshipRuntimeDependencies {
@@ -935,6 +941,74 @@ export async function recordWitnessReaction({
     relationshipId: relationship.id,
     dependencies
   })
+}
+
+/**
+ * One person's feelings toward another change because of something that happened between them and
+ * a third party (a defence, a betrayal), with a linked memory carrying the cause. Handles the
+ * first-met case like the other event recorders.
+ */
+export async function recordDirectedRelationshipEvent({
+  fromId,
+  toId,
+  fromState,
+  toState,
+  eventType,
+  memoryContent,
+  memoryEventType,
+  timestamp,
+  cause,
+  dependencies
+}: {
+  fromId: string
+  toId: string
+  fromState: CharacterState
+  toState: CharacterState
+  /** A key of the relationship event score table. */
+  eventType: string
+  memoryContent: string
+  memoryEventType: string
+  timestamp: string
+  cause?: Cause
+  dependencies: RelationshipRuntimeDependencies
+}): Promise<void> {
+  const location = {
+    lotId: fromState.location.lotId,
+    lotName: fromState.location.lotName,
+    spaceId: fromState.location.spaceId,
+    spaceName: fromState.location.spaceName
+  }
+  const ensured = await ensureDirectionalRelationship({
+    fromCharacterId: fromId,
+    toCharacterId: toId,
+    fromState,
+    lastSeenAt: timestamp,
+    dependencies
+  })
+  let relationship = ensured.relationship
+  if (ensured.created) {
+    await createFirstMetMemory({
+      characterId: fromId,
+      otherCharacterName: toState.name,
+      relationshipId: relationship.id,
+      timestamp,
+      location,
+      dependencies
+    })
+    relationship = await applyRelationshipEventDelta({ relationship, fromState, eventType: 'first_met', dependencies })
+  }
+  relationship = await applyRelationshipEventDelta({ relationship, fromState, eventType, dependencies })
+  await createLinkedRelationshipMemory({
+    characterId: fromId,
+    content: memoryContent,
+    relationshipId: relationship.id,
+    timestamp,
+    eventType: memoryEventType,
+    location,
+    cause,
+    dependencies
+  })
+  await syncRelationshipMilestoneLabels({ characterState: fromState, relationshipId: relationship.id, dependencies })
 }
 
 export async function recordRelationshipDirectContact({

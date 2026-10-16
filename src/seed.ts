@@ -271,7 +271,10 @@ async function seedDesertWillow() {
   // Schoolmates
   await relate("char-priya-lin", "char-leo-marsh", "friend", "friend", FRIEND.warmth, FRIEND.bond);
   await relate("char-leo-marsh", "char-anh-nguyen", "friend", "friend", FRIEND.warmth, FRIEND.bond);
-  console.log("  · 14 relationships");
+  // Neighbours who would take a side when things get heated.
+  await relate("char-sara-marsh", "char-elena-reyes", "friend", "friend", FRIEND.warmth, FRIEND.bond);
+  await relate("char-tom-marsh", "char-manny-reyes", "friend", "friend", FRIEND.warmth, FRIEND.bond);
+  console.log("  · 16 relationships");
 
   // The campground is a deliberate empty community lot (nice backdrop).
   void campground;
@@ -404,10 +407,10 @@ async function seedTraits() {
     "char-amina-lin": ["trait-needs-little-sleep"],
     "char-elena-reyes": ["trait-needs-lots-of-sleep", "trait-petty"],
     "char-leo-marsh": ["trait-big-appetite", "trait-jealous"],
-    "char-priya-lin": ["trait-small-appetite"],
+    "char-priya-lin": ["trait-small-appetite", "trait-sensitive"],
     "char-kim-nguyen": ["trait-asexual"],
     "char-june-hale": ["trait-aromantic"],
-    "char-sara-marsh": ["trait-good-hearted"],
+    "char-sara-marsh": ["trait-good-hearted", "trait-protective"],
     "char-tom-marsh": ["trait-bitter", "trait-loses-temper-easily"],
     "char-ravi-lin": ["trait-conflict-averse", "trait-forgiving"]
   };

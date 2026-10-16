@@ -1183,6 +1183,103 @@ describe('simulation store integration', () => {
     })
   })
 
+  describe('taking sides', () => {
+    const memoriesOfType = (eventType: string) =>
+      persistenceMocks.createStructuredCharacterLongTermMemory.mock.calls
+        .map(([input]) => input as { characterId: string; eventType?: string; content: string; cause?: { kind: string; factors: Array<{ label: string }> } })
+        .filter((input) => input.eventType === eventType)
+    const rel = (from: string, to: string, longTermScore: number) => ({
+      id: `${from}-${to}`, fromCharacterId: from, toCharacterId: to, shortTermScore: 0, longTermScore, labels: [] as string[], lastSeenAt: null, lastSpokeAt: null, isDeceasedTarget: false
+    })
+
+    // Alice (char-1, hot-tempered, over her limit) turns on Bob (char-2); Cy (char-3) is a bystander.
+    function setupScene(opts: { cyFor: 'bob' | 'alice' | 'neither'; extra?: (store: ReturnType<typeof useSimulationStore>) => void }) {
+      const store = setupStore()
+      setupSecondCharacter(store, 'lot-1', 'Test House', 'space-1', 'Living Room')
+      store.initializeCharacter({ id: 'char-3', name: 'Cy' })
+      store.updateCharacterLocation('char-3', 'region-1', 'lot-1', 'Test House', 'space-1', 'Living Room')
+      for (const id of ['char-1', 'char-2', 'char-3']) {
+        store.enqueueIntent(id, { action: 'idle', utility: 0 })
+        const state = store.characterStates[id]
+        Object.assign(state, { age: 40, pressure: {}, antisocial: undefined, grievances: [], stances: {}, witnessCooldowns: {}, memories: [], longTermMemories: [], relationships: [], traitIds: [], traits: [], values: [] })
+      }
+      store.activityLog = []
+      store.events = []
+      store.setDramaIntensity('normal')
+      const alice = store.characterStates['char-1']
+      alice.traitIds = ['trait-loses-temper-easily']
+      alice.traits = ['Loses temper easily']
+      alice.pressure = { irritation: { value: 0.62, ledger: { grievances: 0.62 } } }
+      alice.grievances = [{ id: 'char-2:t', aboutCharacterId: 'char-2', aboutName: 'Bob', topicId: 'daytime-napping', summary: 'napping in the daytime', ticksRemaining: 500, times: 2 }]
+      store.characterStates['char-3'].relationships = [
+        rel('char-3', 'char-2', opts.cyFor === 'bob' ? 0.8 : 0.05),
+        rel('char-3', 'char-1', opts.cyFor === 'alice' ? 0.8 : 0.05)
+      ]
+      opts.extra?.(store)
+      return store
+    }
+
+    it('a bystander close to the target steps in: calms the actor, is thanked, and every step has a cause', async () => {
+      const store = setupScene({ cyFor: 'bob' })
+      await store.executeTick()
+      const step = store.activityLog.find((e) => e.action === 'intervene')
+      expect(step?.details).toBe('Welfare intervention: Cy stood between Alice and Bob.')
+      expect(step?.cause?.kind).toBe('took_side')
+      expect(step?.cause?.factors.some((f) => f.label === 'Regard for Bob')).toBe(true)
+      expect(store.events.find((e) => e.type === 'intervention')?.cause).toEqual(step?.cause)
+      expect(memoriesOfType('intervention').find((m) => m.characterId === 'char-3')?.cause?.kind).toBe('took_side')
+      expect(memoriesOfType('was_defended').find((m) => m.characterId === 'char-2')?.content).toBe('Cy stepped in when Alice turned on me.')
+      // Bob now thinks better of Cy.
+      expect(store.characterStates['char-2'].relationships?.find((r) => r.toCharacterId === 'char-3')?.longTermScore).toBeGreaterThan(0)
+      expect(store.characterStates['char-3'].witnessCooldowns?.['side:char-1']).toBeGreaterThan(0)
+    })
+
+    it('a bystander close to the actor aligns with her: the target holds it against them, with the cause on the grievance', async () => {
+      const store = setupScene({ cyFor: 'alice' })
+      await store.executeTick()
+      expect(store.activityLog.some((e) => e.action === 'intervene')).toBe(false)
+      const aligned = store.activityLog.find((e) => e.action === 'took_side')
+      expect(aligned?.details).toBe('Cy aligned with Alice against Bob.')
+      const grievance = store.characterStates['char-2'].grievances?.find((g) => g.topicId === 'sided-with-aggressor')
+      expect(grievance).toMatchObject({ aboutCharacterId: 'char-3', directed: true })
+      expect(grievance?.cause?.kind).toBe('took_side')
+      expect(memoriesOfType('took_side').some((m) => m.characterId === 'char-3' && m.content === "Took Alice's side against Bob.")).toBe(true)
+    })
+
+    it('controls: a stranger, a conflict-averse friend, and drama Off all stay out', async () => {
+      const stranger = setupScene({ cyFor: 'neither' })
+      await stranger.executeTick()
+      expect(stranger.activityLog.some((e) => ['intervene', 'took_side'].includes(e.action))).toBe(false)
+
+      const averse = setupScene({ cyFor: 'bob', extra: (s) => { Object.assign(s.characterStates['char-3'], { traitIds: ['trait-conflict-averse'], traits: ['Conflict-averse'] }) } })
+      await averse.executeTick()
+      expect(averse.activityLog.some((e) => ['snap', 'belittle', 'argue'].includes(e.action))).toBe(true)
+      expect(averse.activityLog.some((e) => e.action === 'intervene')).toBe(false)
+
+      const off = setupScene({ cyFor: 'bob' })
+      off.setDramaIntensity('off')
+      await off.executeTick()
+      expect(off.activityLog.some((e) => ['snap', 'belittle', 'argue', 'intervene'].includes(e.action))).toBe(false)
+      off.setDramaIntensity('normal')
+    })
+
+    it('a child who watches is upset (a memory, a little distress) and never steps in', async () => {
+      const store = setupScene({
+        cyFor: 'neither',
+        extra: (s) => {
+          s.initializeCharacter({ id: 'char-4', name: 'Dee' })
+          s.updateCharacterLocation('char-4', 'region-1', 'lot-1', 'Test House', 'space-1', 'Living Room')
+          s.enqueueIntent('char-4', { action: 'idle', utility: 0 })
+          Object.assign(s.characterStates['char-4'], { age: 9, pressure: {}, grievances: [], stances: {}, witnessCooldowns: {}, memories: [], longTermMemories: [], relationships: [rel('char-4', 'char-2', 0.9)] })
+        }
+      })
+      await store.executeTick()
+      expect(memoriesOfType('witnessed_conflict').find((m) => m.characterId === 'char-4')?.content).toBe('Was upset watching Alice and Bob fall out.')
+      expect(store.characterStates['char-4'].pressure?.irritation?.ledger).toHaveProperty('distress')
+      expect(store.activityLog.some((e) => e.action === 'intervene')).toBe(false)
+    })
+  })
+
   describe('antisocial acts', () => {
     const memoriesOfType = (eventType: string) =>
       persistenceMocks.createStructuredCharacterLongTermMemory.mock.calls

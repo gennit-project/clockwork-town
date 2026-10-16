@@ -223,3 +223,61 @@ export function buildAntisocialCause(input: AntisocialCauseInput): Cause {
     factors
   }
 }
+
+export interface SideCauseInput {
+  bystanderName: string
+  actorName: string
+  targetName: string
+  side: 'target' | 'actor'
+  targetRegard: number
+  actorRegard: number
+  margin: number
+  /** The gap in regard that was required to take a side. */
+  gapRequired: number
+  /** The regard the side taken had to reach to get involved at all. */
+  needed: number
+  /** Why each party was regarded as they were, e.g. "family", "value Happy family ranked 1". */
+  notes: string[]
+  dispositions: string[]
+  /** Stepping in only: it backfired because the actor was still well over their line. */
+  backfired?: boolean
+}
+
+export function buildSideCause(input: SideCauseInput): Cause {
+  const forTarget = input.side === 'target'
+  const factors: CauseFactor[] = [
+    { label: `Regard for ${input.targetName}`, value: fixed(input.targetRegard) },
+    { label: `Regard for ${input.actorName}`, value: fixed(input.actorRegard) },
+    { label: 'Gap in regard', value: fixed(input.margin), threshold: Number(fixed(input.gapRequired)) },
+    { label: 'Regard needed to get involved', value: fixed(input.needed) },
+    ...input.notes.map((note) => ({ label: 'Because', value: note }))
+  ]
+  if (input.dispositions.length > 0) factors.push({ label: 'Dispositions', value: input.dispositions.join(', ') })
+  if (input.backfired) factors.push({ label: 'Outcome', value: `${input.actorName} was still over their limit: it backfired` })
+  return {
+    kind: 'took_side',
+    summary: forTarget
+      ? `${input.bystanderName} stood up for ${input.targetName} against ${input.actorName}: regard ${fixed(input.targetRegard)} vs ${fixed(input.actorRegard)}`
+      : `${input.bystanderName} aligned with ${input.actorName} against ${input.targetName}: regard ${fixed(input.actorRegard)} vs ${fixed(input.targetRegard)}`,
+    factors
+  }
+}
+
+export interface UpsetCauseInput {
+  witnessName: string
+  actorName: string
+  targetName: string
+  actSummary: string
+  reason: string
+}
+
+export function buildUpsetCause(input: UpsetCauseInput): Cause {
+  return {
+    kind: 'witnessed_conflict',
+    summary: `${input.witnessName} was upset watching ${input.actorName} and ${input.targetName}`,
+    factors: [
+      { label: 'Witnessed', value: input.actSummary },
+      { label: 'Why it affected them', value: input.reason }
+    ]
+  }
+}

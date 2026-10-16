@@ -505,7 +505,7 @@ export interface PlanCandidate {
 // ============================================
 
 /** What kind of decision a Cause explains. Extended by later Epic 6 items (antisocial acts, rejections). */
-export type CauseKind = 'declined_invitation' | 'idle' | 'disapproval' | 'pressure' | 'antisocial_act'
+export type CauseKind = 'declined_invitation' | 'idle' | 'disapproval' | 'pressure' | 'antisocial_act' | 'took_side' | 'witnessed_conflict'
 
 /** One real number behind a decision, captured when the decision was made. */
 export interface CauseFactor {

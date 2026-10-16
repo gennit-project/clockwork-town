@@ -45,6 +45,7 @@ export const CRITICAL_LIMIT_TICKS: Record<NeedName, number> = {
   fulfillment: STUCK_TICKS * 6
 }
 
+import { persistenceMocks } from './townWeekMocks'
 export { persistenceMocks, graphqlClientMock } from './townWeekMocks'
 
 /** A small deterministic PRNG (mulberry32) so animal wandering is repeatable. */
@@ -84,6 +85,11 @@ export interface TownWeekReport {
   /** Acts after which the actor was still over their line on the next tick. */
   actsStillOver: number
   longestActStreakDays: number
+  /** Bystanders who stepped in, how many of those backfired, who aligned with the actor, and children or sensitive residents upset by watching. */
+  interventions: number
+  backfires: number
+  sidesTaken: number
+  upsetWitnesses: number
   /** Antisocial acts logged without a cause (must be zero). */
   actsWithoutCause: number
   /** Share of all irritation (summed over every tick) that each trigger accounts for. */
@@ -150,6 +156,10 @@ export async function runTownWeek(options: RunOptions): Promise<TownWeekReport> 
     const justActed = new Set<string>()
     let actsStillOver = 0
     let actsWithoutCause = 0
+    let interventions = 0
+    let backfires = 0
+    let sidesTaken = 0
+    const memoryCallsAtStart = persistenceMocks.createStructuredCharacterLongTermMemory.mock.calls.length
     const triggerTotals: Record<string, number> = {}
     const ticks = options.days * TICKS_PER_DAY
     const startedAt = Date.now()
@@ -168,6 +178,11 @@ export async function runTownWeek(options: RunOptions): Promise<TownWeekReport> 
       for (const entry of store.activityLog) {
         if (seen.has(entry)) continue
         seen.add(entry)
+        if (entry.action === 'intervene') {
+          interventions++
+          if (entry.details.includes('(escalated)')) backfires++
+        }
+        if (entry.action === 'took_side') sidesTaken++
         if (!['snap', 'belittle', 'argue'].includes(entry.action)) continue
         if (!entry.cause || entry.cause.kind !== 'antisocial_act' || entry.cause.factors.length === 0) actsWithoutCause++
         actsByRung[entry.action] = (actsByRung[entry.action] ?? 0) + 1
@@ -235,6 +250,12 @@ export async function runTownWeek(options: RunOptions): Promise<TownWeekReport> 
       capHits,
       actsStillOver,
       longestActStreakDays,
+      interventions,
+      backfires,
+      sidesTaken,
+      upsetWitnesses: persistenceMocks.createStructuredCharacterLongTermMemory.mock.calls
+        .slice(memoryCallsAtStart)
+        .filter(([input]) => (input as { eventType?: string }).eventType === 'witnessed_conflict').length,
       actsWithoutCause,
       triggerShare: Object.fromEntries(Object.entries(triggerTotals).map(([k, v]) => [k, v / totalTrigger])),
       pressureTicketsOpened: desk.tickets.filter((t) => t.rule === 'pressure').length,
@@ -279,6 +300,7 @@ export function formatReport(report: TownWeekReport, label: string): string {
   lines.push(
     `cap hits: ${report.capHits}; acts still over line next tick: ${report.actsStillOver}; longest act streak (days): ${report.longestActStreakDays}`
   )
+  lines.push(`interventions: ${report.interventions} (${report.backfires} backfired); sided with the actor: ${report.sidesTaken}; upset witnesses: ${report.upsetWitnesses}`)
   lines.push(`pressure tickets: ${report.pressureTicketsOpened}; unmet-need tickets: ${report.unmetNeedTicketsOpened}; damaged relationships: ${report.damagedRelationships}`)
   lines.push(`critical for an hour+: ${report.criticalForAnHour.join(', ') || 'nobody'}`)
   lines.push(
