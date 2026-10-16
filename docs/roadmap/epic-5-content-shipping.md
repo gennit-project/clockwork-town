@@ -197,6 +197,48 @@ harder modes.
 
 ---
 
+## 5.6 — "Cameras" view: a security-desk feed of what is interesting `[M–L]`
+
+The most direct expression of the project's core loop (a self-sustaining town you check in
+on, where interesting things happen that you can step into or ignore): a view styled like
+a bank of surveillance monitors, several panels at once, each one **following something worth
+watching** and cutting away when it stops being interesting.
+
+- **Panels.** Four to six feeds, text-only (deadpan "CAM 3, Community Center, Library" headers,
+  a running transcript of what the people there are doing and saying, timestamped in sim time).
+  Each panel is either *following a resident*, *watching a room*, or *on auto*.
+- **Auto-director.** A scoring function over data the sim already produces decides where the
+  cameras point: open tickets and grievances, recent events (reunions, disapproval, antisocial
+  acts), pressure meters nearing their limit (a hot-tempered resident about to snap is worth a
+  camera before the act, not after), group gatherings, and first-time encounters. Panels cut to
+  the highest-scoring places and hold a short time so the feed is watchable, not frantic. Every
+  cut carries its reason in a line of text ("because: Tom is over his irritation limit and Sara is
+  in the room"), built from the same cause records as the rest of the UI (Epic 6.1), so the view
+  explains itself.
+- **Wholesome and drama filters.** A control biases the director toward warm moments (hugs,
+  reunions, shared meals, group fun), toward friction, or a mix. Both kinds get airtime by default.
+- **Actions from a panel.** Click through to the resident, the ticket or the "why". Optionally
+  step in (the same interventions the dashboards offer) without leaving the view.
+- **Mode awareness.** In the hands-off default mode the view is a window onto a town that is
+  running fine; in manual-care modes (Epic 5.5) the director also surfaces residents who need
+  help. It never shows more than the sim knows: no invented dialogue beyond what the sim's own
+  memories and log entries say.
+
+**Where it plugs in.** Read-only over existing state: the activity log, the recent-events feed,
+tickets, grievances, pressure readings (`utils/pressure.ts`) and causes (`utils/causes.ts`). The
+new code is the scoring and cut-timing logic (pure and unit-testable, like the rest of Epic 6),
+a feed formatter, and the panel UI. No new backend or data model.
+
+**Prerequisites.** Epic 6.1 (causes) and 6.2 (pressure) are built; the view gets more
+interesting as Epic 6.3b/6.4/6.6 add friction and bystanders, and as the seeded town gains more
+sources of events (see the 6.8 notes). It benefits from Epic 5.5's mode setting but does not need it.
+
+**Done when.** With the sim running, the view shows several live feeds, cuts to a staged
+argument within a few ticks of it brewing, explains the cut in plain words, can be biased toward
+wholesome or drama, and shows a calm-but-alive town (not an empty one) when nothing is happening.
+
+---
+
 ## Reference catalogs (content bible)
 
 These canonical lists are referenced by earlier epics (esp. Epic 0 traits/values and

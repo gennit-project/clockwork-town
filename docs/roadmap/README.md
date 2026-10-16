@@ -108,7 +108,7 @@ Two corrections to the original (pre-this-folder) numbering:
 | 2 | Authoring substrate (item catalog, character family/relationship/memory editing, world/region config) | [epic-2-authoring.md](epic-2-authoring.md) |
 | 3 | Domestic life & economy (finances, cooking rota, chores) | [epic-3-domestic-economy.md](epic-3-domestic-economy.md) |
 | 4 | Town as a living system (job slots, NPCs, illness, death & grief, childcare, essential facilities) | [epic-4-living-town.md](epic-4-living-town.md) |
-| 5 | Content & shipping (build-and-staff flow, default town, tutorial, difficulty) | [epic-5-content-shipping.md](epic-5-content-shipping.md) |
+| 5 | Content & shipping (build-and-staff flow, default town, tutorial, difficulty and autonomy modes, the "cameras" view) | [epic-5-content-shipping.md](epic-5-content-shipping.md) |
 | 6 | Friction & drama (autonomous antisocial behavior with an auditable cause, rejection, repair) | [epic-6-friction-and-drama.md](epic-6-friction-and-drama.md) |
 | ✓ | Completed work (Epic 0, Epic 1.1–1.4, Epic 6.1–6.2, 6.3 first half, 6.8) | [completed/](completed/README.md) |
 | — | Parked / long-term / cut | [parked-long-term.md](parked-long-term.md) |

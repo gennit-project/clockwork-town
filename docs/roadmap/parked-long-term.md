@@ -14,6 +14,12 @@ rebuilt. Three buckets: **Cut** (won't do), **Parked** (maybe later, not now), a
 
 ## Parked — revisit after Epics 0–5 prove out
 
+- **Alternative skins.** The current look is the Grafana-style "IT service desk for the human
+  soul". Two ideas for a user-selectable skin: (1) a second *text* theme with different tone and
+  vocabulary (for example worker-placement-board-game wording instead of tickets and alerts),
+  which is cheap and compatible with text-only; (2) a 2D-artwork "board game" look, which needs
+  art and reopens the text-only decision above, so it stays parked until that decision is
+  reopened. Any skin must render the same data (tickets, causes, needs) and not fork the sim.
 - **Spatial map / build editor with roads.** The "plop a building, rotate it, draw a
   road to connect it" experience. This is the single most expensive feature and is
   explicitly decoupled from the tutorial, which uses the non-spatial build-and-staff
